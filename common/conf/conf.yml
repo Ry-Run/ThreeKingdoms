@@ -1,0 +1,62 @@
+mysql:
+  host: "177.8.0.11"
+  port: 3306
+  user: "root"
+  password: "123456abc"
+  dbname: "slgdb"
+  charset: "utf8"
+  max_idle: 2
+  max_conn: 10
+
+httpserver:
+  host: ""
+  port: 8088
+
+gateserver:
+  host: ""
+  port: 8004
+  need_secret: true
+  slg_proxy: "ws://177.8.0.16:8001"
+  chat_proxy: "ws://177.8.0.12:8002"
+  login_proxy: "ws://177.8.0.15:8003"
+
+slgserver:
+  host: ""
+  port: 8001
+  need_secret: false
+  is_dev: false
+
+chatserver:
+  host: ""
+  port: 8002
+  need_secret: false
+
+loginserver:
+  host: ""
+  port: 8003
+  need_secret: false
+
+xorm:
+  show_sql: true
+  log_file: "./logs/sql.logs"
+
+log:
+  # 日志目录（相对路径建议用 ./logs，部署更直观）
+  file_dir: "./logs/"
+  # 单个日志文件最大大小（MB），超过会切割
+  max_size: 120
+  # 保留的旧日志文件数量
+  max_backups: 30
+  # 旧日志保留天数
+  max_age: 10
+  # 是否压缩旧日志（压缩省空间，但多一点 CPU）
+  compress: true
+  # 日志级别：debug/info/warn/error/dpanic/panic/fatal
+  level: "info"
+  # 开发模式：true 时更适合人读（并且 warn+ 可能带 stacktrace，取决于你的实现）
+  dev: false
+
+logic:
+  map_data: "./data/conf/mapRes_0.json"
+  json_data: "./data/conf/json/"
+  server_id: 1
