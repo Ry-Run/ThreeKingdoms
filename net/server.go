@@ -10,12 +10,13 @@ import (
 
 type Server struct {
 	addr   string
-	router *router
+	router *Router
 }
 
-func New(add string) *Server {
+func NewServer(add string, r *Router) *Server {
 	return &Server{
-		addr: add,
+		addr:   add,
+		router: r,
 	}
 }
 
@@ -31,11 +32,15 @@ func (s *Server) wsHandle(resp http.ResponseWriter, req *http.Request) {
 			return true
 		},
 	}
-	upgrade, err := upgrader.Upgrade(resp, req, nil)
+	wsConn, err := upgrader.Upgrade(resp, req, nil)
 	if err != nil {
 		logs.Panic("websocket upgrade error", zap.Error(err))
 	}
 
 	logs.Info("websocket upgrade success")
-	upgrade.WriteMessage(websocket.BinaryMessage, []byte("ok"))
+
+	wsServer := NewWsServer(wsConn)
+	wsServer.Router(s.router)
+	wsServer.Run()
+	wsServer.handshake()
 }
