@@ -2,9 +2,4 @@ go 1.24.11
 
 toolchain go1.24.11
 
-use (
-	./common
-	./net
-	./server
-	./db
-)
+use .
