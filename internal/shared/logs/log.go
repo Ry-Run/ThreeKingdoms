@@ -14,6 +14,12 @@ import (
 
 var logger *zap.Logger = zap.NewNop()
 
+// Logger 暴露底层 zap logger，方便在接口层/基础设施层统一打印结构化日志。
+// 注意：对外建议只读使用，不要随意替换配置；初始化请通过 Init。
+func Logger() *zap.Logger {
+	return logger
+}
+
 func Init(appName string, cfg config.LogConfig) error {
 	// 1) 解析日志级别：默认是 info
 	//    cfg.Level 支持 "debug/info/warn/error/..."（大小写不敏感）

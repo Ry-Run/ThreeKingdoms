@@ -1,7 +1,7 @@
-package controller
+package handler
 
 import (
-	proto "ThreeKingdoms/internal/account/dto"
+	"ThreeKingdoms/internal/account/dto"
 	ws "ThreeKingdoms/internal/shared/transport/ws"
 )
 
@@ -19,7 +19,7 @@ func (a *Account) RegisterRoutes(r *ws.Router) {
 
 func (a *Account) login(req ws.WsMsgReq, resp *ws.WsMsgResp) {
 	resp.Body.Code = 0
-	loginRes := &proto.LoginRsp{}
+	loginRes := &dto.LoginResp{}
 	loginRes.UId = 1
 	loginRes.Username = "admin"
 	loginRes.Session = "as"

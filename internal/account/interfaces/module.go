@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"ThreeKingdoms/internal/account/interfaces/controller"
+	"ThreeKingdoms/internal/account/interfaces/handler"
 	ws "ThreeKingdoms/internal/shared/transport/ws"
 )
 
@@ -10,5 +10,5 @@ type Module struct{}
 func New() *Module { return &Module{} }
 
 func (m *Module) Register(r *ws.Router) {
-	controller.NewAccount().RegisterRoutes(r)
+	handler.NewAccount().RegisterRoutes(r)
 }
