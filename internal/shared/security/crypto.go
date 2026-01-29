@@ -71,3 +71,7 @@ func UnZip(data []byte) ([]byte, error) {
 func Password(pwd string, pwdCode string) string {
 	return Md5(pwd + pwdCode)
 }
+
+func PwdEncrypt(pwd, passcode string) string {
+	return Password(pwd, passcode)
+}

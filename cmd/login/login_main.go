@@ -17,14 +17,14 @@ func main() {
 	logs.Info("conf", zap.Any("conf", config.Conf))
 
 	addr := "127.0.0.1:8080"
+	gormDB, _ := db.Open(config.Conf.MySQL)
 	r := ws.NewRouter()
 	modules := []ws.Registrar{
-		interfaces.New(),
+		interfaces.New(gormDB, logs.Logger()),
 	}
 	for _, m := range modules {
 		m.Register(r)
 	}
-	db.Open(config.Conf.MySQL)
 	s := ws.NewServer(addr, r)
 	s.Run()
 }

@@ -72,3 +72,4 @@ const OutArmNotMatch = 63         //兵种不符
 const PosNotSkill = 64            //该位置没有技能
 const SkillLevelFull = 65         //技能等级已满
 const RoleNameExist = 66          //昵称已经存在
+const SystemError = 500           //系统错误

@@ -13,7 +13,7 @@ type Group struct {
 	handlers map[string]HandlerFunc
 }
 
-type HandlerFunc func(req WsMsgReq, resp *WsMsgResp)
+type HandlerFunc func(req *WsMsgReq, resp *WsMsgResp)
 
 func (g *Group) Handle(name string, h HandlerFunc) {
 	g.handlers[name] = h
@@ -39,7 +39,7 @@ func (r *Router) Group(prefix string) *Group {
 }
 
 // req.Body.Name(路径)：例如，登录业务 account(组标识).login(路由标识)
-func (r *Router) Dispatch(req WsMsgReq, resp *WsMsgResp) {
+func (r *Router) Dispatch(req *WsMsgReq, resp *WsMsgResp) {
 	split := strings.Split(req.Body.Name, ".")
 	if len(split) < 2 {
 		logs.Error("Router Dispatch err, len(split) < 2", zap.String("name", req.Body.Name))

@@ -127,7 +127,7 @@ func (s *WsServer) readMsgLoop() {
 		// 5.分发消息
 		req := WsMsgReq{Body: &body, Conn: s}
 		resp := WsMsgResp{Body: &RespBody{Seq: s.Seq, Name: body.Name, Msg: body.Msg}}
-		s.router.Dispatch(req, &resp)
+		s.router.Dispatch(&req, &resp)
 	}
 }
 

@@ -49,6 +49,12 @@ func TestError_WithCause_业务错误不捕获栈(t *testing.T) {
 	}
 }
 
+func TestDomainErrors_错误码语义不复用(t *testing.T) {
+	if errors.Is(ErrLastLoginNotFound, ErrUserNotFound) {
+		t.Fatalf("ErrLastLoginNotFound 不应复用 ErrUserNotFound 的错误码语义")
+	}
+}
+
 func TestError_WithData_不污染原对象(t *testing.T) {
 	base := ErrUserNotFound
 	err := base.WithData("userId", int64(1))

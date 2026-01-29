@@ -10,9 +10,10 @@ import "ThreeKingdoms/modules/kit/errx"
 type Code = errx.Code
 
 const (
-	CodeUserNotFound    Code = "ACCOUNT_USER_NOT_FOUND"
-	CodeInvalidPassword Code = "ACCOUNT_INVALID_PASSWORD"
-	CodeUserDisabled    Code = "ACCOUNT_USER_DISABLED"
+	CodeUserNotFound      Code = "ACCOUNT_USER_NOT_FOUND"
+	CodeLastLoginNotFound Code = "ACCOUNT_LAST_LOGIN_NOT_FOUND"
+	CodeInvalidPassword   Code = "ACCOUNT_INVALID_PASSWORD"
+	CodeUserDisabled      Code = "ACCOUNT_USER_DISABLED"
 	// CodeSystemUnavailable 复用 kit 的统一系统码（跨服务一致，便于告警/排障）。
 	CodeSystemUnavailable Code = errx.CodeUnavailable
 )
@@ -32,8 +33,8 @@ func NewError(code Code, data map[string]any, cause error) *Error {
 }
 
 var (
-	ErrUserNotFound      = errx.NewBiz(CodeUserNotFound, "")
-	ErrInvalidPassword   = errx.NewBiz(CodeInvalidPassword, "")
+	ErrUserNotFound      = errx.NewBiz(CodeUserNotFound, "用户未找到")
+	ErrLastLoginNotFound = errx.NewBiz(CodeLastLoginNotFound, "用户最后一次登录记录未找到")
 	ErrUserDisabled      = errx.NewBiz(CodeUserDisabled, "")
 	ErrSystemUnavailable = errx.ErrUnavailable
 )

@@ -17,6 +17,8 @@ const (
 	CodeRateLimited Code = "RATE_LIMITED"
 	// CodeMaintenance 表示服务维护/停服。
 	CodeMaintenance Code = "MAINTENANCE"
+	// 请求参数错误
+	CodeReqParamError Code = "CODE_REQ_PARAM_ERROR"
 )
 
 // 统一系统类哨兵错误（允许 WithData/WithCause 派生新对象）。
@@ -26,4 +28,5 @@ var (
 	ErrTimeout     = NewSys(CodeTimeout, "请求超时")
 	ErrRateLimited = NewSys(CodeRateLimited, "请求过于频繁")
 	ErrMaintenance = NewSys(CodeMaintenance, "服务维护中")
+	ErrReqParamERR = NewSys(CodeReqParamError, "请求参数错误")
 )

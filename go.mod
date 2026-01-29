@@ -5,6 +5,7 @@ go 1.24
 require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-think/openssl v1.20.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/gorilla/websocket v1.5.3
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/spf13/viper v1.21.0

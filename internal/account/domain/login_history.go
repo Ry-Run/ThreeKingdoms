@@ -2,6 +2,11 @@ package domain
 
 import "time"
 
+const (
+	LoginFail    int8 = 0
+	LoginSuccess int8 = 1
+)
+
 type LoginHistory struct {
 	Id       int       `gorm:"column:id;primaryKey;autoIncrement;comment:主键ID" json:"id"`
 	UId      int       `gorm:"column:uid;index:idx_uid_time;not null;comment:用户ID" json:"uid"`
