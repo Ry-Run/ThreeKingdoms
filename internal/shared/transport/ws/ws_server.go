@@ -64,7 +64,7 @@ func (s *WsServer) Addr() string {
 func (s *WsServer) Push(name string, data any) {
 	rsp := WsMsgResp{
 		Body: &RespBody{
-			Seq:  s.Seq,
+			Seq:  0,
 			Name: name,
 			Msg:  data,
 		},
@@ -129,7 +129,7 @@ func (s *WsServer) readMsgLoop() {
 
 		// 5.分发消息
 		req := WsMsgReq{Body: &body, Conn: s}
-		resp := WsMsgResp{Body: &RespBody{Seq: s.Seq, Name: body.Name, Msg: body.Msg}}
+		resp := WsMsgResp{Body: &RespBody{Seq: req.Body.Seq, Name: body.Name, Msg: body.Msg}}
 		s.router.Dispatch(&req, &resp)
 	}
 }

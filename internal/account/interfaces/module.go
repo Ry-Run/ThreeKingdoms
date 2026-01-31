@@ -7,6 +7,7 @@ import (
 	"ThreeKingdoms/internal/shared/security"
 	"ThreeKingdoms/internal/shared/session"
 	ws "ThreeKingdoms/internal/shared/transport/ws"
+	"ThreeKingdoms/internal/shared/utils"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -21,6 +22,7 @@ type Module struct {
 	llRepo     *repo.LoginLastRepo
 	pwdEncrypt func(pwd string, passcode string) string
 	account    *handler.Account
+	randSeq    func(n int) string
 }
 
 func New(db *gorm.DB, l *zap.Logger, session session.Manager) *Module {
@@ -31,8 +33,9 @@ func New(db *gorm.DB, l *zap.Logger, session session.Manager) *Module {
 		lhRepo:     repo.NewLoginHistoryRepo(db),
 		llRepo:     repo.NewLoginLastRepo(db),
 		pwdEncrypt: security.PwdEncrypt,
+		randSeq:    utils.RandSeq,
 	}
-	m.account = handler.NewAccount(m.userRepo, m.pwdEncrypt, m.log, m.lhRepo, m.llRepo, m.session)
+	m.account = handler.NewAccount(m.userRepo, m.pwdEncrypt, m.log, m.lhRepo, m.llRepo, m.session, m.randSeq)
 	return &m
 }
 

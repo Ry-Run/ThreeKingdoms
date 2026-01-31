@@ -22,6 +22,9 @@ func NewHttpServer(add string, engine *gin.Engine) *Server {
 		engine.Use(gin.Recovery())
 	}
 	engine.Use(middleware.Cors())
+	engine.GET("/healthz", func(c *gin.Context) {
+		c.JSON(nethttp.StatusOK, gin.H{"status": "ok"})
+	})
 
 	return &Server{
 		addr:   add,
@@ -38,7 +41,7 @@ func NewHttpServer(add string, engine *gin.Engine) *Server {
 	}
 }
 
-// Start 启动 HTTP 服务（阻塞）。关闭时会返回 net/http.ErrServerClosed。
+// Start 启动 HTTP 服务（阻塞）。关闭时会返回 net/dto.ErrServerClosed。
 func (s *Server) Start() error {
 	return s.srv.ListenAndServe()
 }

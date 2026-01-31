@@ -2,13 +2,16 @@ package handler
 
 import (
 	"ThreeKingdoms/internal/account/app"
-	"ThreeKingdoms/internal/account/dto"
+	"ThreeKingdoms/internal/account/app/model"
+	"ThreeKingdoms/internal/account/interfaces/handler/dto"
 	"ThreeKingdoms/internal/shared/session"
+	"ThreeKingdoms/internal/shared/transport"
 	"ThreeKingdoms/internal/shared/transport/ws"
 	"ThreeKingdoms/modules/kit/logx"
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -21,9 +24,9 @@ type Account struct {
 }
 
 func NewAccount(userRepo app.UserRepo, pwdEncrypter app.PwdEncrypter, log logx.Logger,
-	lhRepo app.LoginHistoryRepo, llRepo app.LoginLastRepo, session session.Manager) *Account {
+	lhRepo app.LoginHistoryRepo, llRepo app.LoginLastRepo, session session.Manager, randSeq app.RandSeq) *Account {
 	return &Account{
-		userService: app.NewUserService(userRepo, pwdEncrypter, log, lhRepo, llRepo),
+		userService: app.NewUserService(userRepo, pwdEncrypter, log, lhRepo, llRepo, randSeq),
 		log:         log,
 		session:     session,
 	}
@@ -35,23 +38,23 @@ func (a *Account) RegisterWsRoutes(r *ws.Router) {
 }
 
 func (a *Account) RegisterHttpRoutes(g *gin.RouterGroup) {
-	g.Group("/account").POST("/register", a.register)
+	g.Group("/account").GET("/register", a.register)
 }
 
 func (a *Account) login(req *ws.WsMsgReq, resp *ws.WsMsgResp) {
-	loginReq := &dto.LoginReq{}
+	loginReq := &model.LoginReq{}
 
 	// ReqBody.Msg 由 json.Unmarshal 解码到 interface{}，通常是 map[string]any。
 	// 这里用 json 二次编解码做“宽松解析”，避免 copier 的方向/类型陷阱。
 	raw, err := json.Marshal(req.Body.Msg)
 	if err != nil {
 		a.log.Error("marshal req.Body.Msg failed", zap.Error(err), zap.Any("msg", req.Body.Msg))
-		resp.Body.Code = ws.InvalidParam
+		resp.Body.Code = transport.InvalidParam
 		return
 	}
 	if err := json.Unmarshal(raw, loginReq); err != nil {
 		a.log.Error("unmarshal loginReq failed", zap.Error(err), zap.ByteString("raw", raw))
-		resp.Body.Code = ws.InvalidParam
+		resp.Body.Code = transport.InvalidParam
 		return
 	}
 
@@ -60,15 +63,15 @@ func (a *Account) login(req *ws.WsMsgReq, resp *ws.WsMsgResp) {
 		ReportError("login fail", err)
 		switch {
 		case errors.Is(err, app.ErrInvalidCredentials):
-			resp.Body.Code = ws.PwdIncorrect
+			resp.Body.Code = transport.PwdIncorrect
 		default:
-			resp.Body.Code = ws.SystemError
+			resp.Body.Code = transport.SystemError
 		}
 		return
 	}
 
-	resp.Body.Code = ws.OK
-	resp.Body.Msg = &loginResp
+	resp.Body.Code = transport.OK
+	resp.Body.Msg = loginResp
 
 	// 缓存 ws连接 和当前用户数据
 	req.Conn.SetProperty(ws.ConnKeyUID, loginResp.UId)
@@ -76,5 +79,24 @@ func (a *Account) login(req *ws.WsMsgReq, resp *ws.WsMsgResp) {
 }
 
 func (a *Account) register(c *gin.Context) {
+	var req model.RegisterReq
+	err := c.Bind(&req)
+	if err != nil {
+		a.log.Error("register request param invalidate", zap.Error(err))
+		c.JSON(http.StatusOK, dto.Error(transport.InvalidParam, "param invalidate"))
+		return
+	}
 
+	err = a.userService.Register(context.Background(), req)
+	if err != nil {
+		ReportError("register fail", err)
+		switch {
+		case errors.Is(err, app.ErrUserExist):
+			c.JSON(http.StatusOK, dto.Error(transport.UserExist, "user exist"))
+		default:
+			c.JSON(http.StatusOK, dto.Error(transport.DBError, "db error"))
+		}
+		return
+	}
+	c.JSON(http.StatusOK, dto.Success(transport.OK, nil))
 }

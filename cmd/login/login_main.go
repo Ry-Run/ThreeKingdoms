@@ -69,7 +69,7 @@ func main() {
 	errCh := make(chan error, 2)
 	go func() {
 		if err := httpServer.Start(); err != nil && !errors.Is(err, nethttp.ErrServerClosed) {
-			errCh <- fmt.Errorf("http server start failed: %w", err)
+			errCh <- fmt.Errorf("dto server start failed: %w", err)
 			return
 		}
 		errCh <- nil

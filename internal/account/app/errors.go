@@ -11,6 +11,7 @@ const (
 	CodeInternalServer Code = errx.CodeInternal
 	// CodeUnavailable 复用 kit 的统一系统码（跨服务一致，便于告警/排障）。
 	CodeUnavailable Code = errx.CodeUnavailable
+	CodeUserExist   Code = "USER_EXIST"
 )
 
 // Error 复用通用错误模型：对外语义(code/msg)、上下文(data)、溯源链(cause)、系统错误一次栈(stack)。
@@ -31,4 +32,5 @@ var (
 	ErrInvalidCredentials = errx.NewBiz(CodeInvalidCredentials, "用户名或密码错误")
 	ErrInternalServer     = errx.ErrInternal
 	ErrUnavailable        = errx.ErrUnavailable
+	ErrUserExist          = errx.NewBiz(CodeUserExist, "用户已存在")
 )

@@ -15,7 +15,7 @@ type User struct {
 }
 
 func (User) TableName() string {
-	return "user" // 指定表名，防止 GORM 自动复数化为 users
+	return "user_info" // 指定表名
 }
 
 func (u User) CheckPassword(pwd string, encrypt func(plaintext, passcode string) string) bool {
