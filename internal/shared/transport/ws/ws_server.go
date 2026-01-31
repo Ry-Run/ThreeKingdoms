@@ -21,6 +21,8 @@ type WsServer struct {
 	Seq      int64
 	property map[string]any
 	sync.RWMutex
+	done      chan struct{}
+	closeOnce sync.Once
 }
 
 func NewWsServer(wsConn *websocket.Conn) *WsServer {
@@ -29,6 +31,7 @@ func NewWsServer(wsConn *websocket.Conn) *WsServer {
 		outChan:  make(chan *WsMsgResp, 1000),
 		property: make(map[string]any),
 		Seq:      0,
+		done:     make(chan struct{}),
 	}
 }
 
@@ -86,7 +89,7 @@ func (s *WsServer) readMsgLoop() {
 		_, data, err := s.conn.ReadMessage()
 		if err != nil {
 			logs.Error("ws_server read msg", zap.Error(err))
-			continue
+			return
 		}
 
 		// 前端发送的是压缩加密过的json
@@ -106,7 +109,7 @@ func (s *WsServer) readMsgLoop() {
 
 		// 3.解密数据
 		key := secretKey.(string)
-		decryptedData, err := security.AesCBCDecrypt(data, []byte(key), []byte(key), openssl.ZEROS_PADDING)
+		decryptedData, err := security.AesCBCDecrypt(secretData, []byte(key), []byte(key), openssl.ZEROS_PADDING)
 		if err != nil {
 			logs.Error("ws_server readMsgLoop decrypt error", zap.Error(err))
 			// 出错后，发起握手
@@ -139,12 +142,21 @@ func (s *WsServer) writeMsgLoop() {
 				logs.Info("ws_server write msg", zap.Any("msg", msg))
 				s.write(msg)
 			}
+		case <-s.done:
+			return
 		}
 	}
 }
 
 func (s *WsServer) Close() {
-	_ = s.conn.Close()
+	s.closeOnce.Do(func() {
+		_ = s.conn.Close()
+		close(s.done)
+	})
+}
+
+func (s *WsServer) Done() <-chan struct{} {
+	return s.done
 }
 
 func (s *WsServer) write(msg *WsMsgResp) {
@@ -176,7 +188,9 @@ func (s *WsServer) write(msg *WsMsgResp) {
 		logs.Error("ws_server write zip error", zap.Error(err))
 	}
 
-	err = s.conn.WriteMessage(websocket.TextMessage, zip)
+	if err := s.conn.WriteMessage(websocket.TextMessage, zip); err != nil {
+		logs.Error("ws_server write error", zap.Error(err))
+	}
 }
 
 func (s *WsServer) handshake() {
@@ -202,5 +216,7 @@ func (s *WsServer) handshake() {
 		s.RemoveProperty(SecretKey)
 	}
 
-	s.conn.WriteMessage(websocket.BinaryMessage, data)
+	if err := s.conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+		logs.Error("ws_server handshake write error", zap.Error(err))
+	}
 }

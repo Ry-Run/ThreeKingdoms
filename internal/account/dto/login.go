@@ -3,7 +3,7 @@ package dto
 type LoginResp struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Session  string `json:"session"`
+	Session  string `json:"session"` // token
 	UId      int    `json:"uid"`
 }
 

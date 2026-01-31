@@ -1,7 +1,9 @@
 package ws
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
@@ -12,18 +14,31 @@ import (
 type Server struct {
 	addr   string
 	router *Router
+	srv    *http.Server
 }
 
 func NewServer(add string, r *Router) *Server {
 	return &Server{
 		addr:   add,
 		router: r,
+		srv: &http.Server{
+			Addr:              add,
+			ReadHeaderTimeout: 5 * time.Second,
+			IdleTimeout:       60 * time.Second,
+		},
 	}
 }
 
-func (s *Server) Run() {
-	http.HandleFunc("/", s.wsHandle)
-	http.ListenAndServe(s.addr, nil)
+// Start 启动 WebSocket 服务（阻塞）。关闭时会返回 net/http.ErrServerClosed。
+func (s *Server) Start() error {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", s.wsHandle)
+	s.srv.Handler = mux
+	return s.srv.ListenAndServe()
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.srv.Shutdown(ctx)
 }
 
 func (s *Server) wsHandle(resp http.ResponseWriter, req *http.Request) {
@@ -35,7 +50,8 @@ func (s *Server) wsHandle(resp http.ResponseWriter, req *http.Request) {
 	}
 	wsConn, err := upgrader.Upgrade(resp, req, nil)
 	if err != nil {
-		logs.Panic("websocket upgrade error", zap.Error(err))
+		logs.Error("websocket upgrade error", zap.Error(err))
+		return
 	}
 
 	logs.Info("websocket upgrade success")

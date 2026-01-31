@@ -93,8 +93,6 @@ func (s *UserService) Login(ctx context.Context, req dto.LoginReq) (resp dto.Log
 		return resp, ErrUnavailable.WithCause(err)
 	}
 
-	// 缓存 ws连接 和当前用户数据
-
 	return dto.LoginResp{
 		Username: user.Username,
 		UId:      user.UId,

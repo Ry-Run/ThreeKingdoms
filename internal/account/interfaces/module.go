@@ -5,29 +5,42 @@ import (
 	"ThreeKingdoms/internal/account/infra/repo"
 	"ThreeKingdoms/internal/account/interfaces/handler"
 	"ThreeKingdoms/internal/shared/security"
+	"ThreeKingdoms/internal/shared/session"
 	ws "ThreeKingdoms/internal/shared/transport/ws"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type Module struct {
-	db  *gorm.DB
-	log *zap.Logger
+	log        *logger.ZapLoggerAdapter
+	session    session.Manager
+	userRepo   *repo.UserRepo
+	lhRepo     *repo.LoginHistoryRepo
+	llRepo     *repo.LoginLastRepo
+	pwdEncrypt func(pwd string, passcode string) string
+	account    *handler.Account
 }
 
-func New(db *gorm.DB, l *zap.Logger) *Module {
-	return &Module{
-		db:  db,
-		log: l,
+func New(db *gorm.DB, l *zap.Logger, session session.Manager) *Module {
+	m := Module{
+		log:        logger.NewZapLoggerAdapter(l),
+		session:    session,
+		userRepo:   repo.NewUserRepo(db),
+		lhRepo:     repo.NewLoginHistoryRepo(db),
+		llRepo:     repo.NewLoginLastRepo(db),
+		pwdEncrypt: security.PwdEncrypt,
 	}
+	m.account = handler.NewAccount(m.userRepo, m.pwdEncrypt, m.log, m.lhRepo, m.llRepo, m.session)
+	return &m
 }
 
-func (m *Module) Register(r *ws.Router) {
-	userRepo := repo.NewUserRepo(m.db)
-	lhRepo := repo.NewLoginHistoryRepo(m.db)
-	llRepo := repo.NewLoginLastRepo(m.db)
-	log := logger.NewZapLoggerAdapter(m.log)
-	pwdEncrypt := security.PwdEncrypt
-	handler.NewAccount(userRepo, pwdEncrypt, log, lhRepo, llRepo).RegisterRoutes(r)
+func (m *Module) WsRegister(r *ws.Router) {
+	m.account.RegisterWsRoutes(r)
+}
+
+func (m *Module) HttpRegister(g *gin.RouterGroup) {
+	m.account.RegisterHttpRoutes(g)
+
 }

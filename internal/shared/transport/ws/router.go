@@ -30,12 +30,15 @@ func NewRouter() *Router {
 }
 
 func (r *Router) Group(prefix string) *Group {
-	g := &Group{
-		prefix:   prefix,
-		handlers: make(map[string]HandlerFunc),
+	group := r.groups[prefix]
+	if group == nil {
+		group = &Group{
+			prefix:   prefix,
+			handlers: make(map[string]HandlerFunc),
+		}
 	}
-	r.groups[prefix] = g
-	return g
+	r.groups[prefix] = group
+	return group
 }
 
 // req.Body.Name(路径)：例如，登录业务 account(组标识).login(路由标识)
@@ -47,7 +50,11 @@ func (r *Router) Dispatch(req *WsMsgReq, resp *WsMsgResp) {
 	}
 	prefix := split[0]
 	handler := split[1]
-	handlerFunc := r.groups[prefix].handlers[handler]
+	group := r.groups[prefix]
+	if group == nil {
+		logs.Error("Router Dispatch err, group not exist", zap.String("group", prefix))
+	}
+	handlerFunc := group.handlers[handler]
 	if handlerFunc == nil {
 		logs.Error("Router Dispatch err, handler not exist", zap.String("prefix", prefix), zap.String("handler", handler))
 		return

@@ -41,6 +41,11 @@ func Open(cfg config.MySQLConfig) (*gorm.DB, error) {
 	sqlDB.SetMaxOpenConns(cfg.MaxConn)
 	sqlDB.SetMaxIdleConns(cfg.MaxIdle)
 
-	logs.Info("open db success", zap.String("url", dsn))
+	logs.Info("open db success",
+		zap.String("host", cfg.Host),
+		zap.Int("port", cfg.Port),
+		zap.String("db", cfg.DBName),
+		zap.String("user", cfg.User),
+	)
 	return db, nil
 }

@@ -31,12 +31,16 @@ type WSConn interface {
 	Addr() string
 	Push(name string, data any)
 	Close()
+	// Done 用于感知连接生命周期结束（连接关闭时该 channel 会被关闭）
+	Done() <-chan struct{}
 }
 
 type Handshake struct {
 	Key string `json:"key"`
 }
 
-const HandshakeMsg = "handshake"
-
-const SecretKey = "secretKey"
+const (
+	HandshakeMsg = "handshake"
+	SecretKey    = "secretKey"
+	ConnKeyUID   = "uid"
+)

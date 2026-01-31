@@ -3,30 +3,39 @@ package handler
 import (
 	"ThreeKingdoms/internal/account/app"
 	"ThreeKingdoms/internal/account/dto"
-	ws "ThreeKingdoms/internal/shared/transport/ws"
+	"ThreeKingdoms/internal/shared/session"
+	"ThreeKingdoms/internal/shared/transport/ws"
 	"ThreeKingdoms/modules/kit/logx"
 	"context"
 	"encoding/json"
 	"errors"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 type Account struct {
 	userService *app.UserService
 	log         logx.Logger
+	session     session.Manager
 }
 
-func NewAccount(userRepo app.UserRepo, pwdEncrypter app.PwdEncrypter, log logx.Logger, lhRepo app.LoginHistoryRepo, llRepo app.LoginLastRepo) *Account {
+func NewAccount(userRepo app.UserRepo, pwdEncrypter app.PwdEncrypter, log logx.Logger,
+	lhRepo app.LoginHistoryRepo, llRepo app.LoginLastRepo, session session.Manager) *Account {
 	return &Account{
 		userService: app.NewUserService(userRepo, pwdEncrypter, log, lhRepo, llRepo),
 		log:         log,
+		session:     session,
 	}
 }
 
-func (a *Account) RegisterRoutes(r *ws.Router) {
+func (a *Account) RegisterWsRoutes(r *ws.Router) {
 	g := r.Group("account")
 	g.Handle("login", a.login)
+}
+
+func (a *Account) RegisterHttpRoutes(g *gin.RouterGroup) {
+	g.Group("/account").POST("/register", a.register)
 }
 
 func (a *Account) login(req *ws.WsMsgReq, resp *ws.WsMsgResp) {
@@ -60,5 +69,12 @@ func (a *Account) login(req *ws.WsMsgReq, resp *ws.WsMsgResp) {
 
 	resp.Body.Code = ws.OK
 	resp.Body.Msg = &loginResp
+
+	// 缓存 ws连接 和当前用户数据
+	req.Conn.SetProperty(ws.ConnKeyUID, loginResp.UId)
+	a.session.Bind(loginResp.UId, loginResp.Session, req.Conn)
+}
+
+func (a *Account) register(c *gin.Context) {
 
 }

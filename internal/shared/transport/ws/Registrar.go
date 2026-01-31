@@ -1,5 +1,5 @@
 package ws
 
 type Registrar interface {
-	Register(r *Router)
+	WsRegister(r *Router)
 }
