@@ -73,3 +73,9 @@ const PosNotSkill = 64            //该位置没有技能
 const SkillLevelFull = 65         //技能等级已满
 const RoleNameExist = 66          //昵称已经存在
 const SystemError = 500           //系统错误
+const NotLogin = 501              //未登录错误
+
+// 网关到下游服务的全局技术错误码（客户端统一可识别）。
+const UpstreamUnavailable = 9000 //下游服务不可用
+const UpstreamTimeout = 9001     //下游服务超时
+const UpstreamInternal = 9002    //下游服务内部错误

@@ -16,9 +16,9 @@ gateserver:
   host: "127.0.0.1"
   port: 8004
   need_secret: true
-  slg_proxy: "ws://177.8.0.16:8001"
-  chat_proxy: "ws://177.8.0.12:8002"
-  login_proxy: "ws://177.8.0.15:8003"
+  slg_proxy: "ws://127.0.0.1:8001"
+  chat_proxy: "ws://127.0.0.1:8002"
+  login_proxy: "ws://127.0.0.1:8003"
 
 slgserver:
   host: "127.0.0.1"

@@ -3,6 +3,7 @@ package logs
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/natefinch/lumberjack"
@@ -62,8 +63,9 @@ func Init(appName string, cfg config.LogConfig) error {
 	//    如果没有配置文件路径，则丢弃文件输出（只输出到控制台）
 	var fileWriter io.Writer
 	if cfg.FileDir != "" {
+		fileName := resolveLogFilename(cfg.FileDir, appName)
 		fileWriter = &lumberjack.Logger{
-			Filename:   cfg.FileDir,
+			Filename:   fileName,
 			MaxSize:    max(1, cfg.MaxSize),    // 单个文件最大大小（MB），至少 1
 			MaxBackups: max(0, cfg.MaxBackups), // 最多保留多少个旧文件
 			MaxAge:     max(0, cfg.MaxAge),     // 最多保留多少天的旧文件
@@ -113,6 +115,21 @@ func Init(appName string, cfg config.LogConfig) error {
 	}
 	logger = l
 	return nil
+}
+
+func resolveLogFilename(fileDir, appName string) string {
+	trimmed := strings.TrimSpace(fileDir)
+	if trimmed == "" {
+		return trimmed
+	}
+	if strings.HasSuffix(trimmed, "/") || strings.HasSuffix(trimmed, `\`) {
+		return filepath.Join(trimmed, appName+".log")
+	}
+	info, err := os.Stat(trimmed)
+	if err == nil && info.IsDir() {
+		return filepath.Join(trimmed, appName+".log")
+	}
+	return trimmed
 }
 
 // 常用日志级别的辅助函数（便捷封装）。

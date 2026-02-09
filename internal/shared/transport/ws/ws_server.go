@@ -129,8 +129,11 @@ func (s *WsServer) readMsgLoop() {
 
 		// 5.分发消息
 		req := WsMsgReq{Body: &body, Conn: s}
+		// req 和 resp 的 Seq 必须一致
 		resp := WsMsgResp{Body: &RespBody{Seq: req.Body.Seq, Name: body.Name, Msg: body.Msg}}
 		s.router.Dispatch(&req, &resp)
+
+		s.Push(body.Name, &resp)
 	}
 }
 

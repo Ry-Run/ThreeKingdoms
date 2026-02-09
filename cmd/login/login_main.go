@@ -3,21 +3,19 @@ package main
 import (
 	"ThreeKingdoms/internal/account/interfaces"
 	"ThreeKingdoms/internal/shared/config"
+	accountpb "ThreeKingdoms/internal/shared/gen/account"
 	"ThreeKingdoms/internal/shared/infrastructure/db"
 	"ThreeKingdoms/internal/shared/logs"
-	"ThreeKingdoms/internal/shared/session"
-	transporthttp "ThreeKingdoms/internal/shared/transport/http"
-	"ThreeKingdoms/internal/shared/transport/ws"
+	transportgrpc "ThreeKingdoms/internal/shared/transport/grpc"
 	"context"
-	"errors"
 	"fmt"
-	nethttp "net/http"
+	"net"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -27,59 +25,36 @@ func main() {
 	}
 	logs.Info("conf", zap.Any("conf", config.Conf))
 
-	httpHost := config.Conf.HTTPServer.Host
-	if httpHost == "" {
-		httpHost = "0.0.0.0"
+	loginServerHost := config.Conf.LoginServer.Host
+	if loginServerHost == "" {
+		loginServerHost = "0.0.0.0"
 	}
-	httpServerAddr := fmt.Sprintf("%s:%d", httpHost, config.Conf.HTTPServer.Port)
-
-	wsHost := config.Conf.LoginServer.Host
-	if wsHost == "" {
-		wsHost = "0.0.0.0"
-	}
-	wsServerAddr := fmt.Sprintf("%s:%d", wsHost, config.Conf.LoginServer.Port)
+	loginServerAddr := fmt.Sprintf("%s:%d", loginServerHost, config.Conf.LoginServer.Port)
+	server := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(transportgrpc.UnaryServerTraceInterceptor()),
+		grpc.ChainStreamInterceptor(transportgrpc.StreamServerTraceInterceptor()),
+	)
 
 	gormDB, err := db.Open(config.Conf.MySQL)
 	if err != nil {
 		logs.Fatal("open db failed", zap.Error(err))
 	}
-	sessMgr := session.NewSessMgr()
-	r := ws.NewRouter()
-	accountModule := interfaces.New(gormDB, logs.Logger(), sessMgr)
-	wsModules := []ws.Registrar{
-		accountModule,
-	}
-	for _, m := range wsModules {
-		m.WsRegister(r)
-	}
-
-	httpServer := transporthttp.NewHttpServer(httpServerAddr, gin.Default())
-	httpModules := []transporthttp.Registrar{
-		accountModule,
-	}
-	for _, m := range httpModules {
-		m.HttpRegister(httpServer.Group())
-	}
-
-	wsServer := ws.NewServer(wsServerAddr, r)
+	account := interfaces.New(gormDB, logs.Logger())
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	errCh := make(chan error, 2)
+	lis, err := net.Listen("tcp", loginServerAddr)
+	if err != nil {
+		logs.Fatal("listen login grpc failed", zap.Error(err))
+	}
+	errCh := make(chan error, 1)
+	accountpb.RegisterAccountServiceServer(server, account.Account)
 	go func() {
-		if err := httpServer.Start(); err != nil && !errors.Is(err, nethttp.ErrServerClosed) {
-			errCh <- fmt.Errorf("dto server start failed: %w", err)
-			return
+		logs.Info("login grpc server started", zap.String("addr", loginServerAddr))
+		if err := server.Serve(lis); err != nil {
+			errCh <- fmt.Errorf("login grpc serve failed: %w", err)
 		}
-		errCh <- nil
-	}()
-	go func() {
-		if err := wsServer.Start(); err != nil && !errors.Is(err, nethttp.ErrServerClosed) {
-			errCh <- fmt.Errorf("ws server start failed: %w", err)
-			return
-		}
-		errCh <- nil
 	}()
 
 	select {
@@ -91,8 +66,15 @@ func main() {
 		}
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	_ = httpServer.Shutdown(shutdownCtx)
-	_ = wsServer.Shutdown(shutdownCtx)
+	stopCh := make(chan struct{})
+	go func() {
+		server.GracefulStop()
+		close(stopCh)
+	}()
+	select {
+	case <-stopCh:
+	case <-time.After(10 * time.Second):
+		server.Stop()
+	}
+	_ = lis.Close()
 }

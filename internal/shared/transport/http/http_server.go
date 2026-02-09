@@ -2,6 +2,7 @@ package http
 
 import (
 	"ThreeKingdoms/internal/shared/transport/http/middleware"
+	"ThreeKingdoms/modules/kit/logx"
 	"context"
 	nethttp "net/http"
 	"time"
@@ -10,24 +11,23 @@ import (
 )
 
 type Server struct {
-	addr   string
 	engine *gin.Engine
 	group  *gin.RouterGroup
 	srv    *nethttp.Server
 }
 
-func NewHttpServer(add string, engine *gin.Engine) *Server {
+func NewHttpServer(add string, engine *gin.Engine, logger logx.Logger) *Server {
 	if engine == nil {
 		engine = gin.New()
 		engine.Use(gin.Recovery())
 	}
 	engine.Use(middleware.Cors())
+	engine.Use(middleware.AccessLog(logger))
 	engine.GET("/healthz", func(c *gin.Context) {
 		c.JSON(nethttp.StatusOK, gin.H{"status": "ok"})
 	})
 
 	return &Server{
-		addr:   add,
 		engine: engine,
 		group:  engine.Group(""),
 		srv: &nethttp.Server{
@@ -50,10 +50,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.srv.Shutdown(ctx)
 }
 
-func (s *Server) Handler() nethttp.Handler {
-	return s.engine
-}
-
 func (s *Server) Group() *gin.RouterGroup {
 	return s.group
+}
+
+func (s *Server) Engine() *gin.Engine {
+	return s.engine
 }

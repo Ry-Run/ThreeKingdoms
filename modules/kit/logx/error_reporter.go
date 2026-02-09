@@ -1,15 +1,10 @@
 package logx
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"runtime"
 	"strings"
-
-	"ThreeKingdoms/modules/kit/tracex"
-
-	"go.uber.org/zap"
 )
 
 type codeTextProvider interface {
@@ -28,10 +23,15 @@ type stackProvider interface {
 	Stack() []uintptr
 }
 
+type reasonProvider interface {
+	Reason() string
+}
+
 type ErrorLog struct {
 	Error      string
 	Code       string
 	Msg        string
+	Reason     string
 	Data       map[string]any
 	CauseChain []string
 	Origin     string
@@ -60,56 +60,16 @@ func BuildErrorLog(err error) ErrorLog {
 	if errors.As(err, &dp) {
 		out.Data = dp.Data()
 	}
+	var rp reasonProvider
+	if errors.As(err, &rp) {
+		out.Reason = rp.Reason()
+	}
 	var sp stackProvider
 	if errors.As(err, &sp) {
 		out.Origin, out.Stack = formatStack(sp.Stack(), 32)
 	}
 	out.CauseChain = buildCauseChain(err, 20)
 	return out
-}
-
-// ReportError 在接口层打印一次“易读”的错误日志：建议每个请求/消息只调用一次。
-func ReportError(l *zap.Logger, msg string, err error, fields ...zap.Field) {
-	ReportErrorContext(context.Background(), l, msg, err, fields...)
-}
-
-// ReportErrorContext 会把 trace/span 一起带入日志字段（如果 ctx 中存在）。
-func ReportErrorContext(ctx context.Context, l *zap.Logger, msg string, err error, fields ...zap.Field) {
-	if err == nil || l == nil {
-		return
-	}
-
-	meta := BuildErrorLog(err)
-
-	base := make([]zap.Field, 0, 10+len(fields))
-	base = append(base, zap.String("error", meta.Error))
-	if meta.Code != "" {
-		base = append(base, zap.String("error_code", meta.Code))
-	}
-	if meta.Msg != "" {
-		base = append(base, zap.String("error_msg", meta.Msg))
-	}
-	if meta.Data != nil {
-		base = append(base, zap.Any("error_data", meta.Data))
-	}
-	if len(meta.CauseChain) != 0 {
-		base = append(base, zap.Any("cause_chain", meta.CauseChain))
-	}
-	if meta.Origin != "" {
-		base = append(base, zap.String("origin_caller", meta.Origin))
-	}
-	if meta.Stack != "" {
-		base = append(base, zap.String("stack_origin", meta.Stack))
-	}
-	if tid, ok := tracex.TraceIDFrom(ctx); ok {
-		base = append(base, zap.String("trace_id", tid))
-	}
-	if sid, ok := tracex.SpanIDFrom(ctx); ok {
-		base = append(base, zap.String("span_id", sid))
-	}
-	base = append(base, fields...)
-
-	l.Error(msg, base...)
 }
 
 func buildCauseChain(err error, maxDepth int) []string {

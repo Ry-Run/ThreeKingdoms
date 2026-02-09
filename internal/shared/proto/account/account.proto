@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package three_kingdoms.account.v1;
+
+// Go 包路径指向生成目录（internal/shared/gen/...），由 internal/scripts/gen-proto.sh 生成。
+option go_package = "ThreeKingdoms/internal/shared/gen/account;accountpb";
+
+// 账号相关接口（先覆盖 login/register，后续可在同一个服务里继续扩展）。
+service AccountService {
+  // 登录
+  rpc Login(LoginRequest) returns (LoginReply);
+
+  // 注册
+  rpc Register(RegisterRequest) returns (RegisterReply);
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+  string ip = 3;
+  string hardware = 4;
+}
+
+message LoginReply {
+  // RPC 是否成功执行业务逻辑（业务拒绝时为 false）
+  bool ok = 1;
+  // 业务拒绝原因（业务拒绝时返回；成功为空）
+  string reason = 2;
+  // 业务文案（可直接用于日志/提示）
+  string message = 3;
+  string session = 4; // token
+  int32 uid = 5;
+
+  // 以下字段当前在 ws login 响应里存在（为兼容协议先保留）
+  string username = 6;
+  string password = 7;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+  string hardware = 3;
+}
+
+message RegisterReply {
+  // RPC 是否成功执行业务逻辑（业务拒绝时为 false）
+  bool ok = 1;
+  // 业务拒绝原因（业务拒绝时返回；成功为空）
+  string reason = 2;
+  // 业务文案（可直接用于日志/提示）
+  string message = 3;
+}

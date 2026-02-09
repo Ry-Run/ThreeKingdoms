@@ -16,6 +16,11 @@ const (
 	kindSys
 )
 
+// Reason 是错误原因的最小接口，只暴露 reason code。
+type Reason interface {
+	ReasonCode() string
+}
+
 // Error 是通用错误模型：
 // - code/msg：对外语义
 // - data：业务/应用上下文（禁止外部修改，内部会复制）
@@ -111,6 +116,22 @@ func (e *Error) Data() map[string]any {
 	return cloneAnyMap(e.data)
 }
 
+// Reason 返回约定的字符串原因码（存储在 data.reason）。
+func (e *Error) Reason() string {
+	if e == nil || e.data == nil {
+		return ""
+	}
+	v, ok := e.data["reason"]
+	if !ok {
+		return ""
+	}
+	s, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return s
+}
+
 // Stack 返回“错误最早发生/被转换那一刻”的调用栈（只对系统类错误生效，且只捕获一次）。
 func (e *Error) Stack() []uintptr {
 	if e == nil || len(e.stack) == 0 {
@@ -135,6 +156,14 @@ func (e *Error) WithData(key string, value any) *Error {
 	}
 	next.data[key] = value
 	return next
+}
+
+// WithReason 是 WithData("reason", reason.ReasonCode()) 的语义化快捷方法。
+func (e *Error) WithReason(reason Reason) *Error {
+	if reason == nil {
+		return e.WithData("reason", "")
+	}
+	return e.WithData("reason", reason.ReasonCode())
 }
 
 func (e *Error) WithDataMap(data map[string]any) *Error {

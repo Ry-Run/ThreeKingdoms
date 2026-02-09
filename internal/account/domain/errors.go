@@ -1,6 +1,8 @@
 package domain
 
-import "ThreeKingdoms/modules/kit/errx"
+import (
+	"ThreeKingdoms/modules/kit/errx"
+)
 
 // Code 表示领域错误码（对外语义的唯一来源之一）。
 //
