@@ -69,7 +69,7 @@ func main() {
 		m.HttpRegister(httpServer.Group())
 	}
 
-	wsServer := ws.NewServer(wsRouter)
+	wsServer := ws.NewServer(wsRouter, baseLogger)
 	httpServer.Engine().Any("/ws", gin.WrapH(wsServer))
 	httpServer.Engine().Any("/ws/*any", gin.WrapH(wsServer))
 

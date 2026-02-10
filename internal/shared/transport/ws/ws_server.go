@@ -1,15 +1,17 @@
 package ws
 
 import (
+	"ThreeKingdoms/modules/kit/logx"
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/go-think/openssl"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 
-	"ThreeKingdoms/internal/shared/logs"
 	"ThreeKingdoms/internal/shared/security"
 	"ThreeKingdoms/internal/shared/utils"
 )
@@ -23,15 +25,17 @@ type WsServer struct {
 	sync.RWMutex
 	done      chan struct{}
 	closeOnce sync.Once
+	log       logx.Logger
 }
 
-func NewWsServer(wsConn *websocket.Conn) *WsServer {
+func NewWsServer(wsConn *websocket.Conn, l logx.Logger) *WsServer {
 	return &WsServer{
 		conn:     wsConn,
 		outChan:  make(chan *WsMsgResp, 1000),
 		property: make(map[string]any),
 		Seq:      0,
 		done:     make(chan struct{}),
+		log:      l,
 	}
 }
 
@@ -81,14 +85,14 @@ func (s *WsServer) readMsgLoop() {
 	defer func() {
 		if err := recover(); err != nil {
 			e := fmt.Sprintf("%v", err)
-			logs.Error("ws readMsgLoop error", zap.String("err", e))
+			s.log.Error("ws readMsgLoop error", zap.String("err", e))
 		}
 		s.Close()
 	}()
 	for {
 		_, data, err := s.conn.ReadMessage()
 		if err != nil {
-			logs.Error("ws_server read msg", zap.Error(err))
+			s.log.Error("ws_server read msg", zap.Error(err))
 			return
 		}
 
@@ -96,14 +100,14 @@ func (s *WsServer) readMsgLoop() {
 		//1. 解压缩
 		secretData, err := security.UnZip(data)
 		if err != nil {
-			logs.Error("ws_server readMsgLoop unzip", zap.Error(err))
+			s.log.Error("ws_server readMsgLoop unzip", zap.Error(err))
 			continue
 		}
 
 		// 2.获取密匙
 		secretKey := s.GetProperty(SecretKey)
 		if secretKey == nil {
-			logs.Error("ws_server readMsgLoop not found secretKey", zap.String(SecretKey, string(secretData)))
+			s.log.Error("ws_server readMsgLoop not found secretKey", zap.String(SecretKey, string(secretData)))
 			continue
 		}
 
@@ -111,29 +115,36 @@ func (s *WsServer) readMsgLoop() {
 		key := secretKey.(string)
 		decryptedData, err := security.AesCBCDecrypt(secretData, []byte(key), []byte(key), openssl.ZEROS_PADDING)
 		if err != nil {
-			logs.Error("ws_server readMsgLoop decrypt error", zap.Error(err))
+			s.log.Error("ws_server readMsgLoop decrypt error", zap.Error(err))
 			// 出错后，发起握手
 			s.handshake()
 			continue
 		}
 
 		// 4.转为 json
-		body := ReqBody{}
-		err = json.Unmarshal(decryptedData, &body)
+		reqBody := ReqBody{}
+		err = json.Unmarshal(decryptedData, &reqBody)
 		if err != nil {
-			logs.Error("ws_server readMsgLoop unmarshal json error", zap.Error(err))
+			s.log.Error("ws_server readMsgLoop unmarshal json error", zap.Error(err))
 			continue
 		}
 
-		logs.Info("ws_server read msg", zap.Any("data", body))
-
 		// 5.分发消息
-		req := WsMsgReq{Body: &body, Conn: s}
+		req := WsMsgReq{Body: &reqBody, Conn: s}
 		// req 和 resp 的 Seq 必须一致
-		resp := WsMsgResp{Body: &RespBody{Seq: req.Body.Seq, Name: body.Name, Msg: body.Msg}}
-		s.router.Dispatch(&req, &resp)
+		resp := WsMsgResp{Body: &RespBody{Seq: req.Body.Seq, Name: reqBody.Name, Msg: reqBody.Msg}}
+		if reqBody.Name == HeartbeatMsg {
+			// 回复客户端心跳，心跳放服务端合适，目前只能满足客户端的条件
+			h := &Heartbeat{}
+			mapstructure.Decode(reqBody.Msg, h)
+			h.STime = time.Now().UnixNano() / 1e6
+			resp.Body.Msg = h
+		} else {
+			s.log.Info("ws_server read msg", zap.Any("data", reqBody))
+			s.router.Dispatch(&req, &resp)
+		}
 
-		s.Push(body.Name, &resp)
+		s.Push(reqBody.Name, &resp)
 	}
 }
 
@@ -142,7 +153,7 @@ func (s *WsServer) writeMsgLoop() {
 		select {
 		case msg, ok := <-s.outChan:
 			if ok {
-				logs.Info("ws_server write msg", zap.Any("msg", msg))
+				s.log.Info("ws_server write msg", zap.Any("msg", msg))
 				s.write(msg)
 			}
 		case <-s.done:
@@ -166,14 +177,14 @@ func (s *WsServer) write(msg *WsMsgResp) {
 	// 转成 json
 	marshal, err := json.Marshal(msg.Body)
 	if err != nil {
-		logs.Error("ws_server write marshal json error", zap.Error(err))
+		s.log.Error("ws_server write marshal json error", zap.Error(err))
 		return
 	}
 
 	// 获取密匙
 	secretKey := s.GetProperty(SecretKey)
 	if secretKey == nil {
-		logs.Error("ws_server write not found secretKey", zap.Any("msg", msg))
+		s.log.Error("ws_server write not found secretKey", zap.Any("msg", msg))
 		return
 	}
 
@@ -181,18 +192,19 @@ func (s *WsServer) write(msg *WsMsgResp) {
 	key := secretKey.(string)
 	encryptedData, err := security.AesCBCEncrypt(marshal, []byte(key), []byte(key), openssl.ZEROS_PADDING)
 	if err != nil {
-		logs.Error("ws_server write decrypt error", zap.Error(err))
+		s.log.Error("ws_server write decrypt error", zap.Error(err))
 		return
 	}
 
 	// 压缩
 	zip, err := security.Zip(encryptedData)
 	if err != nil {
-		logs.Error("ws_server write zip error", zap.Error(err))
+		s.log.Error("ws_server write zip error", zap.Error(err))
 	}
 
-	if err := s.conn.WriteMessage(websocket.TextMessage, zip); err != nil {
-		logs.Error("ws_server write error", zap.Error(err))
+	// 压缩后的密文是二进制字节流，必须走 BinaryMessage，不能走 TextMessage
+	if err := s.conn.WriteMessage(websocket.BinaryMessage, zip); err != nil {
+		s.log.Error("ws_server write error", zap.Error(err))
 	}
 }
 
@@ -210,7 +222,7 @@ func (s *WsServer) handshake() {
 
 	data, err := json.Marshal(body)
 	if err != nil {
-		logs.Error("ws_server handshake marshal json error", zap.Error(err))
+		s.log.Error("ws_server handshake marshal json error", zap.Error(err))
 	}
 
 	if secretKey != "" {
@@ -219,7 +231,10 @@ func (s *WsServer) handshake() {
 		s.RemoveProperty(SecretKey)
 	}
 
-	if err := s.conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
-		logs.Error("ws_server handshake write error", zap.Error(err))
+	// 压缩
+	zipData, err := security.Zip(data)
+
+	if err := s.conn.WriteMessage(websocket.BinaryMessage, zipData); err != nil {
+		s.log.Error("ws_server handshake write error", zap.Error(err))
 	}
 }

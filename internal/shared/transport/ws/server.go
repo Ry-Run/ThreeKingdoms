@@ -1,21 +1,22 @@
 package ws
 
 import (
+	"ThreeKingdoms/modules/kit/logx"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
-
-	"ThreeKingdoms/internal/shared/logs"
 )
 
 type Server struct {
 	router *Router
+	log    logx.Logger
 }
 
-func NewServer(r *Router) *Server {
+func NewServer(r *Router, l logx.Logger) *Server {
 	return &Server{
 		router: r,
+		log:    l,
 	}
 }
 
@@ -28,13 +29,13 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 	wsConn, err := upgrader.Upgrade(resp, req, nil)
 	if err != nil {
-		logs.Error("websocket upgrade error", zap.Error(err))
+		s.log.Error("websocket upgrade error", zap.Error(err))
 		return
 	}
 
-	logs.Info("websocket upgrade success")
+	s.log.Info("websocket upgrade success")
 
-	wsServer := NewWsServer(wsConn)
+	wsServer := NewWsServer(wsConn, s.log)
 	wsServer.Router(s.router)
 	wsServer.Run()
 	wsServer.handshake()
