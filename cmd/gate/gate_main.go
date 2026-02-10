@@ -2,8 +2,8 @@ package main
 
 import (
 	"ThreeKingdoms/internal/gate/interfaces"
-	"ThreeKingdoms/internal/shared/config"
 	"ThreeKingdoms/internal/shared/logs"
+	"ThreeKingdoms/internal/shared/serverconfig"
 	"ThreeKingdoms/internal/shared/session"
 	"ThreeKingdoms/internal/shared/transport/grpc"
 	transporthttp "ThreeKingdoms/internal/shared/transport/http"
@@ -22,13 +22,13 @@ import (
 )
 
 func main() {
-	config.Load("")
-	if err := logs.Init("gate", config.Conf.Log); err != nil {
+	serverconfig.Load()
+	if err := logs.Init("gate", serverconfig.Conf.Log); err != nil {
 		panic(err)
 	}
-	logs.Info("conf", zap.Any("conf", config.Conf))
+	logs.Info("conf", zap.Any("conf", serverconfig.Conf))
 
-	serverConfig := config.Conf.GateServer
+	serverConfig := serverconfig.Conf.GateServer
 	gateHost := serverConfig.Host
 	if gateHost == "" {
 		gateHost = "0.0.0.0"
@@ -39,11 +39,11 @@ func main() {
 	baseLogger := logx.NewZapLogger(logs.Logger())
 	wsRouter := ws.NewRouter(baseLogger)
 
-	loginServerHost := config.Conf.LoginServer.Host
+	loginServerHost := serverconfig.Conf.LoginServer.Host
 	if loginServerHost == "" {
 		loginServerHost = "0.0.0.0"
 	}
-	loginServerAddr := fmt.Sprintf("%s:%d", loginServerHost, config.Conf.LoginServer.Port)
+	loginServerAddr := fmt.Sprintf("%s:%d", loginServerHost, serverconfig.Conf.LoginServer.Port)
 
 	accountConn, accountClient, err := grpc.DialAccountService(loginServerAddr)
 	if err != nil {

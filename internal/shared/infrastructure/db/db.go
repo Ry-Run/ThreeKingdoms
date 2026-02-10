@@ -1,6 +1,7 @@
 package db
 
 import (
+	"ThreeKingdoms/internal/shared/serverconfig"
 	"fmt"
 	"time"
 
@@ -9,12 +10,11 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"ThreeKingdoms/internal/shared/config"
 	"ThreeKingdoms/internal/shared/logs"
 )
 
 // todo 替换成其他的，不一定是 mysql
-func Open(cfg config.MySQLConfig) (*gorm.DB, error) {
+func Open(cfg serverconfig.MySQLConfig) (*gorm.DB, error) {
 
 	gcfg := &gorm.Config{
 		Logger: logs.NewGormLogger(logger.Info, 200*time.Millisecond),

@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS `role_1` (
     PRIMARY KEY (`rid`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '玩家表';
 
+INSERT INTO role_1 (`rid`, `uid`, `headId`, `sex`, `nick_name`, `balance`, `login_time`, `logout_time`, `profile`, `created_at`)
+VALUES (1, 1, 0, 0, '张三', 0, NULL, NULL, '', '2022-03-18 12:51:22');
+
 CREATE TABLE IF NOT EXISTS `map_role_city_1` (
     `cityId` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'cityId',
     `rid` int unsigned NOT NULL COMMENT 'roleId',
@@ -107,6 +110,9 @@ CREATE TABLE IF NOT EXISTS `role_res_1` (
     UNIQUE KEY (`rid`),
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '角色资源表';
+
+INSERT INTO `role_res_1`(`id`, `rid`, `wood`, `iron`, `stone`, `grain`, `gold`, `decree`)
+VALUES (1, 1, 499387021, 499387021, 499324378, 997689756, 3992570, 20);
 
 CREATE TABLE IF NOT EXISTS `general_1` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',

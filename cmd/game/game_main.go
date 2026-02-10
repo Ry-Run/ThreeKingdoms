@@ -2,6 +2,7 @@ package main
 
 import (
 	"ThreeKingdoms/internal/account/interfaces"
+	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	accountpb "ThreeKingdoms/internal/shared/gen/account"
 	"ThreeKingdoms/internal/shared/infrastructure/db"
 	"ThreeKingdoms/internal/shared/logs"
@@ -20,16 +21,20 @@ import (
 
 func main() {
 	serverconfig.Load()
-	if err := logs.Init("login", serverconfig.Conf.Log); err != nil {
+	if err := logs.Init("game", serverconfig.Conf.Log); err != nil {
 		panic(err)
 	}
 	logs.Info("conf", zap.Any("conf", serverconfig.Conf))
 
-	loginServerHost := serverconfig.Conf.LoginServer.Host
-	if loginServerHost == "" {
-		loginServerHost = "0.0.0.0"
+	// 加载游戏配置
+	basic.Load()
+	logs.Info("game config ", zap.Any("basic", basic.BasicConf))
+
+	slgServerHost := serverconfig.Conf.SLGServer.Host
+	if slgServerHost == "" {
+		slgServerHost = "0.0.0.0"
 	}
-	loginServerAddr := fmt.Sprintf("%s:%d", loginServerHost, serverconfig.Conf.LoginServer.Port)
+	SLGServerAddr := fmt.Sprintf("%s:%d", slgServerHost, serverconfig.Conf.SLGServer.Port)
 	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(transportgrpc.UnaryServerTraceInterceptor()),
 		grpc.ChainStreamInterceptor(transportgrpc.StreamServerTraceInterceptor()),
@@ -44,16 +49,16 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	lis, err := net.Listen("tcp", loginServerAddr)
+	lis, err := net.Listen("tcp", SLGServerAddr)
 	if err != nil {
-		logs.Fatal("listen login grpc failed", zap.Error(err))
+		logs.Fatal("listen game grpc failed", zap.Error(err))
 	}
 	errCh := make(chan error, 1)
 	accountpb.RegisterAccountServiceServer(server, account.Account)
 	go func() {
-		logs.Info("login grpc server started", zap.String("addr", loginServerAddr))
+		logs.Info("game grpc server started", zap.String("addr", SLGServerAddr))
 		if err := server.Serve(lis); err != nil {
-			errCh <- fmt.Errorf("login grpc serve failed: %w", err)
+			errCh <- fmt.Errorf("game grpc serve failed: %w", err)
 		}
 	}()
 

@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"ThreeKingdoms/internal/shared/serverconfig"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,8 +10,6 @@ import (
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"ThreeKingdoms/internal/shared/config"
 )
 
 var logger *zap.Logger = zap.NewNop()
@@ -21,7 +20,7 @@ func Logger() *zap.Logger {
 	return logger
 }
 
-func Init(appName string, cfg config.LogConfig) error {
+func Init(appName string, cfg serverconfig.LogConfig) error {
 	// 1) 解析日志级别：默认是 info
 	//    cfg.Level 支持 "debug/info/warn/error/..."（大小写不敏感）
 	lvl := zapcore.InfoLevel

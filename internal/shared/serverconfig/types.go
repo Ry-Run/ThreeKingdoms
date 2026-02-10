@@ -1,4 +1,4 @@
-package config
+package serverconfig
 
 type Config struct {
 	MySQL       MySQLConfig       `yaml:"mysql" mapstructure:"mysql"`

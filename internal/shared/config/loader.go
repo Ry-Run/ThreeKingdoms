@@ -4,12 +4,49 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
-func load(configPath string) {
+func Load[T any](cfgName string, c *T) {
+	curDir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	// 约定：
+	// 1) 传入 cfgName（相对/绝对路径）则优先使用；
+	// 2) 否则从当前目录开始向上查找 `configs/conf.yml`。
+	if cfgName != "" {
+		if filepath.IsAbs(cfgName) {
+			loadConf(cfgName, c)
+			return
+		}
+		loadConf(filepath.Join(curDir, cfgName), c)
+		return
+	}
+
+	loadConf(findConfigUpward(curDir, cfgName), c)
+}
+
+func findConfigUpward(startDir string, defaultPath string) string {
+	dir := startDir
+	for {
+		candidate := filepath.Join(dir, defaultPath)
+		if fileExist(candidate) {
+			return candidate
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			panic("config file not exist, searched configs/conf.yml from: " + startDir)
+		}
+		dir = parent
+	}
+}
+
+func loadConf[T any](configPath string, c *T) {
 	if !fileExist(configPath) {
 		panic(fmt.Sprintf("config file not exist, configPath=%v", configPath))
 	}
@@ -19,7 +56,7 @@ func load(configPath string) {
 	// todo 确认 Conf 并发读取问题
 	v.OnConfigChange(func(e fsnotify.Event) {
 		log.Println("配置文件变更")
-		err := v.Unmarshal(&Conf)
+		err := v.Unmarshal(c)
 		if err != nil {
 			panic(fmt.Errorf("viper unmarshal change config data: cast exception, err=%v \n", err))
 		}
@@ -30,7 +67,7 @@ func load(configPath string) {
 	if err != nil {
 		panic(err)
 	}
-	err = v.Unmarshal(&Conf)
+	err = v.Unmarshal(c)
 	if err != nil {
 		panic(err)
 	}
