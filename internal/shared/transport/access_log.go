@@ -90,5 +90,5 @@ func WriteAccessLog(ctx context.Context, log logx.Logger) {
 			fields = append(fields, zap.String("error_reason", al.ErrorReason))
 		}
 	}
-	logx.ReportAccessWithLoggerContext(ctx, log, al.action, int(al.BizCode), fields...)
+	logx.ReportAccess(ctx, log, al.action, int(al.BizCode), fields...)
 }

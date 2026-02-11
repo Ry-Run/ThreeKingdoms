@@ -7,6 +7,7 @@
 package accountpb
 
 import (
+	common "ThreeKingdoms/internal/shared/gen/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -90,18 +91,13 @@ func (x *LoginRequest) GetHardware() string {
 }
 
 type LoginReply struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// RPC 是否成功执行业务逻辑（业务拒绝时为 false）
-	Ok bool `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	// 业务拒绝原因（业务拒绝时返回；成功为空）
-	Reason string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
-	// 业务文案（可直接用于日志/提示）
-	Message string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
-	Session string `protobuf:"bytes,4,opt,name=session,proto3" json:"session,omitempty"` // token
-	Uid     int32  `protobuf:"varint,5,opt,name=uid,proto3" json:"uid,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Result  *common.BizResult      `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	Session string                 `protobuf:"bytes,2,opt,name=session,proto3" json:"session,omitempty"` // token
+	Uid     int32                  `protobuf:"varint,3,opt,name=uid,proto3" json:"uid,omitempty"`
 	// 以下字段当前在 ws login 响应里存在（为兼容协议先保留）
-	Username      string `protobuf:"bytes,6,opt,name=username,proto3" json:"username,omitempty"`
-	Password      string `protobuf:"bytes,7,opt,name=password,proto3" json:"password,omitempty"`
+	Username      string `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
+	Password      string `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -136,25 +132,11 @@ func (*LoginReply) Descriptor() ([]byte, []int) {
 	return file_account_account_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *LoginReply) GetOk() bool {
+func (x *LoginReply) GetResult() *common.BizResult {
 	if x != nil {
-		return x.Ok
+		return x.Result
 	}
-	return false
-}
-
-func (x *LoginReply) GetReason() string {
-	if x != nil {
-		return x.Reason
-	}
-	return ""
-}
-
-func (x *LoginReply) GetMessage() string {
-	if x != nil {
-		return x.Message
-	}
-	return ""
+	return nil
 }
 
 func (x *LoginReply) GetSession() string {
@@ -246,13 +228,8 @@ func (x *RegisterRequest) GetHardware() string {
 }
 
 type RegisterReply struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// RPC 是否成功执行业务逻辑（业务拒绝时为 false）
-	Ok bool `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	// 业务拒绝原因（业务拒绝时返回；成功为空）
-	Reason string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
-	// 业务文案（可直接用于日志/提示）
-	Message       string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Result        *common.BizResult      `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -287,23 +264,129 @@ func (*RegisterReply) Descriptor() ([]byte, []int) {
 	return file_account_account_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *RegisterReply) GetOk() bool {
+func (x *RegisterReply) GetResult() *common.BizResult {
 	if x != nil {
-		return x.Ok
+		return x.Result
 	}
-	return false
+	return nil
 }
 
-func (x *RegisterReply) GetReason() string {
-	if x != nil {
-		return x.Reason
-	}
-	return ""
+type EnterServerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Uid           int32                  `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RegisterReply) GetMessage() string {
+func (x *EnterServerRequest) Reset() {
+	*x = EnterServerRequest{}
+	mi := &file_account_account_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnterServerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnterServerRequest) ProtoMessage() {}
+
+func (x *EnterServerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_account_account_proto_msgTypes[4]
 	if x != nil {
-		return x.Message
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnterServerRequest.ProtoReflect.Descriptor instead.
+func (*EnterServerRequest) Descriptor() ([]byte, []int) {
+	return file_account_account_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *EnterServerRequest) GetUid() int32 {
+	if x != nil {
+		return x.Uid
+	}
+	return 0
+}
+
+type EnterServerReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Result        *common.BizResult      `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	Role          *Role                  `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
+	Resource      *Resource              `protobuf:"bytes,3,opt,name=resource,proto3" json:"resource,omitempty"`
+	Time          int64                  `protobuf:"varint,4,opt,name=time,proto3" json:"time,omitempty"`
+	Token         string                 `protobuf:"bytes,5,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnterServerReply) Reset() {
+	*x = EnterServerReply{}
+	mi := &file_account_account_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnterServerReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnterServerReply) ProtoMessage() {}
+
+func (x *EnterServerReply) ProtoReflect() protoreflect.Message {
+	mi := &file_account_account_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnterServerReply.ProtoReflect.Descriptor instead.
+func (*EnterServerReply) Descriptor() ([]byte, []int) {
+	return file_account_account_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *EnterServerReply) GetResult() *common.BizResult {
+	if x != nil {
+		return x.Result
+	}
+	return nil
+}
+
+func (x *EnterServerReply) GetRole() *Role {
+	if x != nil {
+		return x.Role
+	}
+	return nil
+}
+
+func (x *EnterServerReply) GetResource() *Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
+func (x *EnterServerReply) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *EnterServerReply) GetToken() string {
+	if x != nil {
+		return x.Token
 	}
 	return ""
 }
@@ -312,32 +395,37 @@ var File_account_account_proto protoreflect.FileDescriptor
 
 const file_account_account_proto_rawDesc = "" +
 	"\n" +
-	"\x15account/account.proto\x12\x19three_kingdoms.account.v1\"r\n" +
+	"\x15account/account.proto\x12\x16three_kingdoms.account\x1a\x12account/role.proto\x1a\x13common/common.proto\"r\n" +
 	"\fLoginRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x0e\n" +
 	"\x02ip\x18\x03 \x01(\tR\x02ip\x12\x1a\n" +
-	"\bhardware\x18\x04 \x01(\tR\bhardware\"\xb2\x01\n" +
+	"\bhardware\x18\x04 \x01(\tR\bhardware\"\xaa\x01\n" +
 	"\n" +
-	"LoginReply\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\x12\x18\n" +
-	"\asession\x18\x04 \x01(\tR\asession\x12\x10\n" +
-	"\x03uid\x18\x05 \x01(\x05R\x03uid\x12\x1a\n" +
-	"\busername\x18\x06 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\a \x01(\tR\bpassword\"e\n" +
+	"LoginReply\x128\n" +
+	"\x06result\x18\x01 \x01(\v2 .three_kingdoms.common.BizResultR\x06result\x12\x18\n" +
+	"\asession\x18\x02 \x01(\tR\asession\x12\x10\n" +
+	"\x03uid\x18\x03 \x01(\x05R\x03uid\x12\x1a\n" +
+	"\busername\x18\x04 \x01(\tR\busername\x12\x1a\n" +
+	"\bpassword\x18\x05 \x01(\tR\bpassword\"e\n" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x1a\n" +
-	"\bhardware\x18\x03 \x01(\tR\bhardware\"Q\n" +
-	"\rRegisterReply\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage2\xcb\x01\n" +
-	"\x0eAccountService\x12W\n" +
-	"\x05Login\x12'.three_kingdoms.account.v1.LoginRequest\x1a%.three_kingdoms.account.v1.LoginReply\x12`\n" +
-	"\bRegister\x12*.three_kingdoms.account.v1.RegisterRequest\x1a(.three_kingdoms.account.v1.RegisterReplyB5Z3ThreeKingdoms/internal/shared/gen/account;accountpbb\x06proto3"
+	"\bhardware\x18\x03 \x01(\tR\bhardware\"I\n" +
+	"\rRegisterReply\x128\n" +
+	"\x06result\x18\x01 \x01(\v2 .three_kingdoms.common.BizResultR\x06result\"&\n" +
+	"\x12EnterServerRequest\x12\x10\n" +
+	"\x03uid\x18\x01 \x01(\x05R\x03uid\"\xe6\x01\n" +
+	"\x10EnterServerReply\x128\n" +
+	"\x06result\x18\x01 \x01(\v2 .three_kingdoms.common.BizResultR\x06result\x120\n" +
+	"\x04role\x18\x02 \x01(\v2\x1c.three_kingdoms.account.RoleR\x04role\x12<\n" +
+	"\bresource\x18\x03 \x01(\v2 .three_kingdoms.account.ResourceR\bresource\x12\x12\n" +
+	"\x04time\x18\x04 \x01(\x03R\x04time\x12\x14\n" +
+	"\x05token\x18\x05 \x01(\tR\x05token2\xa4\x02\n" +
+	"\x0eAccountService\x12Q\n" +
+	"\x05Login\x12$.three_kingdoms.account.LoginRequest\x1a\".three_kingdoms.account.LoginReply\x12Z\n" +
+	"\bRegister\x12'.three_kingdoms.account.RegisterRequest\x1a%.three_kingdoms.account.RegisterReply\x12c\n" +
+	"\vEnterServer\x12*.three_kingdoms.account.EnterServerRequest\x1a(.three_kingdoms.account.EnterServerReplyB5Z3ThreeKingdoms/internal/shared/gen/account;accountpbb\x06proto3"
 
 var (
 	file_account_account_proto_rawDescOnce sync.Once
@@ -351,23 +439,35 @@ func file_account_account_proto_rawDescGZIP() []byte {
 	return file_account_account_proto_rawDescData
 }
 
-var file_account_account_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_account_account_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_account_account_proto_goTypes = []any{
-	(*LoginRequest)(nil),    // 0: three_kingdoms.account.v1.LoginRequest
-	(*LoginReply)(nil),      // 1: three_kingdoms.account.v1.LoginReply
-	(*RegisterRequest)(nil), // 2: three_kingdoms.account.v1.RegisterRequest
-	(*RegisterReply)(nil),   // 3: three_kingdoms.account.v1.RegisterReply
+	(*LoginRequest)(nil),       // 0: three_kingdoms.account.LoginRequest
+	(*LoginReply)(nil),         // 1: three_kingdoms.account.LoginReply
+	(*RegisterRequest)(nil),    // 2: three_kingdoms.account.RegisterRequest
+	(*RegisterReply)(nil),      // 3: three_kingdoms.account.RegisterReply
+	(*EnterServerRequest)(nil), // 4: three_kingdoms.account.EnterServerRequest
+	(*EnterServerReply)(nil),   // 5: three_kingdoms.account.EnterServerReply
+	(*common.BizResult)(nil),   // 6: three_kingdoms.common.BizResult
+	(*Role)(nil),               // 7: three_kingdoms.account.Role
+	(*Resource)(nil),           // 8: three_kingdoms.account.Resource
 }
 var file_account_account_proto_depIdxs = []int32{
-	0, // 0: three_kingdoms.account.v1.AccountService.Login:input_type -> three_kingdoms.account.v1.LoginRequest
-	2, // 1: three_kingdoms.account.v1.AccountService.Register:input_type -> three_kingdoms.account.v1.RegisterRequest
-	1, // 2: three_kingdoms.account.v1.AccountService.Login:output_type -> three_kingdoms.account.v1.LoginReply
-	3, // 3: three_kingdoms.account.v1.AccountService.Register:output_type -> three_kingdoms.account.v1.RegisterReply
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	6, // 0: three_kingdoms.account.LoginReply.result:type_name -> three_kingdoms.common.BizResult
+	6, // 1: three_kingdoms.account.RegisterReply.result:type_name -> three_kingdoms.common.BizResult
+	6, // 2: three_kingdoms.account.EnterServerReply.result:type_name -> three_kingdoms.common.BizResult
+	7, // 3: three_kingdoms.account.EnterServerReply.role:type_name -> three_kingdoms.account.Role
+	8, // 4: three_kingdoms.account.EnterServerReply.resource:type_name -> three_kingdoms.account.Resource
+	0, // 5: three_kingdoms.account.AccountService.Login:input_type -> three_kingdoms.account.LoginRequest
+	2, // 6: three_kingdoms.account.AccountService.Register:input_type -> three_kingdoms.account.RegisterRequest
+	4, // 7: three_kingdoms.account.AccountService.EnterServer:input_type -> three_kingdoms.account.EnterServerRequest
+	1, // 8: three_kingdoms.account.AccountService.Login:output_type -> three_kingdoms.account.LoginReply
+	3, // 9: three_kingdoms.account.AccountService.Register:output_type -> three_kingdoms.account.RegisterReply
+	5, // 10: three_kingdoms.account.AccountService.EnterServer:output_type -> three_kingdoms.account.EnterServerReply
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_account_account_proto_init() }
@@ -375,13 +475,14 @@ func file_account_account_proto_init() {
 	if File_account_account_proto != nil {
 		return
 	}
+	file_account_role_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_account_account_proto_rawDesc), len(file_account_account_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

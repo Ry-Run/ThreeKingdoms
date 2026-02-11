@@ -2,6 +2,7 @@ package main
 
 import (
 	"ThreeKingdoms/internal/account/interfaces"
+	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	accountpb "ThreeKingdoms/internal/shared/gen/account"
 	"ThreeKingdoms/internal/shared/infrastructure/db"
 	"ThreeKingdoms/internal/shared/logs"
@@ -20,10 +21,14 @@ import (
 
 func main() {
 	serverconfig.Load()
-	if err := logs.Init("login", serverconfig.Conf.Log); err != nil {
+	if err := logs.Init("account", serverconfig.Conf.Log); err != nil {
 		panic(err)
 	}
 	logs.Info("conf", zap.Any("conf", serverconfig.Conf))
+
+	// 加载游戏配置
+	basic.Load()
+	logs.Info("player config ", zap.Any("basic", basic.BasicConf))
 
 	loginServerHost := serverconfig.Conf.LoginServer.Host
 	if loginServerHost == "" {
@@ -46,14 +51,14 @@ func main() {
 
 	lis, err := net.Listen("tcp", loginServerAddr)
 	if err != nil {
-		logs.Fatal("listen login grpc failed", zap.Error(err))
+		logs.Fatal("listen account grpc failed", zap.Error(err))
 	}
 	errCh := make(chan error, 1)
 	accountpb.RegisterAccountServiceServer(server, account.Account)
 	go func() {
-		logs.Info("login grpc server started", zap.String("addr", loginServerAddr))
+		logs.Info("account grpc server started", zap.String("addr", loginServerAddr))
 		if err := server.Serve(lis); err != nil {
-			errCh <- fmt.Errorf("login grpc serve failed: %w", err)
+			errCh <- fmt.Errorf("account grpc serve failed: %w", err)
 		}
 	}()
 

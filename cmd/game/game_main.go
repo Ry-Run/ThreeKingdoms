@@ -21,14 +21,14 @@ import (
 
 func main() {
 	serverconfig.Load()
-	if err := logs.Init("game", serverconfig.Conf.Log); err != nil {
+	if err := logs.Init("player", serverconfig.Conf.Log); err != nil {
 		panic(err)
 	}
 	logs.Info("conf", zap.Any("conf", serverconfig.Conf))
 
 	// 加载游戏配置
 	basic.Load()
-	logs.Info("game config ", zap.Any("basic", basic.BasicConf))
+	logs.Info("player config ", zap.Any("basic", basic.BasicConf))
 
 	slgServerHost := serverconfig.Conf.SLGServer.Host
 	if slgServerHost == "" {
@@ -51,14 +51,14 @@ func main() {
 
 	lis, err := net.Listen("tcp", SLGServerAddr)
 	if err != nil {
-		logs.Fatal("listen game grpc failed", zap.Error(err))
+		logs.Fatal("listen player grpc failed", zap.Error(err))
 	}
 	errCh := make(chan error, 1)
 	accountpb.RegisterAccountServiceServer(server, account.Account)
 	go func() {
-		logs.Info("game grpc server started", zap.String("addr", SLGServerAddr))
+		logs.Info("player grpc server started", zap.String("addr", SLGServerAddr))
 		if err := server.Serve(lis); err != nil {
-			errCh <- fmt.Errorf("game grpc serve failed: %w", err)
+			errCh <- fmt.Errorf("player grpc serve failed: %w", err)
 		}
 	}()
 

@@ -47,7 +47,7 @@ func (r *Router) Group(prefix string) *Group {
 	return group
 }
 
-// req.Body.Name(路径)：例如，登录业务 account(组标识).login(路由标识)
+// req.Body.Name(路径)：例如，登录业务 account(组标识).account(路由标识)
 func (r *Router) Dispatch(req *WsMsgReq, resp *WsMsgResp) {
 	ctx := r.prepareDispatchContext(req, resp)
 	defer r.writeAccessLog(ctx, resp)

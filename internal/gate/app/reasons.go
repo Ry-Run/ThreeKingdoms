@@ -30,4 +30,5 @@ var (
 	// account 服务业务 reason（协议常量，避免依赖 account 包）。
 	ReasonAccountLoginInvalidCredentials = NewReason(reasoncode.AccountLoginInvalidCredentials, "用户名或密码错误")
 	ReasonAccountRegisterUserExist       = NewReason(reasoncode.AccountRegisterUserExist, "用户已存在")
+	ReasonAccountRoleNotExist            = NewReason(reasoncode.AccountRoleNotExist, "角色不存在")
 )

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package three_kingdoms.common;
+
+// Go 包路径指向生成目录（internal/shared/gen/...），由 internal/scripts/gen-proto.sh 生成。
+option go_package = "ThreeKingdoms/internal/shared/gen/common;commonpb";
+
+// 通用业务结果结构：可被 account/player/world 等服务复用。
+message BizResult {
+  // RPC 是否成功执行业务逻辑（业务拒绝时为 false）
+  bool ok = 1;
+  // 业务拒绝原因（业务拒绝时返回；成功为空）
+  string reason = 2;
+  // 业务文案（可直接用于日志/提示）
+  string message = 3;
+}

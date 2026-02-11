@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package three_kingdoms.account;
+
+// Go 包路径指向生成目录（internal/shared/gen/...），由 internal/scripts/gen-proto.sh 生成。
+option go_package = "ThreeKingdoms/internal/shared/gen/account;accountpb";
+
+message Role {
+  int32 rid = 1;
+  int32 uid = 2;
+  string nick_name = 3;
+  int32 sex = 4;
+  int32 balance = 5;
+  int32 head_id = 6;
+  string profile = 7;
+}
+
+message Resource {
+  int32 wood = 1;
+  int32 iron = 2;
+  int32 stone = 3;
+  int32 grain = 4;
+  int32 gold = 5;
+  int32 decree = 6;
+  int32 wood_yield = 7;
+  int32 iron_yield = 8;
+  int32 stone_yield = 9;
+  int32 grain_yield = 10;
+  int32 gold_yield = 11;
+  int32 depot_capacity = 12;
+}

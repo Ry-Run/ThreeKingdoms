@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `login_last` (
     `login_time` TIMESTAMP NULL DEFAULT NULL COMMENT '登录时间',
     `logout_time` TIMESTAMP NULL DEFAULT NULL COMMENT '登出时间',
     `ip` varchar(31) NOT NULL DEFAULT '' COMMENT 'ip',
-    `is_logout` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否logout,1:logout，0:login',
+    `is_logout` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否logout,1:logout，0:account',
     `session` varchar(255) COMMENT '会话',
     `hardware` varchar(64) NOT NULL DEFAULT '' COMMENT 'hardware',
     UNIQUE KEY (`uid`),

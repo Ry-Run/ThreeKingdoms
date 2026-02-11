@@ -2,6 +2,8 @@ package interfaces
 
 import (
 	"ThreeKingdoms/internal/gate/interfaces/handler"
+	"ThreeKingdoms/internal/gate/interfaces/handler/http"
+	ws2 "ThreeKingdoms/internal/gate/interfaces/handler/ws"
 	accountpb "ThreeKingdoms/internal/shared/gen/account"
 	"ThreeKingdoms/internal/shared/session"
 	transporthttp "ThreeKingdoms/internal/shared/transport/http"
@@ -11,15 +13,15 @@ import (
 )
 
 type Module struct {
-	wsHandler   *handler.WsHandler
-	httpHandler *handler.HttpHandler
+	wsHandler   *ws2.WsHandler
+	httpHandler *http.HttpHandler
 }
 
 func New(s session.Manager, accountClient accountpb.AccountServiceClient) *Module {
 	gate := handler.NewGate(s, accountClient)
 	return &Module{
-		wsHandler:   handler.NewWsHandler(gate),
-		httpHandler: handler.NewHttpHandler(gate),
+		wsHandler:   ws2.NewWsHandler(gate),
+		httpHandler: http.NewHttpHandler(gate),
 	}
 }
 

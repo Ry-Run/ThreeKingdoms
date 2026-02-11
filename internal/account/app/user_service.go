@@ -3,6 +3,7 @@ package app
 import (
 	"ThreeKingdoms/internal/account/domain"
 	accountpb "ThreeKingdoms/internal/shared/gen/account"
+	commonpb "ThreeKingdoms/internal/shared/gen/common"
 	"ThreeKingdoms/internal/shared/security"
 	"context"
 	"errors"
@@ -15,15 +16,17 @@ type UserService struct {
 	lhRepo       LoginHistoryRepo
 	llRepo       LoginLastRepo
 	randSeq      RandSeq
+	roleRepo     RoleRepo
 }
 
-func NewUserService(userRepo UserRepo, pwdEncrypter PwdEncrypter, loginHistoryRepo LoginHistoryRepo, llRepo LoginLastRepo, randSeq RandSeq) *UserService {
+func NewUserService(userRepo UserRepo, pwdEncrypter PwdEncrypter, loginHistoryRepo LoginHistoryRepo, llRepo LoginLastRepo, randSeq RandSeq, roleRepo RoleRepo) *UserService {
 	return &UserService{
 		userRepo:     userRepo,
 		pwdEncrypter: pwdEncrypter,
 		lhRepo:       loginHistoryRepo,
 		llRepo:       llRepo,
 		randSeq:      randSeq,
+		roleRepo:     roleRepo,
 	}
 }
 
@@ -34,9 +37,7 @@ func (s *UserService) Login(ctx context.Context, req *accountpb.LoginRequest) (*
 		switch {
 		case errors.Is(err, domain.ErrUserNotFound):
 			return &accountpb.LoginReply{
-				Ok:      false,
-				Reason:  ReasonLoginInvalidCredentials.Code,
-				Message: ReasonLoginInvalidCredentials.Message,
+				Result: fail(ReasonLoginInvalidCredentials),
 			}, nil
 		default:
 			return nil, ErrUnavailable.WithReason(ReasonUserRepoUnavailable).WithCause(err)
@@ -45,9 +46,7 @@ func (s *UserService) Login(ctx context.Context, req *accountpb.LoginRequest) (*
 	checkRes := user.CheckPassword(req.Password, s.pwdEncrypter)
 	if !checkRes {
 		return &accountpb.LoginReply{
-			Ok:      false,
-			Reason:  ReasonLoginInvalidCredentials.Code,
-			Message: ReasonLoginInvalidCredentials.Message,
+			Result: fail(ReasonLoginInvalidCredentials),
 		}, nil
 	}
 
@@ -85,10 +84,10 @@ func (s *UserService) Login(ctx context.Context, req *accountpb.LoginRequest) (*
 	}
 
 	return &accountpb.LoginReply{
-		Ok:       true,
 		Username: user.Username,
 		Uid:      int32(user.UId),
 		Session:  token,
+		Result:   ok(),
 	}, nil
 }
 
@@ -100,9 +99,7 @@ func (s *UserService) Register(ctx context.Context, req *accountpb.RegisterReque
 
 	if user != nil {
 		return &accountpb.RegisterReply{
-			Ok:      false,
-			Reason:  ReasonRegisterUserExist.Code,
-			Message: ReasonRegisterUserExist.Message,
+			Result: fail(ReasonRegisterUserExist),
 		}, nil
 	}
 
@@ -121,6 +118,51 @@ func (s *UserService) Register(ctx context.Context, req *accountpb.RegisterReque
 		return nil, ErrUnavailable.WithReason(ReasonUserCreateFail).WithCause(err)
 	}
 	return &accountpb.RegisterReply{
-		Ok: true,
+		Result: ok(),
 	}, nil
+}
+
+func (s *UserService) EnterServer(ctx context.Context, req *accountpb.EnterServerRequest) (*accountpb.EnterServerReply, error) {
+	reply := accountpb.EnterServerReply{}
+	role, err := s.roleRepo.GetRoleByUid(ctx, int(req.Uid))
+
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrRoleNotFound):
+			return &accountpb.EnterServerReply{
+				Result: fail(ReasonRoleNotExist),
+			}, nil
+		default:
+			return nil, ErrUnavailable.WithReason(ReasonRoleRepoUnavailable).WithCause(err)
+		}
+	}
+
+	reply.Token, err = security.Award(role.RId)
+	if err != nil {
+		return nil, ErrInternalServer.WithReason(ReasonTokenIssue).WithCause(err)
+	}
+	reply.Result = ok()
+	reply.Time = time.Now().UnixNano() / 1e6
+	reply.Role = &accountpb.Role{
+		Rid:      int32(role.RId),
+		Uid:      int32(role.UId),
+		NickName: role.NickName,
+		Sex:      int32(role.Sex),
+		Balance:  int32(role.Balance),
+		HeadId:   int32(role.HeadId),
+		Profile:  role.Profile,
+	}
+	return &reply, nil
+}
+
+func ok() *commonpb.BizResult {
+	return &commonpb.BizResult{Ok: true}
+}
+
+func fail(reason Reason) *commonpb.BizResult {
+	return &commonpb.BizResult{
+		Ok:      false,
+		Reason:  reason.Code,
+		Message: reason.Message,
+	}
 }

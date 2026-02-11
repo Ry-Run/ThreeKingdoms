@@ -32,7 +32,7 @@ func Init(appName string, cfg serverconfig.LogConfig) error {
 	atomicLevel := zap.NewAtomicLevelAt(lvl)
 
 	// 2) console 和 file 共用的编码器配置（字段名、时间格式、caller 等）
-	//    2026-01-28T10:00:00 INFO  gate-server  server start  login_main.go:12
+	//    2026-01-28T10:00:00 INFO  gate-server  server start  account_main.go:12
 	encoderCfg := zapcore.EncoderConfig{
 		TimeKey:        "ts",                           // 时间字段 key
 		LevelKey:       "level",                        // 日志级别字段 key

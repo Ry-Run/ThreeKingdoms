@@ -3,6 +3,7 @@ package handler
 import (
 	"ThreeKingdoms/internal/gate/app"
 	"ThreeKingdoms/internal/shared/transport"
+	"context"
 	"errors"
 
 	"google.golang.org/grpc/codes"
@@ -17,6 +18,8 @@ func mapBizReasonToClientCode(reason string) int {
 		return transport.PwdIncorrect
 	case app.ReasonAccountRegisterUserExist.Code:
 		return transport.UserExist
+	case app.ReasonAccountRoleNotExist.Code:
+		return transport.RoleNotExist
 	default:
 		return transport.SystemError
 	}
@@ -57,4 +60,19 @@ func grpcCodeFromErrorChain(err error) (codes.Code, bool) {
 		return s.Code(), true
 	}
 	return codes.Unknown, false
+}
+
+func HandleError(ctx context.Context, err error) (int, string) {
+	reason := app.GetErrorReasonCode(err)
+	if reason != "" {
+		transport.SetErrorReason(ctx, reason)
+	}
+
+	if app.IsBizRejectedError(err) {
+		bizCode := mapBizReasonToClientCode(reason)
+		return bizCode, app.GetErrorMessage(err)
+	}
+
+	bizCode := mapTechErrToClientCode(err)
+	return bizCode, "系统繁忙，请稍后重试"
 }

@@ -35,11 +35,11 @@ func NewSysLog(action string, err error) SysLog {
 	}
 }
 
-// ReportAccessWithLoggerContext 记录访问日志：
+// ReportAccess 记录访问日志：
 // - biz_code == 0: INFO
 // - biz_code  1~499: WARN
 // - biz_code >= 500: ERROR
-func ReportAccessWithLoggerContext(ctx context.Context, l Logger, action string, bizCode int, fields ...zap.Field) {
+func ReportAccess(ctx context.Context, l Logger, action string, bizCode int, fields ...zap.Field) {
 	if l == nil {
 		return
 	}
@@ -60,8 +60,8 @@ func ReportAccessWithLoggerContext(ctx context.Context, l Logger, action string,
 	}
 }
 
-// ReportBizWithLoggerContext 记录业务拒绝日志：INFO、err_type=biz、不带堆栈。
-func ReportBizWithLoggerContext(ctx context.Context, l Logger, biz BizLog, fields ...zap.Field) {
+// ReportBizError 记录业务拒绝日志：INFO、err_type=biz、不带堆栈。
+func ReportBizError(ctx context.Context, l Logger, biz BizLog, fields ...zap.Field) {
 	if l == nil {
 		return
 	}
@@ -95,8 +95,8 @@ func ReportBizWithLoggerContext(ctx context.Context, l Logger, biz BizLog, field
 	l.WithContext(ctx).Info(msg, base...)
 }
 
-// ReportSysErrorWithLoggerContext 记录技术错误日志：ERROR、err_type=sys，可附带栈信息。
-func ReportSysErrorWithLoggerContext(ctx context.Context, l Logger, sys SysLog, fields ...zap.Field) {
+// ReportSysError 记录技术错误日志：ERROR、err_type=sys，可附带栈信息。
+func ReportSysError(ctx context.Context, l Logger, sys SysLog, fields ...zap.Field) {
 	if sys.Err == nil || l == nil {
 		return
 	}
