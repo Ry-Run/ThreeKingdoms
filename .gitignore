@@ -3,3 +3,6 @@
 *.ipr
 *.iws
 .ace-tool/
+.logs/
+logs/account.log
+logs/gate.log

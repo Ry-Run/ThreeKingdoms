@@ -153,7 +153,9 @@ func (s *WsServer) writeMsgLoop() {
 		select {
 		case msg, ok := <-s.outChan:
 			if ok {
-				s.log.Info("ws_server write msg", zap.Any("msg", msg))
+				if msg.Body.Name != HeartbeatMsg {
+					s.log.Info("ws_server write msg", zap.Any("msg", msg))
+				}
 				s.write(msg)
 			}
 		case <-s.done:

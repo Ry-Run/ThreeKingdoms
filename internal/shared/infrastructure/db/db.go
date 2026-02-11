@@ -3,21 +3,21 @@ package db
 import (
 	"ThreeKingdoms/internal/shared/serverconfig"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	"ThreeKingdoms/internal/shared/logs"
 )
 
 // todo 替换成其他的，不一定是 mysql
-func Open(cfg serverconfig.MySQLConfig) (*gorm.DB, error) {
-
+func Open(cfg serverconfig.MySQLConfig, l *zap.Logger) (*gorm.DB, error) {
+	if l == nil {
+		l = zap.NewNop()
+	}
 	gcfg := &gorm.Config{
-		Logger: logs.NewGormLogger(logger.Info, 200*time.Millisecond),
+		// SQL 错误由业务层统一记录，这里关闭 gorm 内部 SQL 日志避免重复刷屏。
+		Logger: logger.Default.LogMode(logger.Silent),
 	}
 
 	// username:password@protocol(address)/dbname?charset=utf8&parseTime=True&loc=Local
@@ -41,7 +41,7 @@ func Open(cfg serverconfig.MySQLConfig) (*gorm.DB, error) {
 	sqlDB.SetMaxOpenConns(cfg.MaxConn)
 	sqlDB.SetMaxIdleConns(cfg.MaxIdle)
 
-	logs.Info("open db success",
+	l.Info("open db success",
 		zap.String("host", cfg.Host),
 		zap.Int("port", cfg.Port),
 		zap.String("db", cfg.DBName),

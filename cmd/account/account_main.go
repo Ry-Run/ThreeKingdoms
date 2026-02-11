@@ -40,7 +40,7 @@ func main() {
 		grpc.ChainStreamInterceptor(transportgrpc.StreamServerTraceInterceptor()),
 	)
 
-	gormDB, err := db.Open(serverconfig.Conf.MySQL)
+	gormDB, err := db.Open(serverconfig.Conf.MySQL, logs.Logger())
 	if err != nil {
 		logs.Fatal("open db failed", zap.Error(err))
 	}

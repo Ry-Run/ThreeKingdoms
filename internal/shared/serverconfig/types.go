@@ -7,6 +7,7 @@ type Config struct {
 	SLGServer   SLGServerConfig   `yaml:"slgserver" mapstructure:"slgserver"`
 	ChatServer  ChatServerConfig  `yaml:"chatserver" mapstructure:"chatserver"`
 	LoginServer LoginServerConfig `yaml:"loginserver" mapstructure:"loginserver"`
+	JWTSecret   string            `yaml:"jwt_secret" mapstructure:"jwt_secret"`
 	Xorm        XormConfig        `yaml:"xorm" mapstructure:"xorm"`
 	Log         LogConfig         `yaml:"log" mapstructure:"log"`
 	Logic       LogicConfig       `yaml:"logic" mapstructure:"logic"`

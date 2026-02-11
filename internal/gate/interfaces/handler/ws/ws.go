@@ -5,7 +5,6 @@ import (
 	"ThreeKingdoms/internal/gate/app/model"
 	"ThreeKingdoms/internal/gate/interfaces/handler"
 	"ThreeKingdoms/internal/gate/interfaces/handler/ws/dto"
-	"ThreeKingdoms/internal/shared/security"
 	"ThreeKingdoms/internal/shared/transport"
 	"ThreeKingdoms/internal/shared/transport/ws"
 	"context"
@@ -74,13 +73,13 @@ func (h *WsHandler) enterServer(ctx context.Context, wsReq *ws.WsMsgReq, wsResp 
 		return
 	}
 
-	_, claims, err := security.ParseToken(enterReqDTO.Session)
-	if err != nil {
-		h.fail(wsResp, transport.SessionInvalid, err.Error())
+	uid, ok := h.gate.Session.GetUID(wsReq.Conn)
+	if !ok {
+		h.fail(wsResp, transport.SessionInvalid, "session 无效")
 		return
 	}
 
-	enterReq := model.EnterServerReq{Uid: claims.Uid}
+	enterReq := model.EnterServerReq{Uid: uid}
 	enterResp, err := h.gate.GateService.EnterServer(ctx, enterReq)
 	if err != nil {
 		h.error(ctx, wsResp, err)
