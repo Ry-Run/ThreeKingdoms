@@ -111,7 +111,7 @@ func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceSer
 func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
 
 // UnsafeAccountServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to AccountServiceServer will
+// Use of this interfaces is not recommended, as added methods to AccountServiceServer will
 // result in compilation errors.
 type UnsafeAccountServiceServer interface {
 	mustEmbedUnimplementedAccountServiceServer()

@@ -3,6 +3,5 @@
 *.ipr
 *.iws
 .ace-tool/
-.logs/
-logs/account.log
-logs/gate.log
+logs/
+项目结构与进度说明.md

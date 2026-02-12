@@ -36,6 +36,14 @@ loginserver:
   port: 8003
   need_secret: false
 
+playerserver:
+  host: "127.0.0.1"
+  port: 8004
+
+worldserver:
+  host: "127.0.0.1"
+  port: 8005
+
 # 本地开发默认 JWT 密钥；生产环境请优先使用环境变量 JWT_SECRET 覆盖。
 jwt_secret: "dev-local-jwt-secret"
 

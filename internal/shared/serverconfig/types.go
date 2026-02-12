@@ -1,16 +1,18 @@
 package serverconfig
 
 type Config struct {
-	MySQL       MySQLConfig       `yaml:"mysql" mapstructure:"mysql"`
-	HTTPServer  HTTPServerConfig  `yaml:"httpserver" mapstructure:"httpserver"`
-	GateServer  GateServerConfig  `yaml:"gateserver" mapstructure:"gateserver"`
-	SLGServer   SLGServerConfig   `yaml:"slgserver" mapstructure:"slgserver"`
-	ChatServer  ChatServerConfig  `yaml:"chatserver" mapstructure:"chatserver"`
-	LoginServer LoginServerConfig `yaml:"loginserver" mapstructure:"loginserver"`
-	JWTSecret   string            `yaml:"jwt_secret" mapstructure:"jwt_secret"`
-	Xorm        XormConfig        `yaml:"xorm" mapstructure:"xorm"`
-	Log         LogConfig         `yaml:"log" mapstructure:"log"`
-	Logic       LogicConfig       `yaml:"logic" mapstructure:"logic"`
+	MySQL        MySQLConfig        `yaml:"mysql" mapstructure:"mysql"`
+	HTTPServer   HTTPServerConfig   `yaml:"httpserver" mapstructure:"httpserver"`
+	GateServer   GateServerConfig   `yaml:"gateserver" mapstructure:"gateserver"`
+	SLGServer    SLGServerConfig    `yaml:"slgserver" mapstructure:"slgserver"`
+	ChatServer   ChatServerConfig   `yaml:"chatserver" mapstructure:"chatserver"`
+	LoginServer  LoginServerConfig  `yaml:"loginserver" mapstructure:"loginserver"`
+	PlayerServer PlayerServerConfig `yaml:"playerserver" mapstructure:"playerserver"`
+	WorldServer  WorldServerConfig  `yaml:"worldserver" mapstructure:"worldserver"`
+	JWTSecret    string             `yaml:"jwt_secret" mapstructure:"jwt_secret"`
+	Xorm         XormConfig         `yaml:"xorm" mapstructure:"xorm"`
+	Log          LogConfig          `yaml:"log" mapstructure:"log"`
+	Logic        LogicConfig        `yaml:"logic" mapstructure:"logic"`
 }
 
 type MySQLConfig struct {
@@ -55,6 +57,16 @@ type LoginServerConfig struct {
 	Host       string `yaml:"host" mapstructure:"host"`
 	Port       int    `yaml:"port" mapstructure:"port"`
 	NeedSecret bool   `yaml:"need_secret" mapstructure:"need_secret"`
+}
+
+type PlayerServerConfig struct {
+	Host string `yaml:"host" mapstructure:"host"`
+	Port int    `yaml:"port" mapstructure:"port"`
+}
+
+type WorldServerConfig struct {
+	Host string `yaml:"host" mapstructure:"host"`
+	Port int    `yaml:"port" mapstructure:"port"`
 }
 
 type XormConfig struct {
