@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+import "common/common.proto";
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+
+message PlayerRequest {
+  int64 player_id = 1;
+  int64 seq = 2;
+
+  oneof body {
+    EnterServerRequest enterServerRequest = 10;
+    MyPropertyRequest myPropertyRequest = 11;
+    MyGeneralsRequest myGeneralsRequest = 12;
+  }
+
+  string trace_id = 100;
+}
+
+message PlayerResponse {
+  common.BizResult result = 1;
+
+  oneof body {
+    EnterServerResponse login = 10;
+    MyPropertyResponse myPropertyResponse = 11;
+    MyGeneralsResponse myGeneralsResponse = 12;
+  }
+}
+
+service PlayerService {
+  rpc Handle(PlayerRequest) returns (PlayerResponse);
+}
+
+message EnterServerRequest {
+  int32 player_id = 1;
+}
+
+message EnterServerResponse {
+  int32 player_id = 1;
+}
+
+message MyPropertyRequest {
+  int32 player_id = 1;
+}
+
+message MyPropertyResponse {
+  int32 player_id = 1;
+}
+
+message MyGeneralsRequest {
+  int32 player_id = 1;
+}
+
+message MyGeneralsResponse {
+  int32 player_id = 1;
+}

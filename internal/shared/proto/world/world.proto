@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package three_kingdoms.world;
+
+import "common/common.proto";
+
+option go_package = "ThreeKingdoms/internal/shared/gen/world;worldpb";
+
+service WorldService {
+  rpc NationMapConfig(EmptyRequest) returns (JsonReply);
+}
+
+message EmptyRequest {}
+
+message JsonReply {
+  common.BizResult result = 1;
+  int32 biz_code = 2;
+  string biz_message = 3;
+  string payload_json = 4;
+}

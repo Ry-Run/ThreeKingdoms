@@ -131,7 +131,7 @@ func (s *WsServer) readMsgLoop() {
 
 		// 5.分发消息
 		req := WsMsgReq{Body: &reqBody, Conn: s}
-		// req 和 resp 的 Seq 必须一致
+		// req 和 resp 的 Version 必须一致
 		resp := WsMsgResp{Body: &RespBody{Seq: req.Body.Seq, Name: reqBody.Name, Msg: reqBody.Msg}}
 		if reqBody.Name == HeartbeatMsg {
 			// 回复客户端心跳，心跳放服务端合适，目前只能满足客户端的条件
