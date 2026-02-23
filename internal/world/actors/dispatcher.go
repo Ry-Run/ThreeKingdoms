@@ -1,15 +1,14 @@
 package actors
 
 import (
-	worldpb "ThreeKingdoms/internal/shared/gen/world"
+	"ThreeKingdoms/internal/shared/actor/messages"
 	"reflect"
 
 	"github.com/asynkron/protoactor-go/actor"
-	"google.golang.org/protobuf/proto"
 )
 
 type Dispatcher struct {
-	handlers map[string]Handler
+	handlers map[reflect.Type]Handler
 }
 
 type Handler struct {
@@ -19,66 +18,54 @@ type Handler struct {
 
 func NewDispatcher() *Dispatcher {
 	d := &Dispatcher{
-		handlers: make(map[string]Handler),
+		handlers: make(map[reflect.Type]Handler),
 	}
 	d.registerAll()
 	return d
 }
 
-func protoMessageName(msg proto.Message) string {
-	return string(proto.MessageName(msg))
-}
-
 func (d *Dispatcher) registerAll() {
-	register(d, WH.HandleNationMapConfigRequest)
+	register(d, WH.HandleHWCreateCity)
+	register(d, WH.HandleHWWorldMap)
+	register(d, WH.HandleHWMyCities)
 }
 
-func register[Req proto.Message](
+func register[Req any](
 	d *Dispatcher,
 	fn func(ctx actor.Context, p *WorldActor, req Req),
 ) {
 	reqType := reflect.TypeOf((*Req)(nil)).Elem()
-	if reqType.Kind() != reflect.Ptr {
-		panic("dispatcher req type must be pointer message")
+	if reqType == nil {
+		panic("dispatcher req type cannot be nil")
 	}
-	reqName := protoMessageName(reflect.New(reqType.Elem()).Interface().(proto.Message))
 
-	d.handlers[reqName] = Handler{
+	d.handlers[reqType] = Handler{
 		fn:      reflect.ValueOf(fn),
 		reqType: reqType,
 	}
 }
 
-func (d *Dispatcher) Dispatch(ctx actor.Context, p *WorldActor, req *worldpb.EmptyRequest) {
+func (d *Dispatcher) Dispatch(ctx actor.Context, p *WorldActor, req messages.WorldMessage) {
 	if req == nil {
-		ctx.Respond(fail("nil req"))
+		ctx.Respond("nil req")
 		return
 	}
 
-	body := unwrapWorldRequestBody(req)
-	if body == nil {
-		ctx.Respond(fail("empty request body"))
-		return
-	}
-
-	handler, ok := d.handlers[protoMessageName(body)]
+	bodyType := reflect.TypeOf(req)
+	handler, ok := d.handlers[bodyType]
 	if !ok {
-		ctx.Respond(fail("no handler for request body"))
+		ctx.Respond("no handler for request body")
 		return
 	}
 
-	if reflect.TypeOf(body) != handler.reqType {
-		ctx.Respond(fail("request body type mismatch"))
+	if bodyType != handler.reqType {
+		ctx.Respond("request body type mismatch")
 		return
 	}
 
 	handler.fn.Call([]reflect.Value{
 		reflect.ValueOf(ctx),
 		reflect.ValueOf(p),
-		reflect.ValueOf(body),
+		reflect.ValueOf(req),
 	})
-}
-
-func unwrapWorldRequestBody(req *worldpb.EmptyRequest) proto.Message {
-	return req
 }

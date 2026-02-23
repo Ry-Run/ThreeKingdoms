@@ -2,6 +2,7 @@ package serverconfig
 
 type Config struct {
 	MySQL        MySQLConfig        `yaml:"mysql" mapstructure:"mysql"`
+	MongoDB      MongoDBConfig      `yaml:"mongodb" mapstructure:"mongodb"`
 	HTTPServer   HTTPServerConfig   `yaml:"httpserver" mapstructure:"httpserver"`
 	GateServer   GateServerConfig   `yaml:"gateserver" mapstructure:"gateserver"`
 	SLGServer    SLGServerConfig    `yaml:"slgserver" mapstructure:"slgserver"`
@@ -24,6 +25,12 @@ type MySQLConfig struct {
 	Charset  string `yaml:"charset" mapstructure:"charset"`
 	MaxIdle  int    `yaml:"max_idle" mapstructure:"max_idle"`
 	MaxConn  int    `yaml:"max_conn" mapstructure:"max_conn"`
+}
+
+type MongoDBConfig struct {
+	URI             string `yaml:"uri" mapstructure:"uri"`
+	Database        string `yaml:"database" mapstructure:"database"`
+	ConnectTimeoutS int    `yaml:"connect_timeout_s" mapstructure:"connect_timeout_s"`
 }
 
 type HTTPServerConfig struct {

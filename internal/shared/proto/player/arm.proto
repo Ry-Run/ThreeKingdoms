@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message Army {
+  int32 id = 1  [json_name = "id"];
+  int32 city_id = 2  [json_name = "cityId"];
+  int32 union_id = 3  [json_name = "union_id"]; // 联盟id
+  int32 order = 4  [json_name = "order"];    // 第几队，1-5队（int8 -> int32）
+  repeated int32 generals = 5  [json_name = "generals"];
+  repeated int32 soldiers = 6  [json_name = "soldiers"];
+  repeated int64 con_times = 7  [json_name = "con_times"];
+  repeated int32 con_cnts = 8  [json_name = "con_cnts"];
+  int32 cmd = 9  [json_name = "cmd"];      // int8 -> int32
+  int32 state = 10 [json_name = "state"];    // 0:running,1:stop（int8 -> int32）
+  int32 from_x = 11 [json_name = "from_x"];
+  int32 from_y = 12 [json_name = "from_y"];
+  int32 to_x = 13 [json_name = "to_x"];
+  int32 to_y = 14 [json_name = "to_y"];
+  int64 start = 15 [json_name = "start"];    // 出征开始时间
+  int64 end = 16 [json_name = "end"];      // 出征结束时间
+}

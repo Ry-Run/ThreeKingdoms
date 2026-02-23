@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message General {
+  int32 id = 1  [json_name = "id"];
+  int32 cfg_id = 2  [json_name = "cfgId"];
+  int32 physical_power = 3  [json_name = "physical_power"];
+  int32 order = 4  [json_name = "order"];            // int8 -> int32
+  int32 level = 5  [json_name = "level"];            // int8 -> int32
+  int32 exp = 6  [json_name = "exp"];
+  int32 city_id = 7  [json_name = "cityId"];
+  int32 cur_arms = 8  [json_name = "curArms"];
+  int32 has_pr_point = 9  [json_name = "hasPrPoint"];
+  int32 use_pr_point = 10 [json_name = "usePrPoint"];
+  int32 attack_distance = 11 [json_name = "attack_distance"];
+  int32 force_added = 12 [json_name = "force_added"];
+  int32 strategy_added = 13 [json_name = "strategy_added"];
+  int32 defense_added = 14 [json_name = "defense_added"];
+  int32 speed_added = 15 [json_name = "speed_added"];
+  int32 destroy_added = 16 [json_name = "destroy_added"];
+  int32 star_lv = 17 [json_name = "star_lv"];          // int8 -> int32
+  int32 star = 18 [json_name = "star"];             // int8 -> int32
+  int32 parent_id = 19 [json_name = "parentId"];
+  repeated GSkill skills = 20 [json_name = "skills"];
+  int32 state = 21 [json_name = "state"];            // int8 -> int32
+}
+
+message GSkill {
+  int32 id = 1;
+  int32 lv = 2;
+  int32 cfgId = 3;
+}

@@ -1,9 +1,9 @@
 package actors
 
 import (
-	worldpb "ThreeKingdoms/internal/shared/gen/world"
-	"ThreeKingdoms/internal/world/app/port"
+	"ThreeKingdoms/internal/shared/actor/messages"
 	"ThreeKingdoms/internal/world/entity"
+	"ThreeKingdoms/internal/world/service/port"
 
 	"github.com/asynkron/protoactor-go/actor"
 )
@@ -25,12 +25,12 @@ func NewManagerActor(repo port.WorldRepository) *ManagerActor {
 }
 
 func (m *ManagerActor) Receive(ctx actor.Context) {
-	req, ok := ctx.Message().(*worldpb.EmptyRequest)
+	req, ok := ctx.Message().(messages.WorldMessage)
 	if !ok {
 		return
 	}
 	if req == nil {
-		ctx.Respond(failResponse("nil request"))
+		ctx.Respond("nil request")
 		return
 	}
 
@@ -48,8 +48,4 @@ func (m *ManagerActor) getOrSpawn(ctx actor.Context, worldID WorldID) *actor.PID
 	pid := ctx.Spawn(props)
 	m.worldActors[worldID] = pid
 	return pid
-}
-
-func failResponse(reason string) *worldpb.JsonReply {
-	return fail(reason)
 }

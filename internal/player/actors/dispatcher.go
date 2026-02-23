@@ -31,6 +31,8 @@ func protoMessageName(msg proto.Message) string {
 
 func (d *Dispatcher) registerAll() {
 	register(d, PH.HandleEnterServerRequest)
+	register(d, PH.HandleCreateRole)
+	register(d, PH.HandleWorldMapRequest)
 	register(d, PH.HandleMyPropertyRequest)
 	register(d, PH.HandleMyGeneralsRequest)
 }
@@ -86,6 +88,10 @@ func unwrapPlayerRequestBody(req *playerpb.PlayerRequest) proto.Message {
 	switch body := req.GetBody().(type) {
 	case *playerpb.PlayerRequest_EnterServerRequest:
 		return body.EnterServerRequest
+	case *playerpb.PlayerRequest_CreateRoleRequest:
+		return body.CreateRoleRequest
+	case *playerpb.PlayerRequest_WorldMapRequest:
+		return body.WorldMapRequest
 	case *playerpb.PlayerRequest_MyPropertyRequest:
 		return body.MyPropertyRequest
 	case *playerpb.PlayerRequest_MyGeneralsRequest:

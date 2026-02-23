@@ -3,7 +3,7 @@ package actor
 import (
 	"ThreeKingdoms/internal/shared/transport"
 	"ThreeKingdoms/internal/world/actors"
-	"ThreeKingdoms/internal/world/app/port"
+	"ThreeKingdoms/internal/world/service/port"
 	"context"
 	"errors"
 	"time"

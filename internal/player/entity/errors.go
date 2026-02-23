@@ -5,5 +5,6 @@ import (
 )
 
 var (
-	ErrRoleNotFound = errors.New("role not found")
+	ErrPlayerNotFound = errors.New("player not found")
+	ErrCreateCity     = errors.New("create city failed")
 )

@@ -3,18 +3,28 @@ syntax = "proto3";
 package three_kingdoms.player;
 
 import "common/common.proto";
+import "player/role.proto";
+import "player/resource.proto";
+import "player/building.proto";
+import "player/arm.proto";
+import "player/general.proto";
+import "player/city.proto";
+import "player/map.proto";
 
 option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
 
 
 message PlayerRequest {
   int64 player_id = 1;
-  int64 seq = 2;
+  int64 world_id = 2;
+  int64 seq = 3;
 
   oneof body {
     EnterServerRequest enterServerRequest = 10;
-    MyPropertyRequest myPropertyRequest = 11;
-    MyGeneralsRequest myGeneralsRequest = 12;
+    CreateRoleRequest createRoleRequest = 11;
+    WorldMapRequest worldMapRequest = 12;
+    MyPropertyRequest myPropertyRequest = 13;
+    MyGeneralsRequest myGeneralsRequest = 23;
   }
 
   string trace_id = 100;
@@ -24,9 +34,11 @@ message PlayerResponse {
   common.BizResult result = 1;
 
   oneof body {
-    EnterServerResponse login = 10;
-    MyPropertyResponse myPropertyResponse = 11;
-    MyGeneralsResponse myGeneralsResponse = 12;
+    EnterServerResponse enterServerResponse = 10;
+    CreateRoleResponse createRoleResponse = 11;
+    WorldMapResponse worldMapResponse = 12;
+    MyPropertyResponse myPropertyResponse = 13;
+    MyGeneralsResponse myGeneralsResponse = 24;
   }
 }
 
@@ -39,7 +51,30 @@ message EnterServerRequest {
 }
 
 message EnterServerResponse {
-  int32 player_id = 1;
+  Role role = 1;
+  Resource resource = 2;
+  int64 time = 3;
+  string token = 4;
+}
+
+message CreateRoleRequest {
+  int64 player_id = 1;
+  string nick_name = 2;
+  int32 sex = 3;
+  int32 sid = 4;
+  int32 head_id = 5;
+}
+
+message CreateRoleResponse {
+  Role role = 1;
+}
+
+message WorldMapRequest {
+  int64 player_id = 1;
+}
+
+message WorldMapResponse {
+  repeated Cell map = 1;
 }
 
 message MyPropertyRequest {
@@ -47,7 +82,11 @@ message MyPropertyRequest {
 }
 
 message MyPropertyResponse {
-  int32 player_id = 1;
+  Resource resource = 1;
+  repeated Building buildings = 2;
+  repeated General generals = 3;
+  repeated City cities = 4;
+  repeated Army armies = 5;
 }
 
 message MyGeneralsRequest {

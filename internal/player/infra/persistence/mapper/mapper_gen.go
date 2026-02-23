@@ -10,7 +10,7 @@ func ResourceModelToEntity(m *model.Resource) *entity.ResourceEntity {
 	if m == nil {
 		return nil
 	}
-	var s entity.ResourceEntitySnapshot
+	var s entity.ResourceState
 	s.Id = m.Id
 	s.Rid = m.Rid
 	s.Wood = m.Wood
@@ -43,9 +43,10 @@ func RoleModelToEntity(m *model.Role) *entity.RoleEntity {
 	if m == nil {
 		return nil
 	}
-	var s entity.RoleEntitySnapshot
+	var s entity.RoleState
 	s.Rid = m.Rid
 	s.Uid = m.Uid
+	s.Status = entity.RoleStatus(m.Status)
 	s.Headid = m.Headid
 	s.Sex = m.Sex
 	s.NickName = m.NickName
@@ -65,6 +66,7 @@ func RoleEntityToModel(e *entity.RoleEntity) *model.Role {
 	out := &model.Role{}
 	out.Rid = s.Rid
 	out.Uid = s.Uid
+	out.Status = int(s.Status)
 	out.Headid = s.Headid
 	out.Sex = s.Sex
 	out.NickName = s.NickName
@@ -73,5 +75,40 @@ func RoleEntityToModel(e *entity.RoleEntity) *model.Role {
 	out.LogoutTime = s.LogoutTime
 	out.Profile = s.Profile
 	out.CreatedAt = s.CreatedAt
+	return out
+}
+
+func RoleAttributeModelToEntity(m *model.RoleAttribute) *entity.RoleAttributeEntity {
+	if m == nil {
+		return nil
+	}
+	var s entity.RoleAttributeState
+	s.Id = m.Id
+	s.Rid = m.Rid
+	s.ParentId = m.ParentId
+	s.CollectTimes = m.CollectTimes
+	s.LastCollectTime = m.LastCollectTime
+	s.PosTags = m.PosTags
+	if hook, ok := any(&s).(interface{ PosTagsToPosTagArray() }); ok {
+		hook.PosTagsToPosTagArray()
+	}
+	return entity.HydrateRoleAttributeEntity(s)
+}
+
+func RoleAttributeEntityToModel(e *entity.RoleAttributeEntity) *model.RoleAttribute {
+	if e == nil {
+		return nil
+	}
+	s := e.Snapshot()
+	if hook, ok := any(&s).(interface{ PosTagArrayToPosTags() }); ok {
+		hook.PosTagArrayToPosTags()
+	}
+	out := &model.RoleAttribute{}
+	out.Id = s.Id
+	out.Rid = s.Rid
+	out.ParentId = s.ParentId
+	out.CollectTimes = s.CollectTimes
+	out.LastCollectTime = s.LastCollectTime
+	out.PosTags = s.PosTags
 	return out
 }

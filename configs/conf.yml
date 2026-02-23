@@ -8,6 +8,11 @@ mysql:
   max_idle: 2
   max_conn: 10
 
+mongodb:
+  uri: "mongodb://127.0.0.1:27017"
+  database: "ThreeKingdoms"
+  connect_timeout_s: 3
+
 httpserver:
   host: "127.0.0.1"
   port: 8088

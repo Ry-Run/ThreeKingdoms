@@ -1,19 +1,16 @@
 package actors
 
 import (
-	"ThreeKingdoms/internal/player/app/port"
-	"ThreeKingdoms/internal/player/entity"
+	"ThreeKingdoms/internal/player/service/port"
 	commonpb "ThreeKingdoms/internal/shared/gen/common"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 
 	"github.com/asynkron/protoactor-go/actor"
 )
 
-type PlayerID = entity.PlayerID
-
 type ManagerActor struct {
 	repo         port.PlayerRepository
-	playerActors map[PlayerID]*actor.PID // rid -> actor.pid
+	playerActors map[PlayerID]*actor.PID // player(uid) -> actor.pid
 }
 
 func NewManagerActor(repo port.PlayerRepository) *ManagerActor {
@@ -33,21 +30,22 @@ func (m *ManagerActor) Receive(ctx actor.Context) {
 		return
 	}
 	playerID, ok := toPlayerID(req.GetPlayerId())
+	worldID, ok := toWorldID(req.GetWorldId())
 	if !ok {
 		ctx.Respond(failResponse("invalid player_id"))
 		return
 	}
 
-	ctx.Forward(m.getOrSpawn(ctx, playerID))
+	ctx.Forward(m.getOrSpawn(ctx, playerID, worldID))
 }
 
-func (m *ManagerActor) getOrSpawn(ctx actor.Context, playerId PlayerID) *actor.PID {
+func (m *ManagerActor) getOrSpawn(ctx actor.Context, playerId PlayerID, worldId WorldID) *actor.PID {
 	if pid, ok := m.playerActors[playerId]; ok && pid != nil {
 		return pid
 	}
 
 	props := actor.PropsFromProducer(func() actor.Actor {
-		return NewPlayerActor(playerId, m.repo)
+		return NewPlayerActor(playerId, worldId, m.repo)
 	})
 	// ManagerActor 创建 子 actor
 	pid := ctx.Spawn(props)
@@ -64,6 +62,17 @@ func toPlayerID(raw int64) (PlayerID, bool) {
 		return 0, false
 	}
 	return PlayerID(raw), true
+}
+
+func toWorldID(raw int64) (WorldID, bool) {
+	const maxInt = int64(^uint(0) >> 1)
+	if raw <= 0 {
+		return 0, false
+	}
+	if raw > maxInt {
+		return 0, false
+	}
+	return WorldID(raw), true
 }
 
 func failResponse(reason string) *playerpb.PlayerResponse {

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message Role {
+  int32 rid = 1;
+  int32 uid = 2;
+  string nick_name = 3;
+  int32 sex = 4;
+  int32 balance = 5;
+  int32 head_id = 6;
+  string profile = 7;
+}

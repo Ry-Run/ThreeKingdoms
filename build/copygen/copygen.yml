@@ -1,4 +1,0 @@
-# Define where the code is generated.
-generated:
-  setup: ../../internal/player/infra/persistence/mapper/copygen.go
-  output: ../../internal/player/infra/persistence/mapper/mapper.go

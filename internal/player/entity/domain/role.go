@@ -2,14 +2,14 @@ package domain
 
 import "time"
 
+type RoleStatus int
+
 // entity
 type Role struct {
-	rid        uint32    // roleId
-	uid        uint32    // 用户UID
-	headid     uint32    // 头像Id
-	sex        uint8     // 性别，0:女 1男
+	headid     int16     // 头像Id
+	sex        int8      // 性别，0:女 1男
 	nickName   string    // nick_name
-	balance    uint32    // 余额
+	balance    int       // 余额
 	loginTime  time.Time // 登录时间
 	logoutTime time.Time // 登出时间
 	profile    string    // 个人简介

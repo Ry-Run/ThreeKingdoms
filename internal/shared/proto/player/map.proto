@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message Cell {
+  int32   Type = 1;
+  string  Name = 2;
+  int32   Level = 3;
+  int64   Grain = 4;
+  int64   Wood = 5;
+  int64   Iron = 6;
+  int64   Stone = 7;
+  int64   Durable = 8;
+  int64   Defender = 9;
+}

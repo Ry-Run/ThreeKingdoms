@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message City {
+  string name        = 3  [json_name = "name"];
+  int32 union_id     = 4  [json_name = "union_id"];   // 联盟id
+  string union_name  = 5  [json_name = "union_name"]; // 联盟名字
+  int32 parent_id    = 6  [json_name = "parent_id"];  // 上级id
+  int32 x            = 7  [json_name = "x"];
+  int32 y            = 8  [json_name = "y"];
+  bool is_main       = 9  [json_name = "is_main"];
+  int32 level        = 10 [json_name = "level"];       // int8 -> int32
+  int32 cur_durable  = 11 [json_name = "cur_durable"];
+  int32 max_durable  = 12 [json_name = "max_durable"];
+  int64 occupy_time  = 13 [json_name = "occupy_time"];
+}

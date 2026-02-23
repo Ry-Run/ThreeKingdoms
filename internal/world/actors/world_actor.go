@@ -1,10 +1,11 @@
 package actors
 
 import (
-	worldpb "ThreeKingdoms/internal/shared/gen/world"
-	"ThreeKingdoms/internal/world/app/port"
+	"ThreeKingdoms/internal/shared/actor/messages"
+	_map "ThreeKingdoms/internal/shared/gameconfig/map"
 	"ThreeKingdoms/internal/world/dc"
 	"ThreeKingdoms/internal/world/entity"
+	"ThreeKingdoms/internal/world/service/port"
 	"context"
 	"time"
 
@@ -25,7 +26,7 @@ type WorldActor struct {
 	state      State
 	worldID    *WorldID
 	dc         *dc.WorldDC
-	entity     *entity.World
+	entity     *entity.WorldEntity
 	dispatcher *Dispatcher
 	flushStop  chan struct{}
 }
@@ -43,87 +44,102 @@ func NewWorldActor(worldID WorldID, repo port.WorldRepository) *WorldActor {
 	}
 }
 
-func (p *WorldActor) Receive(ctx actor.Context) {
+func (w *WorldActor) Receive(ctx actor.Context) {
 	switch msg := ctx.Message().(type) {
 	case *actor.Started:
-		p.state = Init
-		p.init(ctx)
+		w.state = Init
+		w.init(ctx)
 		return
 	case *actor.Stopping:
-		p.stopFlushLoop()
+		w.stopFlushLoop()
 		closeCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		if err := p.dc.Close(closeCtx); err != nil {
-			ctx.Logger().Error("world dc close failed", "world_id", p.worldID, "err", err)
+		if err := w.dc.Close(closeCtx); err != nil {
+			ctx.Logger().Error("world dc close failed", "world_id", w.worldID, "err", err)
 		}
-		p.state = Stopping
+		w.state = Stopping
 		return
 	case *actor.Stopped:
-		p.stopFlushLoop()
-		p.state = Offline
+		w.stopFlushLoop()
+		w.state = Offline
 		return
 	case *actor.Restarting:
-		p.stopFlushLoop()
-		p.state = Init
+		w.stopFlushLoop()
+		w.state = Init
 		return
 	case flushTick:
-		if p.state != Online {
+		if w.state != Online {
 			return
 		}
-		if err := p.dc.Flush(context.TODO()); err != nil {
-			ctx.Logger().Error("world periodic flush failed", "world_id", p.worldID, "err", err)
+		if _, err := w.dc.Tick(); err != nil {
+			ctx.Logger().Error("world periodic flush failed", "world_id", w.worldID, "err", err)
 		}
 		return
-	case *worldpb.EmptyRequest:
+	case messages.WorldMessage:
 		if msg == nil {
-			ctx.Respond(fail("nil request"))
+			ctx.Respond("nil request")
 			return
 		}
 
-		if p.state != Online {
-			ctx.Respond(fail("world not online"))
+		if w.state != Online {
+			ctx.Respond("world not online")
 			return
 		}
 
-		p.dispatcher.Dispatch(ctx, p, msg)
+		w.dispatcher.Dispatch(ctx, w, msg)
 	default:
 		return
 	}
 }
 
-func (p *WorldActor) init(ctx actor.Context) {
-	e, err := p.dc.Load(context.TODO(), p.worldID)
+func (w *WorldActor) init(actorCtx actor.Context) {
+	if w.state == Init {
+		return
+	}
+
+	e, err := w.dc.Load(context.TODO(), *w.worldID)
 	if err != nil {
-		p.state = Stopping
-		ctx.Stop(ctx.Self())
+		w.state = Stopping
+		actorCtx.Stop(actorCtx.Self())
 		return
 	}
-	p.state = Online
-	p.entity = e
-	p.startFlushLoop(ctx)
+
+	var needFlush bool
+	if e.LenWorldMap() == 0 {
+		needFlush = true
+		e.ReplaceWorldMap(w.buildInitialMap())
+	}
+
+	if needFlush {
+		_ = w.dc.FlushSync(context.TODO())
+	}
+
+	w.state = Online
+	w.entity = e
+	w.startFlushLoop(actorCtx)
 }
 
-func (p *WorldActor) WorldID() *WorldID {
-	return p.worldID
+func (w *WorldActor) WorldID() *WorldID {
+	return w.worldID
 }
 
-func (p *WorldActor) Entity() *entity.World {
-	return p.entity
+func (w *WorldActor) Entity() *entity.WorldEntity {
+	return w.entity
 }
 
-func (p *WorldActor) DC() *dc.WorldDC {
-	return p.dc
+func (w *WorldActor) DC() *dc.WorldDC {
+	return w.dc
 }
 
-func (p *WorldActor) startFlushLoop(ctx actor.Context) {
-	if p.flushStop != nil {
+func (w *WorldActor) startFlushLoop(ctx actor.Context) {
+	if w.flushStop != nil {
 		return
 	}
-	interval := p.dc.FlushEvery()
+	interval := w.dc.FlushEvery()
 	if interval <= 0 {
 		return
 	}
-	p.flushStop = make(chan struct{})
+	w.flushStop = make(chan struct{})
 	self := ctx.Self()
 	root := ctx.ActorSystem().Root
 
@@ -138,13 +154,33 @@ func (p *WorldActor) startFlushLoop(ctx actor.Context) {
 				return
 			}
 		}
-	}(p.flushStop, interval)
+	}(w.flushStop, interval)
 }
 
-func (p *WorldActor) stopFlushLoop() {
-	if p.flushStop == nil {
+func (w *WorldActor) stopFlushLoop() {
+	if w.flushStop == nil {
 		return
 	}
-	close(p.flushStop)
-	p.flushStop = nil
+	close(w.flushStop)
+	w.flushStop = nil
+}
+
+func (w *WorldActor) buildInitialMap() []entity.CellState {
+	mapCfg := _map.MapConf.Cfg
+	var cells []entity.CellState
+	for _, v := range mapCfg {
+		cell := entity.CellState{
+			CellType: v.Type,
+			Name:     v.Name,
+			Level:    v.Level,
+			Defender: v.Defender,
+			Durable:  v.Durable,
+			Grain:    v.Grain,
+			Iron:     v.Iron,
+			Stone:    v.Stone,
+			Wood:     v.Wood,
+		}
+		cells = append(cells, cell)
+	}
+	return cells
 }

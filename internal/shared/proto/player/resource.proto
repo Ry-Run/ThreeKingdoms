@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message Resource {
+  int32 wood = 1;
+  int32 iron = 2;
+  int32 stone = 3;
+  int32 grain = 4;
+  int32 gold = 5;
+  int32 decree = 6;
+  int32 wood_yield = 7;
+  int32 iron_yield = 8;
+  int32 stone_yield = 9;
+  int32 grain_yield = 10;
+  int32 gold_yield = 11;
+  int32 depot_capacity = 12;
+}

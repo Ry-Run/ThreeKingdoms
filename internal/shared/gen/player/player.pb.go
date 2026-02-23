@@ -25,10 +25,13 @@ const (
 type PlayerRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId int64                  `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	Seq      int64                  `protobuf:"varint,2,opt,name=seq,proto3" json:"seq,omitempty"`
+	WorldId  int64                  `protobuf:"varint,2,opt,name=world_id,json=worldId,proto3" json:"world_id,omitempty"`
+	Seq      int64                  `protobuf:"varint,3,opt,name=seq,proto3" json:"seq,omitempty"`
 	// Types that are valid to be assigned to Body:
 	//
 	//	*PlayerRequest_EnterServerRequest
+	//	*PlayerRequest_CreateRoleRequest
+	//	*PlayerRequest_WorldMapRequest
 	//	*PlayerRequest_MyPropertyRequest
 	//	*PlayerRequest_MyGeneralsRequest
 	Body          isPlayerRequest_Body `protobuf_oneof:"body"`
@@ -74,6 +77,13 @@ func (x *PlayerRequest) GetPlayerId() int64 {
 	return 0
 }
 
+func (x *PlayerRequest) GetWorldId() int64 {
+	if x != nil {
+		return x.WorldId
+	}
+	return 0
+}
+
 func (x *PlayerRequest) GetSeq() int64 {
 	if x != nil {
 		return x.Seq
@@ -92,6 +102,24 @@ func (x *PlayerRequest) GetEnterServerRequest() *EnterServerRequest {
 	if x != nil {
 		if x, ok := x.Body.(*PlayerRequest_EnterServerRequest); ok {
 			return x.EnterServerRequest
+		}
+	}
+	return nil
+}
+
+func (x *PlayerRequest) GetCreateRoleRequest() *CreateRoleRequest {
+	if x != nil {
+		if x, ok := x.Body.(*PlayerRequest_CreateRoleRequest); ok {
+			return x.CreateRoleRequest
+		}
+	}
+	return nil
+}
+
+func (x *PlayerRequest) GetWorldMapRequest() *WorldMapRequest {
+	if x != nil {
+		if x, ok := x.Body.(*PlayerRequest_WorldMapRequest); ok {
+			return x.WorldMapRequest
 		}
 	}
 	return nil
@@ -130,15 +158,27 @@ type PlayerRequest_EnterServerRequest struct {
 	EnterServerRequest *EnterServerRequest `protobuf:"bytes,10,opt,name=enterServerRequest,proto3,oneof"`
 }
 
+type PlayerRequest_CreateRoleRequest struct {
+	CreateRoleRequest *CreateRoleRequest `protobuf:"bytes,11,opt,name=createRoleRequest,proto3,oneof"`
+}
+
+type PlayerRequest_WorldMapRequest struct {
+	WorldMapRequest *WorldMapRequest `protobuf:"bytes,12,opt,name=worldMapRequest,proto3,oneof"`
+}
+
 type PlayerRequest_MyPropertyRequest struct {
-	MyPropertyRequest *MyPropertyRequest `protobuf:"bytes,11,opt,name=myPropertyRequest,proto3,oneof"`
+	MyPropertyRequest *MyPropertyRequest `protobuf:"bytes,13,opt,name=myPropertyRequest,proto3,oneof"`
 }
 
 type PlayerRequest_MyGeneralsRequest struct {
-	MyGeneralsRequest *MyGeneralsRequest `protobuf:"bytes,12,opt,name=myGeneralsRequest,proto3,oneof"`
+	MyGeneralsRequest *MyGeneralsRequest `protobuf:"bytes,23,opt,name=myGeneralsRequest,proto3,oneof"`
 }
 
 func (*PlayerRequest_EnterServerRequest) isPlayerRequest_Body() {}
+
+func (*PlayerRequest_CreateRoleRequest) isPlayerRequest_Body() {}
+
+func (*PlayerRequest_WorldMapRequest) isPlayerRequest_Body() {}
 
 func (*PlayerRequest_MyPropertyRequest) isPlayerRequest_Body() {}
 
@@ -149,7 +189,9 @@ type PlayerResponse struct {
 	Result *common.BizResult      `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 	// Types that are valid to be assigned to Body:
 	//
-	//	*PlayerResponse_Login
+	//	*PlayerResponse_EnterServerResponse
+	//	*PlayerResponse_CreateRoleResponse
+	//	*PlayerResponse_WorldMapResponse
 	//	*PlayerResponse_MyPropertyResponse
 	//	*PlayerResponse_MyGeneralsResponse
 	Body          isPlayerResponse_Body `protobuf_oneof:"body"`
@@ -201,10 +243,28 @@ func (x *PlayerResponse) GetBody() isPlayerResponse_Body {
 	return nil
 }
 
-func (x *PlayerResponse) GetLogin() *EnterServerResponse {
+func (x *PlayerResponse) GetEnterServerResponse() *EnterServerResponse {
 	if x != nil {
-		if x, ok := x.Body.(*PlayerResponse_Login); ok {
-			return x.Login
+		if x, ok := x.Body.(*PlayerResponse_EnterServerResponse); ok {
+			return x.EnterServerResponse
+		}
+	}
+	return nil
+}
+
+func (x *PlayerResponse) GetCreateRoleResponse() *CreateRoleResponse {
+	if x != nil {
+		if x, ok := x.Body.(*PlayerResponse_CreateRoleResponse); ok {
+			return x.CreateRoleResponse
+		}
+	}
+	return nil
+}
+
+func (x *PlayerResponse) GetWorldMapResponse() *WorldMapResponse {
+	if x != nil {
+		if x, ok := x.Body.(*PlayerResponse_WorldMapResponse); ok {
+			return x.WorldMapResponse
 		}
 	}
 	return nil
@@ -232,19 +292,31 @@ type isPlayerResponse_Body interface {
 	isPlayerResponse_Body()
 }
 
-type PlayerResponse_Login struct {
-	Login *EnterServerResponse `protobuf:"bytes,10,opt,name=login,proto3,oneof"`
+type PlayerResponse_EnterServerResponse struct {
+	EnterServerResponse *EnterServerResponse `protobuf:"bytes,10,opt,name=enterServerResponse,proto3,oneof"`
+}
+
+type PlayerResponse_CreateRoleResponse struct {
+	CreateRoleResponse *CreateRoleResponse `protobuf:"bytes,11,opt,name=createRoleResponse,proto3,oneof"`
+}
+
+type PlayerResponse_WorldMapResponse struct {
+	WorldMapResponse *WorldMapResponse `protobuf:"bytes,12,opt,name=worldMapResponse,proto3,oneof"`
 }
 
 type PlayerResponse_MyPropertyResponse struct {
-	MyPropertyResponse *MyPropertyResponse `protobuf:"bytes,11,opt,name=myPropertyResponse,proto3,oneof"`
+	MyPropertyResponse *MyPropertyResponse `protobuf:"bytes,13,opt,name=myPropertyResponse,proto3,oneof"`
 }
 
 type PlayerResponse_MyGeneralsResponse struct {
-	MyGeneralsResponse *MyGeneralsResponse `protobuf:"bytes,12,opt,name=myGeneralsResponse,proto3,oneof"`
+	MyGeneralsResponse *MyGeneralsResponse `protobuf:"bytes,24,opt,name=myGeneralsResponse,proto3,oneof"`
 }
 
-func (*PlayerResponse_Login) isPlayerResponse_Body() {}
+func (*PlayerResponse_EnterServerResponse) isPlayerResponse_Body() {}
+
+func (*PlayerResponse_CreateRoleResponse) isPlayerResponse_Body() {}
+
+func (*PlayerResponse_WorldMapResponse) isPlayerResponse_Body() {}
 
 func (*PlayerResponse_MyPropertyResponse) isPlayerResponse_Body() {}
 
@@ -296,7 +368,10 @@ func (x *EnterServerRequest) GetPlayerId() int32 {
 
 type EnterServerResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      int32                  `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Role          *Role                  `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`
+	Resource      *Resource              `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
+	Time          int64                  `protobuf:"varint,3,opt,name=time,proto3" json:"time,omitempty"`
+	Token         string                 `protobuf:"bytes,4,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -331,11 +406,240 @@ func (*EnterServerResponse) Descriptor() ([]byte, []int) {
 	return file_player_player_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *EnterServerResponse) GetPlayerId() int32 {
+func (x *EnterServerResponse) GetRole() *Role {
+	if x != nil {
+		return x.Role
+	}
+	return nil
+}
+
+func (x *EnterServerResponse) GetResource() *Resource {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
+func (x *EnterServerResponse) GetTime() int64 {
+	if x != nil {
+		return x.Time
+	}
+	return 0
+}
+
+func (x *EnterServerResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type CreateRoleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      int64                  `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	NickName      string                 `protobuf:"bytes,2,opt,name=nick_name,json=nickName,proto3" json:"nick_name,omitempty"`
+	Sex           int32                  `protobuf:"varint,3,opt,name=sex,proto3" json:"sex,omitempty"`
+	Sid           int32                  `protobuf:"varint,4,opt,name=sid,proto3" json:"sid,omitempty"`
+	HeadId        int32                  `protobuf:"varint,5,opt,name=head_id,json=headId,proto3" json:"head_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateRoleRequest) Reset() {
+	*x = CreateRoleRequest{}
+	mi := &file_player_player_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateRoleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateRoleRequest) ProtoMessage() {}
+
+func (x *CreateRoleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_player_player_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateRoleRequest.ProtoReflect.Descriptor instead.
+func (*CreateRoleRequest) Descriptor() ([]byte, []int) {
+	return file_player_player_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CreateRoleRequest) GetPlayerId() int64 {
 	if x != nil {
 		return x.PlayerId
 	}
 	return 0
+}
+
+func (x *CreateRoleRequest) GetNickName() string {
+	if x != nil {
+		return x.NickName
+	}
+	return ""
+}
+
+func (x *CreateRoleRequest) GetSex() int32 {
+	if x != nil {
+		return x.Sex
+	}
+	return 0
+}
+
+func (x *CreateRoleRequest) GetSid() int32 {
+	if x != nil {
+		return x.Sid
+	}
+	return 0
+}
+
+func (x *CreateRoleRequest) GetHeadId() int32 {
+	if x != nil {
+		return x.HeadId
+	}
+	return 0
+}
+
+type CreateRoleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Role          *Role                  `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateRoleResponse) Reset() {
+	*x = CreateRoleResponse{}
+	mi := &file_player_player_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateRoleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateRoleResponse) ProtoMessage() {}
+
+func (x *CreateRoleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_player_player_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateRoleResponse.ProtoReflect.Descriptor instead.
+func (*CreateRoleResponse) Descriptor() ([]byte, []int) {
+	return file_player_player_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CreateRoleResponse) GetRole() *Role {
+	if x != nil {
+		return x.Role
+	}
+	return nil
+}
+
+type WorldMapRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      int64                  `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorldMapRequest) Reset() {
+	*x = WorldMapRequest{}
+	mi := &file_player_player_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorldMapRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorldMapRequest) ProtoMessage() {}
+
+func (x *WorldMapRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_player_player_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorldMapRequest.ProtoReflect.Descriptor instead.
+func (*WorldMapRequest) Descriptor() ([]byte, []int) {
+	return file_player_player_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *WorldMapRequest) GetPlayerId() int64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+type WorldMapResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Map           []*Cell                `protobuf:"bytes,1,rep,name=map,proto3" json:"map,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorldMapResponse) Reset() {
+	*x = WorldMapResponse{}
+	mi := &file_player_player_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorldMapResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorldMapResponse) ProtoMessage() {}
+
+func (x *WorldMapResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_player_player_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorldMapResponse.ProtoReflect.Descriptor instead.
+func (*WorldMapResponse) Descriptor() ([]byte, []int) {
+	return file_player_player_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *WorldMapResponse) GetMap() []*Cell {
+	if x != nil {
+		return x.Map
+	}
+	return nil
 }
 
 type MyPropertyRequest struct {
@@ -347,7 +651,7 @@ type MyPropertyRequest struct {
 
 func (x *MyPropertyRequest) Reset() {
 	*x = MyPropertyRequest{}
-	mi := &file_player_player_proto_msgTypes[4]
+	mi := &file_player_player_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -359,7 +663,7 @@ func (x *MyPropertyRequest) String() string {
 func (*MyPropertyRequest) ProtoMessage() {}
 
 func (x *MyPropertyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_player_player_proto_msgTypes[4]
+	mi := &file_player_player_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -372,7 +676,7 @@ func (x *MyPropertyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MyPropertyRequest.ProtoReflect.Descriptor instead.
 func (*MyPropertyRequest) Descriptor() ([]byte, []int) {
-	return file_player_player_proto_rawDescGZIP(), []int{4}
+	return file_player_player_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MyPropertyRequest) GetPlayerId() int32 {
@@ -384,14 +688,18 @@ func (x *MyPropertyRequest) GetPlayerId() int32 {
 
 type MyPropertyResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      int32                  `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Resource      *Resource              `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
+	Buildings     []*Building            `protobuf:"bytes,2,rep,name=buildings,proto3" json:"buildings,omitempty"`
+	Generals      []*General             `protobuf:"bytes,3,rep,name=generals,proto3" json:"generals,omitempty"`
+	Cities        []*City                `protobuf:"bytes,4,rep,name=cities,proto3" json:"cities,omitempty"`
+	Armies        []*Army                `protobuf:"bytes,5,rep,name=armies,proto3" json:"armies,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MyPropertyResponse) Reset() {
 	*x = MyPropertyResponse{}
-	mi := &file_player_player_proto_msgTypes[5]
+	mi := &file_player_player_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -403,7 +711,7 @@ func (x *MyPropertyResponse) String() string {
 func (*MyPropertyResponse) ProtoMessage() {}
 
 func (x *MyPropertyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_player_player_proto_msgTypes[5]
+	mi := &file_player_player_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -416,14 +724,42 @@ func (x *MyPropertyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MyPropertyResponse.ProtoReflect.Descriptor instead.
 func (*MyPropertyResponse) Descriptor() ([]byte, []int) {
-	return file_player_player_proto_rawDescGZIP(), []int{5}
+	return file_player_player_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *MyPropertyResponse) GetPlayerId() int32 {
+func (x *MyPropertyResponse) GetResource() *Resource {
 	if x != nil {
-		return x.PlayerId
+		return x.Resource
 	}
-	return 0
+	return nil
+}
+
+func (x *MyPropertyResponse) GetBuildings() []*Building {
+	if x != nil {
+		return x.Buildings
+	}
+	return nil
+}
+
+func (x *MyPropertyResponse) GetGenerals() []*General {
+	if x != nil {
+		return x.Generals
+	}
+	return nil
+}
+
+func (x *MyPropertyResponse) GetCities() []*City {
+	if x != nil {
+		return x.Cities
+	}
+	return nil
+}
+
+func (x *MyPropertyResponse) GetArmies() []*Army {
+	if x != nil {
+		return x.Armies
+	}
+	return nil
 }
 
 type MyGeneralsRequest struct {
@@ -435,7 +771,7 @@ type MyGeneralsRequest struct {
 
 func (x *MyGeneralsRequest) Reset() {
 	*x = MyGeneralsRequest{}
-	mi := &file_player_player_proto_msgTypes[6]
+	mi := &file_player_player_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -447,7 +783,7 @@ func (x *MyGeneralsRequest) String() string {
 func (*MyGeneralsRequest) ProtoMessage() {}
 
 func (x *MyGeneralsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_player_player_proto_msgTypes[6]
+	mi := &file_player_player_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -460,7 +796,7 @@ func (x *MyGeneralsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MyGeneralsRequest.ProtoReflect.Descriptor instead.
 func (*MyGeneralsRequest) Descriptor() ([]byte, []int) {
-	return file_player_player_proto_rawDescGZIP(), []int{6}
+	return file_player_player_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *MyGeneralsRequest) GetPlayerId() int32 {
@@ -479,7 +815,7 @@ type MyGeneralsResponse struct {
 
 func (x *MyGeneralsResponse) Reset() {
 	*x = MyGeneralsResponse{}
-	mi := &file_player_player_proto_msgTypes[7]
+	mi := &file_player_player_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -491,7 +827,7 @@ func (x *MyGeneralsResponse) String() string {
 func (*MyGeneralsResponse) ProtoMessage() {}
 
 func (x *MyGeneralsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_player_player_proto_msgTypes[7]
+	mi := &file_player_player_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -504,7 +840,7 @@ func (x *MyGeneralsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MyGeneralsResponse.ProtoReflect.Descriptor instead.
 func (*MyGeneralsResponse) Descriptor() ([]byte, []int) {
-	return file_player_player_proto_rawDescGZIP(), []int{7}
+	return file_player_player_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *MyGeneralsResponse) GetPlayerId() int32 {
@@ -518,31 +854,55 @@ var File_player_player_proto protoreflect.FileDescriptor
 
 const file_player_player_proto_rawDesc = "" +
 	"\n" +
-	"\x13player/player.proto\x12\x15three_kingdoms.player\x1a\x13common/common.proto\"\xf2\x02\n" +
+	"\x13player/player.proto\x12\x15three_kingdoms.player\x1a\x13common/common.proto\x1a\x11player/role.proto\x1a\x15player/resource.proto\x1a\x15player/building.proto\x1a\x10player/arm.proto\x1a\x14player/general.proto\x1a\x11player/city.proto\x1a\x10player/map.proto\"\xbb\x04\n" +
 	"\rPlayerRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x03R\bplayerId\x12\x10\n" +
-	"\x03seq\x18\x02 \x01(\x03R\x03seq\x12[\n" +
+	"\tplayer_id\x18\x01 \x01(\x03R\bplayerId\x12\x19\n" +
+	"\bworld_id\x18\x02 \x01(\x03R\aworldId\x12\x10\n" +
+	"\x03seq\x18\x03 \x01(\x03R\x03seq\x12[\n" +
 	"\x12enterServerRequest\x18\n" +
 	" \x01(\v2).three_kingdoms.player.EnterServerRequestH\x00R\x12enterServerRequest\x12X\n" +
-	"\x11myPropertyRequest\x18\v \x01(\v2(.three_kingdoms.player.MyPropertyRequestH\x00R\x11myPropertyRequest\x12X\n" +
-	"\x11myGeneralsRequest\x18\f \x01(\v2(.three_kingdoms.player.MyGeneralsRequestH\x00R\x11myGeneralsRequest\x12\x19\n" +
+	"\x11createRoleRequest\x18\v \x01(\v2(.three_kingdoms.player.CreateRoleRequestH\x00R\x11createRoleRequest\x12R\n" +
+	"\x0fworldMapRequest\x18\f \x01(\v2&.three_kingdoms.player.WorldMapRequestH\x00R\x0fworldMapRequest\x12X\n" +
+	"\x11myPropertyRequest\x18\r \x01(\v2(.three_kingdoms.player.MyPropertyRequestH\x00R\x11myPropertyRequest\x12X\n" +
+	"\x11myGeneralsRequest\x18\x17 \x01(\v2(.three_kingdoms.player.MyGeneralsRequestH\x00R\x11myGeneralsRequest\x12\x19\n" +
 	"\btrace_id\x18d \x01(\tR\atraceIdB\x06\n" +
-	"\x04body\"\xd0\x02\n" +
+	"\x04body\"\xa0\x04\n" +
 	"\x0ePlayerResponse\x128\n" +
-	"\x06result\x18\x01 \x01(\v2 .three_kingdoms.common.BizResultR\x06result\x12B\n" +
-	"\x05login\x18\n" +
-	" \x01(\v2*.three_kingdoms.player.EnterServerResponseH\x00R\x05login\x12[\n" +
-	"\x12myPropertyResponse\x18\v \x01(\v2).three_kingdoms.player.MyPropertyResponseH\x00R\x12myPropertyResponse\x12[\n" +
-	"\x12myGeneralsResponse\x18\f \x01(\v2).three_kingdoms.player.MyGeneralsResponseH\x00R\x12myGeneralsResponseB\x06\n" +
+	"\x06result\x18\x01 \x01(\v2 .three_kingdoms.common.BizResultR\x06result\x12^\n" +
+	"\x13enterServerResponse\x18\n" +
+	" \x01(\v2*.three_kingdoms.player.EnterServerResponseH\x00R\x13enterServerResponse\x12[\n" +
+	"\x12createRoleResponse\x18\v \x01(\v2).three_kingdoms.player.CreateRoleResponseH\x00R\x12createRoleResponse\x12U\n" +
+	"\x10worldMapResponse\x18\f \x01(\v2'.three_kingdoms.player.WorldMapResponseH\x00R\x10worldMapResponse\x12[\n" +
+	"\x12myPropertyResponse\x18\r \x01(\v2).three_kingdoms.player.MyPropertyResponseH\x00R\x12myPropertyResponse\x12[\n" +
+	"\x12myGeneralsResponse\x18\x18 \x01(\v2).three_kingdoms.player.MyGeneralsResponseH\x00R\x12myGeneralsResponseB\x06\n" +
 	"\x04body\"1\n" +
 	"\x12EnterServerRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"2\n" +
-	"\x13EnterServerResponse\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"0\n" +
+	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"\x81\x01\n" +
+	"\x13EnterServerResponse\x12\x19\n" +
+	"\x04role\x18\x01 \x01(\v2\x05.RoleR\x04role\x12%\n" +
+	"\bresource\x18\x02 \x01(\v2\t.ResourceR\bresource\x12\x12\n" +
+	"\x04time\x18\x03 \x01(\x03R\x04time\x12\x14\n" +
+	"\x05token\x18\x04 \x01(\tR\x05token\"\x8a\x01\n" +
+	"\x11CreateRoleRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x03R\bplayerId\x12\x1b\n" +
+	"\tnick_name\x18\x02 \x01(\tR\bnickName\x12\x10\n" +
+	"\x03sex\x18\x03 \x01(\x05R\x03sex\x12\x10\n" +
+	"\x03sid\x18\x04 \x01(\x05R\x03sid\x12\x17\n" +
+	"\ahead_id\x18\x05 \x01(\x05R\x06headId\"/\n" +
+	"\x12CreateRoleResponse\x12\x19\n" +
+	"\x04role\x18\x01 \x01(\v2\x05.RoleR\x04role\".\n" +
+	"\x0fWorldMapRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x03R\bplayerId\"A\n" +
+	"\x10WorldMapResponse\x12-\n" +
+	"\x03map\x18\x01 \x03(\v2\x1b.three_kingdoms.player.CellR\x03map\"0\n" +
 	"\x11MyPropertyRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"1\n" +
-	"\x12MyPropertyResponse\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"0\n" +
+	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"\xa0\x02\n" +
+	"\x12MyPropertyResponse\x12%\n" +
+	"\bresource\x18\x01 \x01(\v2\t.ResourceR\bresource\x12=\n" +
+	"\tbuildings\x18\x02 \x03(\v2\x1f.three_kingdoms.player.BuildingR\tbuildings\x12:\n" +
+	"\bgenerals\x18\x03 \x03(\v2\x1e.three_kingdoms.player.GeneralR\bgenerals\x123\n" +
+	"\x06cities\x18\x04 \x03(\v2\x1b.three_kingdoms.player.CityR\x06cities\x123\n" +
+	"\x06armies\x18\x05 \x03(\v2\x1b.three_kingdoms.player.ArmyR\x06armies\"0\n" +
 	"\x11MyGeneralsRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"1\n" +
 	"\x12MyGeneralsResponse\x12\x1b\n" +
@@ -562,33 +922,57 @@ func file_player_player_proto_rawDescGZIP() []byte {
 	return file_player_player_proto_rawDescData
 }
 
-var file_player_player_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_player_player_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_player_player_proto_goTypes = []any{
 	(*PlayerRequest)(nil),       // 0: three_kingdoms.player.PlayerRequest
 	(*PlayerResponse)(nil),      // 1: three_kingdoms.player.PlayerResponse
 	(*EnterServerRequest)(nil),  // 2: three_kingdoms.player.EnterServerRequest
 	(*EnterServerResponse)(nil), // 3: three_kingdoms.player.EnterServerResponse
-	(*MyPropertyRequest)(nil),   // 4: three_kingdoms.player.MyPropertyRequest
-	(*MyPropertyResponse)(nil),  // 5: three_kingdoms.player.MyPropertyResponse
-	(*MyGeneralsRequest)(nil),   // 6: three_kingdoms.player.MyGeneralsRequest
-	(*MyGeneralsResponse)(nil),  // 7: three_kingdoms.player.MyGeneralsResponse
-	(*common.BizResult)(nil),    // 8: three_kingdoms.common.BizResult
+	(*CreateRoleRequest)(nil),   // 4: three_kingdoms.player.CreateRoleRequest
+	(*CreateRoleResponse)(nil),  // 5: three_kingdoms.player.CreateRoleResponse
+	(*WorldMapRequest)(nil),     // 6: three_kingdoms.player.WorldMapRequest
+	(*WorldMapResponse)(nil),    // 7: three_kingdoms.player.WorldMapResponse
+	(*MyPropertyRequest)(nil),   // 8: three_kingdoms.player.MyPropertyRequest
+	(*MyPropertyResponse)(nil),  // 9: three_kingdoms.player.MyPropertyResponse
+	(*MyGeneralsRequest)(nil),   // 10: three_kingdoms.player.MyGeneralsRequest
+	(*MyGeneralsResponse)(nil),  // 11: three_kingdoms.player.MyGeneralsResponse
+	(*common.BizResult)(nil),    // 12: three_kingdoms.common.BizResult
+	(*Role)(nil),                // 13: Role
+	(*Resource)(nil),            // 14: Resource
+	(*Cell)(nil),                // 15: three_kingdoms.player.Cell
+	(*Building)(nil),            // 16: three_kingdoms.player.Building
+	(*General)(nil),             // 17: three_kingdoms.player.General
+	(*City)(nil),                // 18: three_kingdoms.player.City
+	(*Army)(nil),                // 19: three_kingdoms.player.Army
 }
 var file_player_player_proto_depIdxs = []int32{
-	2, // 0: three_kingdoms.player.PlayerRequest.enterServerRequest:type_name -> three_kingdoms.player.EnterServerRequest
-	4, // 1: three_kingdoms.player.PlayerRequest.myPropertyRequest:type_name -> three_kingdoms.player.MyPropertyRequest
-	6, // 2: three_kingdoms.player.PlayerRequest.myGeneralsRequest:type_name -> three_kingdoms.player.MyGeneralsRequest
-	8, // 3: three_kingdoms.player.PlayerResponse.result:type_name -> three_kingdoms.common.BizResult
-	3, // 4: three_kingdoms.player.PlayerResponse.login:type_name -> three_kingdoms.player.EnterServerResponse
-	5, // 5: three_kingdoms.player.PlayerResponse.myPropertyResponse:type_name -> three_kingdoms.player.MyPropertyResponse
-	7, // 6: three_kingdoms.player.PlayerResponse.myGeneralsResponse:type_name -> three_kingdoms.player.MyGeneralsResponse
-	0, // 7: three_kingdoms.player.PlayerService.Handle:input_type -> three_kingdoms.player.PlayerRequest
-	1, // 8: three_kingdoms.player.PlayerService.Handle:output_type -> three_kingdoms.player.PlayerResponse
-	8, // [8:9] is the sub-list for method output_type
-	7, // [7:8] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	2,  // 0: three_kingdoms.player.PlayerRequest.enterServerRequest:type_name -> three_kingdoms.player.EnterServerRequest
+	4,  // 1: three_kingdoms.player.PlayerRequest.createRoleRequest:type_name -> three_kingdoms.player.CreateRoleRequest
+	6,  // 2: three_kingdoms.player.PlayerRequest.worldMapRequest:type_name -> three_kingdoms.player.WorldMapRequest
+	8,  // 3: three_kingdoms.player.PlayerRequest.myPropertyRequest:type_name -> three_kingdoms.player.MyPropertyRequest
+	10, // 4: three_kingdoms.player.PlayerRequest.myGeneralsRequest:type_name -> three_kingdoms.player.MyGeneralsRequest
+	12, // 5: three_kingdoms.player.PlayerResponse.result:type_name -> three_kingdoms.common.BizResult
+	3,  // 6: three_kingdoms.player.PlayerResponse.enterServerResponse:type_name -> three_kingdoms.player.EnterServerResponse
+	5,  // 7: three_kingdoms.player.PlayerResponse.createRoleResponse:type_name -> three_kingdoms.player.CreateRoleResponse
+	7,  // 8: three_kingdoms.player.PlayerResponse.worldMapResponse:type_name -> three_kingdoms.player.WorldMapResponse
+	9,  // 9: three_kingdoms.player.PlayerResponse.myPropertyResponse:type_name -> three_kingdoms.player.MyPropertyResponse
+	11, // 10: three_kingdoms.player.PlayerResponse.myGeneralsResponse:type_name -> three_kingdoms.player.MyGeneralsResponse
+	13, // 11: three_kingdoms.player.EnterServerResponse.role:type_name -> Role
+	14, // 12: three_kingdoms.player.EnterServerResponse.resource:type_name -> Resource
+	13, // 13: three_kingdoms.player.CreateRoleResponse.role:type_name -> Role
+	15, // 14: three_kingdoms.player.WorldMapResponse.map:type_name -> three_kingdoms.player.Cell
+	14, // 15: three_kingdoms.player.MyPropertyResponse.resource:type_name -> Resource
+	16, // 16: three_kingdoms.player.MyPropertyResponse.buildings:type_name -> three_kingdoms.player.Building
+	17, // 17: three_kingdoms.player.MyPropertyResponse.generals:type_name -> three_kingdoms.player.General
+	18, // 18: three_kingdoms.player.MyPropertyResponse.cities:type_name -> three_kingdoms.player.City
+	19, // 19: three_kingdoms.player.MyPropertyResponse.armies:type_name -> three_kingdoms.player.Army
+	0,  // 20: three_kingdoms.player.PlayerService.Handle:input_type -> three_kingdoms.player.PlayerRequest
+	1,  // 21: three_kingdoms.player.PlayerService.Handle:output_type -> three_kingdoms.player.PlayerResponse
+	21, // [21:22] is the sub-list for method output_type
+	20, // [20:21] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_player_player_proto_init() }
@@ -596,13 +980,24 @@ func file_player_player_proto_init() {
 	if File_player_player_proto != nil {
 		return
 	}
+	file_player_role_proto_init()
+	file_player_resource_proto_init()
+	file_player_building_proto_init()
+	file_player_arm_proto_init()
+	file_player_general_proto_init()
+	file_player_city_proto_init()
+	file_player_map_proto_init()
 	file_player_player_proto_msgTypes[0].OneofWrappers = []any{
 		(*PlayerRequest_EnterServerRequest)(nil),
+		(*PlayerRequest_CreateRoleRequest)(nil),
+		(*PlayerRequest_WorldMapRequest)(nil),
 		(*PlayerRequest_MyPropertyRequest)(nil),
 		(*PlayerRequest_MyGeneralsRequest)(nil),
 	}
 	file_player_player_proto_msgTypes[1].OneofWrappers = []any{
-		(*PlayerResponse_Login)(nil),
+		(*PlayerResponse_EnterServerResponse)(nil),
+		(*PlayerResponse_CreateRoleResponse)(nil),
+		(*PlayerResponse_WorldMapResponse)(nil),
 		(*PlayerResponse_MyPropertyResponse)(nil),
 		(*PlayerResponse_MyGeneralsResponse)(nil),
 	}
@@ -612,7 +1007,7 @@ func file_player_player_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_player_player_proto_rawDesc), len(file_player_player_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

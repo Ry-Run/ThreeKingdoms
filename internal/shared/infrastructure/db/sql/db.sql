@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `login_last` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '最后一次用户登录表';
 
-CREATE TABLE IF NOT EXISTS `role_1` (
+CREATE TABLE IF NOT EXISTS `role` (
     `rid` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'roleId',
     `uid` int unsigned NOT NULL COMMENT '用户UID',
     `headId` int unsigned NOT NULL DEFAULT 0 COMMENT '头像Id',
@@ -52,14 +52,15 @@ CREATE TABLE IF NOT EXISTS `role_1` (
     `logout_time` TIMESTAMP NULL DEFAULT NULL COMMENT '登出时间',
     `profile` varchar(500) COMMENT '个人简介',
     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `status` int NOT NULL DEFAULT 0 COMMENT '0 CREATED 1 ACTIVE',
     UNIQUE KEY (`uid`, `nick_name`),
     PRIMARY KEY (`rid`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '玩家表';
 
-INSERT INTO role_1 (`rid`, `uid`, `headId`, `sex`, `nick_name`, `balance`, `login_time`, `logout_time`, `profile`, `created_at`)
-VALUES (1, 1, 0, 0, '张三', 0, NULL, NULL, '', '2022-03-18 12:51:22');
+INSERT INTO role (`rid`, `uid`, `headId`, `sex`, `nick_name`, `balance`, `login_time`, `logout_time`, `profile`, `created_at`, `status`)
+VALUES (1, 1, 0, 0, '张三', 0, NULL, NULL, '', '2022-03-18 12:51:22', 0);
 
-CREATE TABLE IF NOT EXISTS `map_role_city_1` (
+CREATE TABLE IF NOT EXISTS `map_role_city` (
     `cityId` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'cityId',
     `rid` int unsigned NOT NULL COMMENT 'roleId',
     `x` int unsigned NOT NULL COMMENT 'x坐标',
@@ -72,7 +73,7 @@ CREATE TABLE IF NOT EXISTS `map_role_city_1` (
     PRIMARY KEY (`cityId`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '玩家城池';
 
-CREATE TABLE IF NOT EXISTS `map_role_build_1` (
+CREATE TABLE IF NOT EXISTS `map_role_build` (
     `id` int unsigned NOT NULL AUTO_INCREMENT,
     `rid` int unsigned NOT NULL,
     `type` int unsigned NOT NULL COMMENT '建筑类型',
@@ -89,7 +90,7 @@ CREATE TABLE IF NOT EXISTS `map_role_build_1` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '角色建筑';
 
-CREATE TABLE IF NOT EXISTS `city_facility_1` (
+CREATE TABLE IF NOT EXISTS `city_facility` (
     `id` int unsigned NOT NULL AUTO_INCREMENT,
     `cityId` int unsigned NOT NULL COMMENT '城市id',
     `rid` int unsigned NOT NULL,
@@ -98,7 +99,7 @@ CREATE TABLE IF NOT EXISTS `city_facility_1` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '城池设施';
 
-CREATE TABLE IF NOT EXISTS `role_res_1` (
+CREATE TABLE IF NOT EXISTS `role_res` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `rid` int unsigned NOT NULL COMMENT 'rid',
     `wood` int unsigned NOT NULL COMMENT '木',
@@ -111,10 +112,10 @@ CREATE TABLE IF NOT EXISTS `role_res_1` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '角色资源表';
 
-INSERT INTO `role_res_1`(`id`, `rid`, `wood`, `iron`, `stone`, `grain`, `gold`, `decree`)
+INSERT INTO `role_res`(`id`, `rid`, `wood`, `iron`, `stone`, `grain`, `gold`, `decree`)
 VALUES (1, 1, 499387021, 499387021, 499324378, 997689756, 3992570, 20);
 
-CREATE TABLE IF NOT EXISTS `general_1` (
+CREATE TABLE IF NOT EXISTS `general` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `rid` int unsigned NOT NULL COMMENT 'rid',
     `cfgId` int unsigned NOT NULL COMMENT '配置id',
@@ -142,7 +143,7 @@ CREATE TABLE IF NOT EXISTS `general_1` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '将领表';
 
-CREATE TABLE IF NOT EXISTS `army_1` (
+CREATE TABLE IF NOT EXISTS `army` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `rid` int unsigned NOT NULL COMMENT 'rid',
     `cityId` int unsigned NOT NULL COMMENT '城市id',
@@ -162,7 +163,7 @@ CREATE TABLE IF NOT EXISTS `army_1` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '军队表';
 
-CREATE TABLE IF NOT EXISTS `war_report_1` (
+CREATE TABLE IF NOT EXISTS `war_report` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `a_rid` int unsigned NOT NULL COMMENT '攻击方id',
     `d_rid` int unsigned NOT NULL DEFAULT 0 COMMENT '防守方id,0为系统npc',
@@ -186,7 +187,7 @@ CREATE TABLE IF NOT EXISTS `war_report_1` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '战报表';
 
-CREATE TABLE IF NOT EXISTS `coalition_1` (
+CREATE TABLE IF NOT EXISTS `coalition` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `name` varchar(20) NOT NULL COMMENT '联盟名字',
     `members` varchar(2048) NOT NULL COMMENT '成员',
@@ -200,7 +201,7 @@ CREATE TABLE IF NOT EXISTS `coalition_1` (
     UNIQUE KEY (`name`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '联盟';
 
-CREATE TABLE IF NOT EXISTS `coalition_apply_1` (
+CREATE TABLE IF NOT EXISTS `coalition_apply` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `union_id` int unsigned NOT NULL COMMENT '联盟id',
     `rid` int unsigned NOT NULL COMMENT '申请者的rid',
@@ -209,7 +210,7 @@ CREATE TABLE IF NOT EXISTS `coalition_apply_1` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '联盟申请表';
 
-CREATE TABLE IF NOT EXISTS `role_attribute_1` (
+CREATE TABLE IF NOT EXISTS `role_attribute` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `rid` int unsigned NOT NULL COMMENT 'rid',
     `parent_id` tinyint unsigned NOT NULL DEFAULT '0' COMMENT '上级联盟id',
@@ -219,7 +220,7 @@ CREATE TABLE IF NOT EXISTS `role_attribute_1` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '玩家属性表';
 
-CREATE TABLE IF NOT EXISTS `coalition_log_1` (
+CREATE TABLE IF NOT EXISTS `coalition_log` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `union_id` int unsigned NOT NULL COMMENT '联盟id',
     `op_rid` int unsigned NOT NULL COMMENT '操作者id',
@@ -230,7 +231,7 @@ CREATE TABLE IF NOT EXISTS `coalition_log_1` (
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT '联盟日志表';
 
-CREATE TABLE IF NOT EXISTS `skill_1` (
+CREATE TABLE IF NOT EXISTS `skill` (
     `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
     `rid` int unsigned NOT NULL COMMENT 'rid',
     `cfgId` int unsigned NOT NULL COMMENT '技能id',

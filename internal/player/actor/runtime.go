@@ -2,7 +2,7 @@ package actor
 
 import (
 	"ThreeKingdoms/internal/player/actors"
-	"ThreeKingdoms/internal/player/app/port"
+	"ThreeKingdoms/internal/player/service/port"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/transport"
 	"context"

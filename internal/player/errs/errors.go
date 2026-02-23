@@ -12,7 +12,7 @@ const (
 )
 
 type Error struct {
-	Op    string         // 发生位置：repo.GetRoleByRID / usecase.CreateRole
+	Op    string         // 发生位置：repo.GetRoleByRID / usecase.HandleCreateRole
 	Kind  Kind           // 粗分类
 	Meta  map[string]any // 关键参数（rid, uid...）
 	Cause error          // 根因（必须保留）

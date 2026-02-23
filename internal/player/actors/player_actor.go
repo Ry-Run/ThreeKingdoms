@@ -1,11 +1,14 @@
 package actors
 
 import (
-	"ThreeKingdoms/internal/player/app/port"
 	"ThreeKingdoms/internal/player/dc"
 	"ThreeKingdoms/internal/player/entity"
+	"ThreeKingdoms/internal/player/service/port"
+	"ThreeKingdoms/internal/shared/actor/messages"
+	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"context"
+	"errors"
 	"time"
 
 	"github.com/asynkron/protoactor-go/actor"
@@ -16,46 +19,59 @@ type State int
 const (
 	None State = iota
 	Init
+	LoadFailed
 	Online
 	Offline
 	Stopping
 )
 
+const seqWindowSize = 1024
+
+type PlayerID = entity.PlayerID
+type WorldID = entity.WorldID
+
 type PlayerActor struct {
-	state      State
-	playerID   *PlayerID
-	dc         *dc.PlayerDC
-	entity     *entity.Player
+	state    State
+	PlayerId *PlayerID
+	WorldId  *WorldID
+	dc       *dc.PlayerDC
+
 	worldPID   *actor.PID
 	dispatcher *Dispatcher
 	flushStop  chan struct{}
+
+	seenSeq      map[int64]struct{}
+	seenSeqOrder []int64
 }
 
 type flushTick struct{}
 
 func (flushTick) NotInfluenceReceiveTimeout() {}
 
-func NewPlayerActor(playerID PlayerID, repo port.PlayerRepository) *PlayerActor {
+func NewPlayerActor(playerID PlayerID, worldId WorldID, repo port.PlayerRepository) *PlayerActor {
 	return &PlayerActor{
 		state:      None,
-		playerID:   &playerID,
+		PlayerId:   &playerID,
+		WorldId:    &worldId,
 		dc:         dc.NewPlayerDC(repo),
 		dispatcher: NewDispatcher(),
+		seenSeq:    make(map[int64]struct{}, seqWindowSize),
 	}
 }
 
-func (p *PlayerActor) Receive(ctx actor.Context) {
-	switch msg := ctx.Message().(type) {
+func (p *PlayerActor) Receive(actorCtx actor.Context) {
+	switch msg := actorCtx.Message().(type) {
 	case *actor.Started:
-		p.state = Init
-		p.init(ctx)
+		if err := p.init(context.TODO(), actorCtx, false); err != nil && !errors.Is(err, entity.ErrPlayerNotFound) {
+			actorCtx.Logger().Error("player init failed", "player_id", p.PlayerId, "err", err)
+		}
 		return
 	case *actor.Stopping:
 		p.stopFlushLoop()
 		closeCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		if err := p.dc.Close(closeCtx); err != nil {
-			ctx.Logger().Error("player dc close failed", "player_id", p.playerID, "err", err)
+			actorCtx.Logger().Error("player dc close failed", "player_id", p.PlayerId, "err", err)
 		}
 		p.state = Stopping
 		return
@@ -71,11 +87,17 @@ func (p *PlayerActor) Receive(ctx actor.Context) {
 		if p.state != Online {
 			return
 		}
-		p.dc.Flush(context.TODO())
+		if _, err := p.dc.Tick(); err != nil {
+			actorCtx.Logger().Error("player periodic flush failed", "player_id", p.PlayerId, "err", err)
+		}
 		return
 	case *playerpb.PlayerRequest:
 		if msg == nil {
-			ctx.Respond(fail("nil request"))
+			actorCtx.Respond(fail("nil request"))
+			return
+		}
+		if err := p.acceptSeq(msg.GetSeq()); err != nil {
+			actorCtx.Respond(fail(err.Error()))
 			return
 		}
 		// stash
@@ -88,32 +110,50 @@ func (p *PlayerActor) Receive(ctx actor.Context) {
 		//}
 
 		if p.state != Online {
-			ctx.Respond(fail("player not online"))
+			if err := p.init(context.TODO(), actorCtx, true); err != nil {
+				return
+			}
+		}
+
+		if p.state != Online || p.Entity() == nil {
+			actorCtx.Respond(fail("player state invalid"))
 			return
 		}
 
-		/**
-		需要异步回消息的时候，就要用到 sender := ctx.Sender() 保留本次消息的响应 actor
-		handler 要一个 playerActor、req、sender 即可
-		*/
-		//worldPID := actor.NewPID("world-host:12000", "world")
-		//ctx.Send(worldPID, struct{}{})
-		p.dispatcher.Dispatch(ctx, p, msg)
+		p.dispatcher.Dispatch(actorCtx, p, msg)
 	default:
 		return
 	}
 }
 
-func (p *PlayerActor) init(ctx actor.Context) {
-	e, err := p.dc.Load(context.TODO(), p.playerID)
-	if err != nil {
-		p.state = Stopping
-		ctx.Stop(ctx.Self())
-		return
+func (p *PlayerActor) init(ctx context.Context, actorCtx actor.Context, respondOnErr bool) error {
+	if p.state == Init {
+		// todo 如果能 stash
+		if respondOnErr {
+			actorCtx.Respond(fail("player loading"))
+		}
+		return nil
 	}
+
+	p.state = Init
+
+	_, err := p.dc.Load(ctx, *p.PlayerId)
+	if err != nil {
+		p.state = LoadFailed
+		if respondOnErr {
+			actorCtx.Respond(fail("load player failed"))
+		}
+		return err
+	}
+
+	err = p.initPlayer(ctx, actorCtx)
+
+	if err != nil {
+		return err
+	}
+
 	p.state = Online
-	p.entity = e
-	p.startFlushLoop(ctx)
+	p.startFlushLoop(actorCtx)
 
 	// 重放 stash
 	//stashed := p.stash
@@ -122,25 +162,10 @@ func (p *PlayerActor) init(ctx actor.Context) {
 	//for _, _ = range stashed {
 	//	//p.dispatcher.Dispatch("", p, "", "")
 	//}
+	return nil
 }
 
-func (p *PlayerActor) PlayerID() *PlayerID {
-	return p.playerID
-}
-
-func (p *PlayerActor) WorldPID() *actor.PID {
-	return p.worldPID
-}
-
-func (p *PlayerActor) Entity() *entity.Player {
-	return p.entity
-}
-
-func (p *PlayerActor) DC() *dc.PlayerDC {
-	return p.dc
-}
-
-func (p *PlayerActor) startFlushLoop(ctx actor.Context) {
+func (p *PlayerActor) startFlushLoop(actorCtx actor.Context) {
 	if p.flushStop != nil {
 		return
 	}
@@ -149,8 +174,8 @@ func (p *PlayerActor) startFlushLoop(ctx actor.Context) {
 		return
 	}
 	p.flushStop = make(chan struct{})
-	self := ctx.Self()
-	root := ctx.ActorSystem().Root
+	self := actorCtx.Self()
+	root := actorCtx.ActorSystem().Root
 
 	go func(stop <-chan struct{}, every time.Duration) {
 		ticker := time.NewTicker(every)
@@ -172,4 +197,103 @@ func (p *PlayerActor) stopFlushLoop() {
 	}
 	close(p.flushStop)
 	p.flushStop = nil
+}
+
+func (p *PlayerActor) Entity() *entity.PlayerEntity {
+	return p.dc.Entity()
+}
+
+func (p *PlayerActor) initPlayer(ctx context.Context, actorCtx actor.Context) error {
+	if p == nil {
+		return errors.New("player is nil")
+	}
+	player := p.Entity()
+
+	var needFlush bool
+	if player.Profile() == nil {
+		needFlush = player.SetProfile(p.buildInitialProfile())
+	}
+
+	if player.Resource() == nil {
+		needFlush = player.SetResource(p.buildInitialResource())
+	}
+
+	if player.Attribute() == nil {
+		needFlush = player.SetAttribute(p.buildInitialAttribute())
+	}
+
+	if needFlush {
+		_ = p.dc.FlushSync(context.TODO())
+	}
+
+	// todo 可以在第一次打开地图时获取位置
+	future := actorCtx.RequestFuture(
+		p.worldPID,
+		messages.HWCreateCity{
+			WorldBaseMessage: messages.WorldBaseMessage{
+				PlayerId: int(*p.PlayerId),
+				WorldId:  0,
+			},
+			NickName: player.Profile().NickName(),
+		},
+		5*time.Second,
+	)
+	result, err := future.Result()
+	if err != nil {
+		return err
+	}
+
+	if WHPosition, ok := result.(messages.WHCreateCity); ok {
+		actorCtx.Logger().Info("position", "x", WHPosition.X, "y", WHPosition.Y)
+	} else {
+		return entity.ErrCreateCity
+	}
+
+	return nil
+}
+
+func (p *PlayerActor) acceptSeq(seq int64) error {
+	if seq <= 0 {
+		return errors.New("invalid seq")
+	}
+	if _, ok := p.seenSeq[seq]; ok {
+		return errors.New("duplicate seq")
+	}
+	p.seenSeq[seq] = struct{}{}
+	p.seenSeqOrder = append(p.seenSeqOrder, seq)
+
+	if len(p.seenSeqOrder) > seqWindowSize {
+		evict := p.seenSeqOrder[0]
+		p.seenSeqOrder = p.seenSeqOrder[1:]
+		delete(p.seenSeq, evict)
+	}
+	return nil
+}
+
+func (p *PlayerActor) buildInitialProfile() entity.RoleState {
+	return entity.RoleState{
+		Headid:    0,
+		Sex:       0,
+		NickName:  "momo",
+		CreatedAt: time.Now(),
+	}
+}
+
+func (p *PlayerActor) buildInitialResource() entity.ResourceState {
+	config := basic.BasicConf.Role
+
+	return entity.ResourceState{
+		Wood:   config.Wood,
+		Iron:   config.Iron,
+		Stone:  config.Stone,
+		Grain:  config.Grain,
+		Gold:   config.Gold,
+		Decree: config.Decree,
+	}
+}
+
+func (p *PlayerActor) buildInitialAttribute() entity.RoleAttributeState {
+	return entity.RoleAttributeState{
+		ParentId: 0,
+	}
 }
