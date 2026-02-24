@@ -15,7 +15,7 @@ type RoleAttribute struct {
 
 // entity
 type PosTag struct {
-	X    int
-	Y    int
-	Name string
+	x    int
+	y    int
+	name string
 }

@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+import "player/arm.proto";
+import "player/general.proto";
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message WarReport {
+  int32 id = 1;
+  int32 attack_rid = 2; // 进攻方
+  int32 defense_rid = 3; // 防守方
+
+  Army beg_attack_army = 4; // 战斗开始时，进攻方的兵力
+  Army beg_defense_army = 5; // 战斗开始时，防守方兵力
+  Army end_attack_army = 6; // 战斗结束后，进攻方剩余兵力
+  Army end_defense_army = 7; // 战斗结束后，防守方剩余兵力
+
+  General beg_attack_general = 8; // 开始时进攻方武将状态
+  General beg_defense_general = 9; // 开始时防守方武将状态
+  General end_attack_general = 10; // 结束后进攻方武将状态
+  General end_defense_general = 11; // 结束后防守方武将状态
+
+  int32 result = 12;          // 0失败，1打平，2胜利
+  string rounds = 13;         // 回合数据（JSON或自定义格式）
+
+  bool attack_is_read = 14;
+  bool defense_is_read = 15;
+
+  int32 destroy_durable = 16;
+  int32 occupy = 17;
+
+  int32 x = 18;
+  int32 y = 19;
+
+  int64 ctime = 20;
+}

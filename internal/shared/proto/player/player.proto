@@ -11,6 +11,7 @@ import "player/general.proto";
 import "player/city.proto";
 import "player/map.proto";
 import "player/pos_tag.proto";
+import "player/war_report.proto";
 
 option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
 
@@ -28,6 +29,7 @@ message PlayerRequest {
     PosTagListRequest posTagListRequest = 14;
     MyGeneralsRequest myGeneralsRequest = 15;
     ArmyListRequest armyListRequest = 16;
+    WarReportRequest WarReportRequest = 17;
   }
 
   string trace_id = 100;
@@ -44,6 +46,7 @@ message PlayerResponse {
     PosTagListResponse posTagListResponse = 14;
     MyGeneralsResponse myGeneralsResponse = 15;
     ArmyListResponse armyListResponse = 16;
+    WarReportResponse WarReportResponse = 17;
   }
 }
 
@@ -116,4 +119,11 @@ message ArmyListRequest {
 message ArmyListResponse {
   int32 CityId = 1;
   repeated Army armies = 2;
+}
+
+message WarReportRequest {
+}
+
+message WarReportResponse {
+  repeated WarReport warReports = 1;
 }

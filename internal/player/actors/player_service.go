@@ -340,3 +340,30 @@ func ToPBArmy(a entity.ArmyState) *playerpb.Army {
 		End:      a.EndTime.Unix(),
 	}
 }
+
+func ToPBWarReport(v entity.WarReportState) *playerpb.WarReport {
+	// CTime 在实体中是 int，当前直接透传到 proto int64；
+	// 若后续统一时间单位（秒/毫秒）规范，这里再一起收敛。
+	return &playerpb.WarReport{
+		Id:                int32(v.Id),
+		AttackRid:         int32(v.Attacker),
+		DefenseRid:        int32(v.Defender),
+		BegAttackArmy:     ToPBArmy(v.BegAttackArmy),
+		BegDefenseArmy:    ToPBArmy(v.BegDefenseArmy),
+		EndAttackArmy:     ToPBArmy(v.EndAttackArmy),
+		EndDefenseArmy:    ToPBArmy(v.EndDefenseArmy),
+		BegAttackGeneral:  ToPBGeneral(v.BegAttackGeneral),
+		BegDefenseGeneral: ToPBGeneral(v.BegDefenseGeneral),
+		EndAttackGeneral:  ToPBGeneral(v.EndAttackGeneral),
+		EndDefenseGeneral: ToPBGeneral(v.EndDefenseGeneral),
+		Result:            int32(v.Result),
+		Rounds:            v.Rounds,
+		AttackIsRead:      v.AttackIsRead,
+		DefenseIsRead:     v.DefenseIsRead,
+		DestroyDurable:    int32(v.DestroyDurable),
+		Occupy:            int32(v.Occupy),
+		X:                 int32(v.X),
+		Y:                 int32(v.Y),
+		Ctime:             int64(v.CTime),
+	}
+}

@@ -8,17 +8,18 @@ import (
 )
 
 const (
-	FieldPlayer_playerID  Field = "playerID"
-	FieldPlayer_worldID   Field = "worldID"
-	FieldPlayer_profile   Field = "profile"
-	FieldPlayer_resource  Field = "resource"
-	FieldPlayer_attribute Field = "attribute"
-	FieldPlayer_x         Field = "x"
-	FieldPlayer_y         Field = "y"
-	FieldPlayer_buildings Field = "buildings"
-	FieldPlayer_armies    Field = "armies"
-	FieldPlayer_generals  Field = "generals"
-	FieldPlayer_facility  Field = "facility"
+	FieldPlayer_playerID   Field = "playerID"
+	FieldPlayer_worldID    Field = "worldID"
+	FieldPlayer_profile    Field = "profile"
+	FieldPlayer_resource   Field = "resource"
+	FieldPlayer_attribute  Field = "attribute"
+	FieldPlayer_x          Field = "x"
+	FieldPlayer_y          Field = "y"
+	FieldPlayer_buildings  Field = "buildings"
+	FieldPlayer_armies     Field = "armies"
+	FieldPlayer_generals   Field = "generals"
+	FieldPlayer_facility   Field = "facility"
+	FieldPlayer_warReports Field = "warReports"
 )
 
 type PlayerEntityCollectionChange struct {
@@ -42,9 +43,10 @@ type PlayerEntityCollectionChangeInner struct {
 }
 
 type PlayerEntityTrace struct {
-	dirty   bool
-	trace   map[Field]bool
-	changes map[Field]*PlayerEntityCollectionChangeInner
+	dirty                 bool
+	trace                 map[Field]bool
+	changes               map[Field]*PlayerEntityCollectionChangeInner
+	childDirty_warReports map[int]struct{}
 }
 
 func (t *PlayerEntityTrace) mark(f Field) {
@@ -151,40 +153,70 @@ func (t *PlayerEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 	ch.sliceSwapRemoveAt = append(ch.sliceSwapRemoveAt, index)
 }
 
+func (t *PlayerEntityTrace) markChildDirty_warReports(f Field, key int) {
+	t.mark(f)
+	if t.childDirty_warReports == nil {
+		t.childDirty_warReports = make(map[int]struct{}, 8)
+	}
+	t.childDirty_warReports[key] = struct{}{}
+}
+
+func (t *PlayerEntityTrace) clearChildDirty_warReports(key int) {
+	if t.childDirty_warReports == nil {
+		return
+	}
+	delete(t.childDirty_warReports, key)
+}
+
+func (t *PlayerEntityTrace) childDirtyKeys_warReports() []int {
+	if len(t.childDirty_warReports) == 0 {
+		return nil
+	}
+	out := make([]int, 0, len(t.childDirty_warReports))
+	for key := range t.childDirty_warReports {
+		out = append(out, key)
+	}
+	sort.Slice(out, func(i, j int) bool { return fmt.Sprint(out[i]) < fmt.Sprint(out[j]) })
+	return out
+}
+
 type PlayerState struct {
-	PlayerID  PlayerID
-	WorldID   WorldID
-	Profile   RoleState
-	Resource  ResourceState
-	Attribute RoleAttributeState
-	X         int
-	Y         int
-	Buildings []BuildingState
-	Armies    map[CityID][]ArmyState
-	Generals  []GeneralState
-	Facility  []FacilityState
+	PlayerID   PlayerID
+	WorldID    WorldID
+	Profile    RoleState
+	Resource   ResourceState
+	Attribute  RoleAttributeState
+	X          int
+	Y          int
+	Buildings  []BuildingState
+	Armies     map[CityID][]ArmyState
+	Generals   []GeneralState
+	Facility   []FacilityState
+	WarReports map[int]WarReportState
 }
 
 type PlayerEntitySnap struct {
-	Version     uint64
-	State       PlayerState
-	DirtyFields []Field
-	Changes     map[Field]PlayerEntityCollectionChange
+	Version             uint64
+	State               PlayerState
+	DirtyFields         []Field
+	Changes             map[Field]PlayerEntityCollectionChange
+	WarReportsDirtyKeys []int
 }
 
 type PlayerEntity struct {
-	playerID  PlayerID
-	worldID   WorldID
-	profile   *RoleEntity
-	resource  *ResourceEntity
-	attribute *RoleAttributeEntity
-	x         int
-	y         int
-	buildings []*BuildingEntity
-	armies    map[CityID][]*ArmyEntity
-	generals  []*GeneralEntity
-	facility  []*FacilityEntity
-	_dt       PlayerEntityTrace
+	playerID   PlayerID
+	worldID    WorldID
+	profile    *RoleEntity
+	resource   *ResourceEntity
+	attribute  *RoleAttributeEntity
+	x          int
+	y          int
+	buildings  []*BuildingEntity
+	armies     map[CityID][]*ArmyEntity
+	generals   []*GeneralEntity
+	facility   []*FacilityEntity
+	warReports map[int]*WarReportEntity
+	_dt        PlayerEntityTrace
 }
 
 func hydrateSlice_buildings(in []BuildingState) []*BuildingEntity {
@@ -408,19 +440,65 @@ func slicesEqual_facility(a, b []FacilityState) bool {
 	return true
 }
 
+func copyMap_warReports(in map[int]WarReportState) map[int]WarReportState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]WarReportState, len(in))
+	for k, v := range in {
+		out[k] = v
+	}
+	return out
+}
+
+func mapsEqual_warReports(a, b map[int]WarReportState) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	return false
+}
+
+func hydrateMap_warReports(in map[int]WarReportState) map[int]*WarReportEntity {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]*WarReportEntity, len(in))
+	for k, v := range in {
+		out[k] = HydrateWarReportEntity(v)
+	}
+	return out
+}
+
+func snapshotMap_warReports(in map[int]*WarReportEntity) map[int]WarReportState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]WarReportState, len(in))
+	for k, v := range in {
+		if v == nil {
+			var z WarReportState
+			out[k] = z
+			continue
+		}
+		out[k] = v.Save()
+	}
+	return out
+}
+
 func HydratePlayerEntity(s PlayerState) *PlayerEntity {
 	return &PlayerEntity{
-		playerID:  s.PlayerID,
-		worldID:   s.WorldID,
-		profile:   HydrateRoleEntity(s.Profile),
-		resource:  HydrateResourceEntity(s.Resource),
-		attribute: HydrateRoleAttributeEntity(s.Attribute),
-		x:         s.X,
-		y:         s.Y,
-		buildings: hydrateSlice_buildings(s.Buildings),
-		armies:    hydrateMap_armies(s.Armies),
-		generals:  hydrateSlice_generals(s.Generals),
-		facility:  hydrateSlice_facility(s.Facility),
+		playerID:   s.PlayerID,
+		worldID:    s.WorldID,
+		profile:    HydrateRoleEntity(s.Profile),
+		resource:   HydrateResourceEntity(s.Resource),
+		attribute:  HydrateRoleAttributeEntity(s.Attribute),
+		x:          s.X,
+		y:          s.Y,
+		buildings:  hydrateSlice_buildings(s.Buildings),
+		armies:     hydrateMap_armies(s.Armies),
+		generals:   hydrateSlice_generals(s.Generals),
+		facility:   hydrateSlice_facility(s.Facility),
+		warReports: hydrateMap_warReports(s.WarReports),
 	}
 }
 
@@ -593,6 +671,7 @@ func (e *PlayerEntity) Save() PlayerState {
 	s.Armies = snapshotMap_armies(e.armies)
 	s.Generals = snapshotSlice_generals(e.generals)
 	s.Facility = snapshotSlice_facility(e.facility)
+	s.WarReports = snapshotMap_warReports(e.warReports)
 	return s
 }
 
@@ -603,10 +682,11 @@ func NewPlayerEntitySnap(version uint64, e *PlayerEntity) *PlayerEntitySnap {
 	dirtyFields := e.DirtyFields()
 	changes := e.DirtyChanges()
 	return &PlayerEntitySnap{
-		Version:     version,
-		State:       e.Save(),
-		DirtyFields: dirtyFields,
-		Changes:     changes,
+		Version:             version,
+		State:               e.Save(),
+		DirtyFields:         dirtyFields,
+		Changes:             changes,
+		WarReportsDirtyKeys: e._dt.childDirtyKeys_warReports(),
 	}
 }
 
@@ -623,10 +703,12 @@ func (s *PlayerEntitySnap) Clone() *PlayerEntitySnap {
 			out.Changes[f] = clonePlayerEntityCollectionChange(ch)
 		}
 	}
+	out.WarReportsDirtyKeys = append([]int(nil), s.WarReportsDirtyKeys...)
 	out.State.Buildings = append([]BuildingState(nil), s.State.Buildings...)
 	out.State.Armies = copyMap_armies(s.State.Armies)
 	out.State.Generals = append([]GeneralState(nil), s.State.Generals...)
 	out.State.Facility = append([]FacilityState(nil), s.State.Facility...)
+	out.State.WarReports = copyMap_warReports(s.State.WarReports)
 	return out
 }
 
@@ -1444,5 +1526,155 @@ func (e *PlayerEntity) ClearFacility() bool {
 	}
 	e.facility = nil
 	e._dt.markFullReplace(FieldPlayer_facility)
+	return true
+}
+
+func (e *PlayerEntity) GetWarReports(key int) (WarReportState, bool) {
+	var z WarReportState
+	if e == nil || e.warReports == nil {
+		return z, false
+	}
+	v, ok := e.warReports[key]
+	if !ok || v == nil {
+		return z, false
+	}
+	return v.Save(), true
+}
+
+func (e *PlayerEntity) LenWarReports() int {
+	if e == nil || e.warReports == nil {
+		return 0
+	}
+	return len(e.warReports)
+}
+
+func (e *PlayerEntity) ForEachWarReports(fn func(key int, value WarReportState)) {
+	if e == nil || e.warReports == nil || fn == nil {
+		return
+	}
+	for k, v := range e.warReports {
+		if v == nil {
+			continue
+		}
+		fn(k, v.Save())
+	}
+}
+
+func (e *PlayerEntity) RangeWarReports(fn func(key int, value WarReportState) bool) {
+	if e == nil || e.warReports == nil || fn == nil {
+		return
+	}
+	for k, v := range e.warReports {
+		if v == nil {
+			continue
+		}
+		if !fn(k, v.Save()) {
+			return
+		}
+	}
+}
+
+func (e *PlayerEntity) DirtyWarReportsKeys() []int {
+	if e == nil {
+		return nil
+	}
+	return e._dt.childDirtyKeys_warReports()
+}
+
+func (e *PlayerEntity) ReplaceWarReports(v map[int]WarReportState) bool {
+	if e == nil {
+		return false
+	}
+	if mapsEqual_warReports(snapshotMap_warReports(e.warReports), v) {
+		return false
+	}
+	e.warReports = hydrateMap_warReports(v)
+	e._dt.markFullReplace(FieldPlayer_warReports)
+	return true
+}
+
+func (e *PlayerEntity) PutWarReports(key int, value WarReportState) bool {
+	if e == nil {
+		return false
+	}
+	if e.warReports == nil {
+		e.warReports = make(map[int]*WarReportEntity)
+	}
+	e.warReports[key] = HydrateWarReportEntity(value)
+	e._dt.markMapSet(FieldPlayer_warReports, fmt.Sprint(key), value)
+	e._dt.markChildDirty_warReports(FieldPlayer_warReports, key)
+	return true
+}
+
+func (e *PlayerEntity) PutWarReportsMany(entries map[int]WarReportState) bool {
+	if e == nil || len(entries) == 0 {
+		return false
+	}
+	if e.warReports == nil {
+		e.warReports = make(map[int]*WarReportEntity, len(entries))
+	}
+	changed := false
+	for k, v := range entries {
+		e.warReports[k] = HydrateWarReportEntity(v)
+		e._dt.markMapSet(FieldPlayer_warReports, fmt.Sprint(k), v)
+		e._dt.markChildDirty_warReports(FieldPlayer_warReports, k)
+		changed = true
+	}
+	return changed
+}
+
+func (e *PlayerEntity) UpdateWarReports(key int, fn func(value *WarReportEntity)) bool {
+	if e == nil || fn == nil || e.warReports == nil {
+		return false
+	}
+	v, ok := e.warReports[key]
+	if !ok || v == nil {
+		return false
+	}
+	fn(v)
+	e._dt.markChildDirty_warReports(FieldPlayer_warReports, key)
+	return true
+}
+
+func (e *PlayerEntity) DelWarReports(key int) bool {
+	if e == nil || e.warReports == nil {
+		return false
+	}
+	if _, ok := e.warReports[key]; !ok {
+		return false
+	}
+	delete(e.warReports, key)
+	e._dt.markMapDelete(FieldPlayer_warReports, fmt.Sprint(key))
+	e._dt.clearChildDirty_warReports(key)
+	return true
+}
+
+func (e *PlayerEntity) DelWarReportsMany(keys []int) bool {
+	if e == nil || e.warReports == nil || len(keys) == 0 {
+		return false
+	}
+	changed := false
+	for _, key := range keys {
+		if _, ok := e.warReports[key]; !ok {
+			continue
+		}
+		delete(e.warReports, key)
+		e._dt.markMapDelete(FieldPlayer_warReports, fmt.Sprint(key))
+		e._dt.clearChildDirty_warReports(key)
+		changed = true
+	}
+	return changed
+}
+
+func (e *PlayerEntity) ClearWarReports() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.warReports) == 0 {
+		return false
+	}
+	e.warReports = nil
+	e._dt.markFullReplace(FieldPlayer_warReports)
+	e._dt.childDirty_warReports = nil
 	return true
 }

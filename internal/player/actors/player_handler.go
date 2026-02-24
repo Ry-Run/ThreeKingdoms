@@ -223,3 +223,14 @@ func (h *PlayerHandler) HandleArmyListRequest(ctx actor.Context, p *PlayerActor,
 		Armies: pbArmies,
 	})
 }
+
+func (h *PlayerHandler) HandleWarReportRequest(ctx actor.Context, p *PlayerActor, request *playerpb.WarReportRequest) {
+	player := p.Entity()
+	warReports := make([]*playerpb.WarReport, 0, player.LenWarReports())
+	player.ForEachWarReports(func(i int, v entity.WarReportState) {
+		warReports = append(warReports, ToPBWarReport(v))
+	})
+	ctx.Respond(&playerpb.WarReportResponse{
+		WarReports: warReports,
+	})
+}

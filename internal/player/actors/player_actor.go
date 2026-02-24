@@ -4,7 +4,6 @@ import (
 	"ThreeKingdoms/internal/player/dc"
 	"ThreeKingdoms/internal/player/entity"
 	"ThreeKingdoms/internal/player/service/port"
-	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"context"
 	"errors"

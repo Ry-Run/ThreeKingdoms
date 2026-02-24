@@ -6,17 +6,18 @@ import (
 )
 
 type PlayerDoc struct {
-	PlayerID  PlayerID             `bson:"player_id"`
-	WorldID   WorldID              `bson:"world_id"`
-	Profile   RoleDoc              `bson:"profile"`
-	Resource  ResourceDoc          `bson:"resource"`
-	Attribute RoleAttributeDoc     `bson:"attribute"`
-	X         int                  `bson:"x"`
-	Y         int                  `bson:"y"`
-	Buildings []BuildingDoc        `bson:"buildings"`
-	Armies    map[CityID][]ArmyDoc `bson:"armies"`
-	Generals  []GeneralDoc         `bson:"generals"`
-	Facility  []FacilityDoc        `bson:"facility"`
+	PlayerID   PlayerID             `bson:"player_id"`
+	WorldID    WorldID              `bson:"world_id"`
+	Profile    RoleDoc              `bson:"profile"`
+	Resource   ResourceDoc          `bson:"resource"`
+	Attribute  RoleAttributeDoc     `bson:"attribute"`
+	X          int                  `bson:"x"`
+	Y          int                  `bson:"y"`
+	Buildings  []BuildingDoc        `bson:"buildings"`
+	Armies     map[CityID][]ArmyDoc `bson:"armies"`
+	Generals   []GeneralDoc         `bson:"generals"`
+	Facility   []FacilityDoc        `bson:"facility"`
+	WarReports map[int]WarReportDoc `bson:"war_reports"`
 }
 
 func toDocSlice_buildings(in []entity.BuildingState) []BuildingDoc {
@@ -129,36 +130,60 @@ func toStateSlice_facility(in []FacilityDoc) []entity.FacilityState {
 	return out
 }
 
+func toDocMap_warReports(in map[int]entity.WarReportState) map[int]WarReportDoc {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]WarReportDoc, len(in))
+	for k, v := range in {
+		out[k] = WarReportStateToDoc(v)
+	}
+	return out
+}
+
+func toStateMap_warReports(in map[int]WarReportDoc) map[int]entity.WarReportState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]entity.WarReportState, len(in))
+	for k, v := range in {
+		out[k] = WarReportDocToState(v)
+	}
+	return out
+}
+
 func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 	state := entity.HydratePlayerEntity(s).Save()
 	return PlayerDoc{
-		PlayerID:  state.PlayerID,
-		WorldID:   state.WorldID,
-		Profile:   RoleStateToDoc(state.Profile),
-		Resource:  ResourceStateToDoc(state.Resource),
-		Attribute: RoleAttributeStateToDoc(state.Attribute),
-		X:         state.X,
-		Y:         state.Y,
-		Buildings: toDocSlice_buildings(state.Buildings),
-		Armies:    toDoc_armies(state.Armies),
-		Generals:  toDocSlice_generals(state.Generals),
-		Facility:  toDocSlice_facility(state.Facility),
+		PlayerID:   state.PlayerID,
+		WorldID:    state.WorldID,
+		Profile:    RoleStateToDoc(state.Profile),
+		Resource:   ResourceStateToDoc(state.Resource),
+		Attribute:  RoleAttributeStateToDoc(state.Attribute),
+		X:          state.X,
+		Y:          state.Y,
+		Buildings:  toDocSlice_buildings(state.Buildings),
+		Armies:     toDoc_armies(state.Armies),
+		Generals:   toDocSlice_generals(state.Generals),
+		Facility:   toDocSlice_facility(state.Facility),
+		WarReports: toDocMap_warReports(state.WarReports),
 	}
 }
 
 func PlayerDocToState(d PlayerDoc) entity.PlayerState {
 	state := entity.PlayerState{
-		PlayerID:  d.PlayerID,
-		WorldID:   d.WorldID,
-		Profile:   RoleDocToState(d.Profile),
-		Resource:  ResourceDocToState(d.Resource),
-		Attribute: RoleAttributeDocToState(d.Attribute),
-		X:         d.X,
-		Y:         d.Y,
-		Buildings: toStateSlice_buildings(d.Buildings),
-		Armies:    toState_armies(d.Armies),
-		Generals:  toStateSlice_generals(d.Generals),
-		Facility:  toStateSlice_facility(d.Facility),
+		PlayerID:   d.PlayerID,
+		WorldID:    d.WorldID,
+		Profile:    RoleDocToState(d.Profile),
+		Resource:   ResourceDocToState(d.Resource),
+		Attribute:  RoleAttributeDocToState(d.Attribute),
+		X:          d.X,
+		Y:          d.Y,
+		Buildings:  toStateSlice_buildings(d.Buildings),
+		Armies:     toState_armies(d.Armies),
+		Generals:   toStateSlice_generals(d.Generals),
+		Facility:   toStateSlice_facility(d.Facility),
+		WarReports: toStateMap_warReports(d.WarReports),
 	}
 	return entity.HydratePlayerEntity(state).Save()
 }

@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	FieldPosTag_X    Field = "X"
-	FieldPosTag_Y    Field = "Y"
-	FieldPosTag_Name Field = "Name"
+	FieldPosTag_x    Field = "x"
+	FieldPosTag_y    Field = "y"
+	FieldPosTag_name Field = "name"
 )
 
 type PosTagEntityCollectionChange struct {
@@ -155,17 +155,17 @@ type PosTagEntitySnap struct {
 }
 
 type PosTagEntity struct {
-	X    int
-	Y    int
-	Name string
+	x    int
+	y    int
+	name string
 	_dt  PosTagEntityTrace
 }
 
 func HydratePosTagEntity(s PosTagState) *PosTagEntity {
 	return &PosTagEntity{
-		X:    s.X,
-		Y:    s.Y,
-		Name: s.Name,
+		x:    s.X,
+		y:    s.Y,
+		name: s.Name,
 	}
 }
 
@@ -285,9 +285,9 @@ func (e *PosTagEntity) Save() PosTagState {
 	if e == nil {
 		return s
 	}
-	s.X = e.X
-	s.Y = e.Y
-	s.Name = e.Name
+	s.X = e.x
+	s.Y = e.y
+	s.Name = e.name
 	return s
 }
 
@@ -326,18 +326,18 @@ func (e *PosTagEntity) X() int {
 		var z int
 		return z
 	}
-	return e.X
+	return e.x
 }
 
 func (e *PosTagEntity) SetX(v int) bool {
 	if e == nil {
 		return false
 	}
-	if e.X == v {
+	if e.x == v {
 		return false
 	}
-	e.X = v
-	e._dt.mark(FieldPosTag_X)
+	e.x = v
+	e._dt.mark(FieldPosTag_x)
 	return true
 }
 
@@ -346,18 +346,18 @@ func (e *PosTagEntity) Y() int {
 		var z int
 		return z
 	}
-	return e.Y
+	return e.y
 }
 
 func (e *PosTagEntity) SetY(v int) bool {
 	if e == nil {
 		return false
 	}
-	if e.Y == v {
+	if e.y == v {
 		return false
 	}
-	e.Y = v
-	e._dt.mark(FieldPosTag_Y)
+	e.y = v
+	e._dt.mark(FieldPosTag_y)
 	return true
 }
 
@@ -366,17 +366,17 @@ func (e *PosTagEntity) Name() string {
 		var z string
 		return z
 	}
-	return e.Name
+	return e.name
 }
 
 func (e *PosTagEntity) SetName(v string) bool {
 	if e == nil {
 		return false
 	}
-	if e.Name == v {
+	if e.name == v {
 		return false
 	}
-	e.Name = v
-	e._dt.mark(FieldPosTag_Name)
+	e.name = v
+	e._dt.mark(FieldPosTag_name)
 	return true
 }
