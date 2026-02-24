@@ -10,6 +10,7 @@ import (
 	"time"
 
 	protoactor "github.com/asynkron/protoactor-go/actor"
+	"go.uber.org/zap"
 )
 
 const defaultAskTimeout = 3 * time.Second
@@ -38,13 +39,15 @@ func (e *RuntimeError) Unwrap() error {
 }
 
 type Runtime struct {
+	logger  *zap.Logger
 	system  *protoactor.ActorSystem
 	root    *protoactor.RootContext
 	manager *protoactor.PID
 	timeout time.Duration
+	ownSys  bool
 }
 
-func NewRuntime(repo port.PlayerRepository, askTimeout time.Duration) *Runtime {
+func NewRuntime(logger *zap.Logger, repo port.PlayerRepository, worldAdd string, askTimeout time.Duration) *Runtime {
 	if askTimeout <= 0 {
 		askTimeout = defaultAskTimeout
 	}
@@ -64,13 +67,19 @@ func NewRuntime(repo port.PlayerRepository, askTimeout time.Duration) *Runtime {
 	*/
 	root := system.Root
 	/**
+	创建一个远程 WorldActor
+	组装远端 PID：Address=服务器 ip:port，Id=SpawnNamed 的名字
+	*/
+	worldPID := protoactor.NewPID(worldAdd, "world")
+
+	/**
 	用 root context 创建（spawn） 一个 actor，返回它的 PID。
 	PropsFromProducer(...) 表示：用一个“工厂函数”来生成 actor 实例。
 	这样每次需要创建 actor 时，框架会调用这个 producer 来 new 一个出来。
 	**/
 	managerProps := protoactor.PropsFromProducer(func() protoactor.Actor {
 		// 具体返回的 actor 实例
-		return actors.NewManagerActor(repo)
+		return actors.NewManagerActor(repo, worldPID)
 	})
 	/**
 	配置这个 actor 的 Props（行为+邮箱+中间件等）。
@@ -80,10 +89,45 @@ func NewRuntime(repo port.PlayerRepository, askTimeout time.Duration) *Runtime {
 	manager := root.Spawn(managerProps)
 
 	return &Runtime{
+		logger:  logger,
 		system:  system,
 		root:    root,
 		manager: manager,
 		timeout: askTimeout,
+		ownSys:  true,
+	}
+}
+
+// NewRuntimeWithWorldPID 使用共享 ActorSystem + 本地 world actor PID 初始化 player runtime，
+// player -> world 将走进程内消息（可直接发送普通 Go 结构体消息）。
+func NewRuntimeWithWorldPID(
+	logger *zap.Logger,
+	system *protoactor.ActorSystem,
+	repo port.PlayerRepository,
+	worldPID *protoactor.PID,
+	askTimeout time.Duration,
+) *Runtime {
+	if askTimeout <= 0 {
+		askTimeout = defaultAskTimeout
+	}
+	ownSys := false
+	if system == nil {
+		system = protoactor.NewActorSystem()
+		ownSys = true
+	}
+	root := system.Root
+	managerProps := protoactor.PropsFromProducer(func() protoactor.Actor {
+		return actors.NewManagerActor(repo, worldPID)
+	})
+	manager := root.Spawn(managerProps)
+
+	return &Runtime{
+		logger:  logger,
+		system:  system,
+		root:    root,
+		manager: manager,
+		timeout: askTimeout,
+		ownSys:  ownSys,
 	}
 }
 
@@ -94,7 +138,7 @@ func (r *Runtime) Shutdown() {
 	if r.root != nil && r.manager != nil {
 		r.root.Stop(r.manager)
 	}
-	if r.system != nil {
+	if r.ownSys && r.system != nil {
 		r.system.Shutdown()
 	}
 }

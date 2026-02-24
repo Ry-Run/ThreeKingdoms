@@ -2,6 +2,7 @@ package handler
 
 import (
 	"ThreeKingdoms/internal/gate/app"
+	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/session"
 )
 
@@ -10,10 +11,10 @@ type Gate struct {
 	GateService *app.GateService
 }
 
-func NewGate(s session.Manager, accountServiceClient app.AccountServiceClient) *Gate {
+func NewGate(s session.Manager, accountServiceClient app.AccountServiceClient, playerServiceClient playerpb.PlayerServiceClient) *Gate {
 	gate := Gate{
 		Session: s,
 	}
-	gate.GateService = app.NewGateService(accountServiceClient)
+	gate.GateService = app.NewGateService(accountServiceClient, playerServiceClient)
 	return &gate
 }

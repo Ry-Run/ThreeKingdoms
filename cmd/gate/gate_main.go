@@ -53,7 +53,21 @@ func main() {
 		_ = accountConn.Close()
 	}()
 
-	accountModule := interfaces.New(sessMgr, accountClient)
+	playerServerHost := serverconfig.Conf.PlayerServer.Host
+	if playerServerHost == "" {
+		playerServerHost = "0.0.0.0"
+	}
+	playerServerAddr := fmt.Sprintf("%s:%d", playerServerHost, serverconfig.Conf.PlayerServer.Port)
+
+	playerConn, playerClient, err := grpc.DialPlayerService(playerServerAddr)
+	if err != nil {
+		logs.Fatal("dial player service failed", zap.Error(err))
+	}
+	defer func() {
+		_ = playerConn.Close()
+	}()
+
+	accountModule := interfaces.New(sessMgr, accountClient, playerClient)
 	wsModules := []ws.Registrar{
 		accountModule,
 	}

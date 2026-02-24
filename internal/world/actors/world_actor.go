@@ -47,7 +47,6 @@ func NewWorldActor(worldID WorldID, repo port.WorldRepository) *WorldActor {
 func (w *WorldActor) Receive(ctx actor.Context) {
 	switch msg := ctx.Message().(type) {
 	case *actor.Started:
-		w.state = Init
 		w.init(ctx)
 		return
 	case *actor.Stopping:
@@ -96,6 +95,7 @@ func (w *WorldActor) init(actorCtx actor.Context) {
 	if w.state == Init {
 		return
 	}
+	w.state = Init
 
 	e, err := w.dc.Load(context.TODO(), *w.worldID)
 	if err != nil {

@@ -48,7 +48,7 @@ type flushTick struct{}
 
 func (flushTick) NotInfluenceReceiveTimeout() {}
 
-func NewPlayerActor(playerID PlayerID, worldId WorldID, repo port.PlayerRepository) *PlayerActor {
+func NewPlayerActor(playerID PlayerID, worldId WorldID, repo port.PlayerRepository, worldPID *actor.PID) *PlayerActor {
 	return &PlayerActor{
 		state:      None,
 		PlayerId:   &playerID,
@@ -56,6 +56,7 @@ func NewPlayerActor(playerID PlayerID, worldId WorldID, repo port.PlayerReposito
 		dc:         dc.NewPlayerDC(repo),
 		dispatcher: NewDispatcher(),
 		seenSeq:    make(map[int64]struct{}, seqWindowSize),
+		worldPID:   worldPID,
 	}
 }
 

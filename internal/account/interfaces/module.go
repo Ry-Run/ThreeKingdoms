@@ -19,7 +19,6 @@ type Module struct {
 	pwdEncrypt func(pwd string, passcode string) string
 	Account    *handler.Account
 	randSeq    func(n int) string
-	roleRepo   *repo.RoleRepo
 }
 
 func New(db *gorm.DB, l *zap.Logger) *Module {
@@ -30,8 +29,7 @@ func New(db *gorm.DB, l *zap.Logger) *Module {
 		llRepo:     repo.NewLoginLastRepo(db),
 		pwdEncrypt: security.PwdEncrypt,
 		randSeq:    utils.RandSeq,
-		roleRepo:   repo.NewRoleRepo(db),
 	}
-	m.Account = handler.NewAccount(m.userRepo, m.pwdEncrypt, m.log, m.lhRepo, m.llRepo, m.randSeq, m.roleRepo)
+	m.Account = handler.NewAccount(m.userRepo, m.pwdEncrypt, m.log, m.lhRepo, m.llRepo, m.randSeq)
 	return &m
 }

@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package three_kingdoms.account;
 
-import "account/role.proto";
 import "common/common.proto";
 
 // Go 包路径指向生成目录（internal/shared/gen/...），由 internal/scripts/gen-proto.sh 生成。
@@ -16,8 +15,6 @@ service AccountService {
   // 注册
   rpc Register(RegisterRequest) returns (RegisterReply);
 
-  // 进入游戏服
-  rpc EnterServer(EnterServerRequest) returns (EnterServerReply);
 }
 
 message LoginRequest {
@@ -45,18 +42,4 @@ message RegisterRequest {
 
 message RegisterReply {
   common.BizResult result = 1;
-}
-
-message EnterServerRequest {
-  int32 uid = 1;
-}
-
-
-message EnterServerReply {
-  common.BizResult result = 1;
-
-  Role role = 2;
-  Resource resource = 3;
-  int64 time = 4;
-  string token = 5;
 }

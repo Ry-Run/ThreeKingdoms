@@ -16,17 +16,15 @@ type UserService struct {
 	lhRepo       LoginHistoryRepo
 	llRepo       LoginLastRepo
 	randSeq      RandSeq
-	roleRepo     RoleRepo
 }
 
-func NewUserService(userRepo UserRepo, pwdEncrypter PwdEncrypter, loginHistoryRepo LoginHistoryRepo, llRepo LoginLastRepo, randSeq RandSeq, roleRepo RoleRepo) *UserService {
+func NewUserService(userRepo UserRepo, pwdEncrypter PwdEncrypter, loginHistoryRepo LoginHistoryRepo, llRepo LoginLastRepo, randSeq RandSeq) *UserService {
 	return &UserService{
 		userRepo:     userRepo,
 		pwdEncrypter: pwdEncrypter,
 		lhRepo:       loginHistoryRepo,
 		llRepo:       llRepo,
 		randSeq:      randSeq,
-		roleRepo:     roleRepo,
 	}
 }
 
@@ -120,39 +118,6 @@ func (s *UserService) Register(ctx context.Context, req *accountpb.RegisterReque
 	return &accountpb.RegisterReply{
 		Result: ok(),
 	}, nil
-}
-
-func (s *UserService) EnterServer(ctx context.Context, req *accountpb.EnterServerRequest) (*accountpb.EnterServerReply, error) {
-	reply := accountpb.EnterServerReply{}
-	role, err := s.roleRepo.GetRoleByUid(ctx, int(req.Uid))
-
-	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrRoleNotFound):
-			return &accountpb.EnterServerReply{
-				Result: fail(ReasonRoleNotExist),
-			}, nil
-		default:
-			return nil, ErrUnavailable.WithReason(ReasonRoleRepoUnavailable).WithCause(err)
-		}
-	}
-
-	reply.Token, err = security.Award(role.RId)
-	if err != nil {
-		return nil, ErrInternalServer.WithReason(ReasonTokenIssue).WithCause(err)
-	}
-	reply.Result = ok()
-	reply.Time = time.Now().UnixNano() / 1e6
-	reply.Role = &accountpb.Role{
-		Rid:      int32(role.RId),
-		Uid:      int32(role.UId),
-		NickName: role.NickName,
-		Sex:      int32(role.Sex),
-		Balance:  int32(role.Balance),
-		HeadId:   int32(role.HeadId),
-		Profile:  role.Profile,
-	}
-	return &reply, nil
 }
 
 func ok() *commonpb.BizResult {

@@ -4,12 +4,16 @@ import (
 	"ThreeKingdoms/internal/gate/app/model"
 	accountpb "ThreeKingdoms/internal/shared/gen/account"
 	commonpb "ThreeKingdoms/internal/shared/gen/common"
+	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"context"
 )
 
 type GateService struct {
 	accountServiceClient AccountServiceClient
+	playerServiceClient  PlayerServiceClient
 }
+
+const defaultPlayerWorldID int64 = 1
 
 func checkBizResult(result *commonpb.BizResult) error {
 	if result == nil {
@@ -21,9 +25,10 @@ func checkBizResult(result *commonpb.BizResult) error {
 	return nil
 }
 
-func NewGateService(accountServiceClient AccountServiceClient) *GateService {
+func NewGateService(accountServiceClient AccountServiceClient, playerServiceClient PlayerServiceClient) *GateService {
 	return &GateService{
 		accountServiceClient: accountServiceClient,
+		playerServiceClient:  playerServiceClient,
 	}
 }
 
@@ -81,33 +86,35 @@ func (g *GateService) Register(ctx context.Context, registerReqDTO model.Registe
 	return nil
 }
 
-func (g *GateService) EnterServer(ctx context.Context, reqDTO model.EnterServerReq) (*model.EnterServerResp, error) {
-	if g.accountServiceClient == nil {
+func (g *GateService) EnterServer(ctx context.Context, reqDTO model.EnterServerReq, seq int64) (*model.EnterServerResp, error) {
+	if g.playerServiceClient == nil {
 		return nil, ErrUnavailable.WithReason(ReasonUpstreamUnavailable)
 	}
-
-	rpcReq := accountpb.EnterServerRequest{
-		Uid: int32(reqDTO.Uid),
-	}
-
-	rpcResp, err := g.accountServiceClient.EnterServer(ctx, &rpcReq)
+	rpcResp, err := g.callPlayer(ctx, &playerpb.PlayerRequest{
+		PlayerId: int64(reqDTO.Uid),
+		WorldId:  defaultPlayerWorldID,
+		Seq:      seq,
+		Body: &playerpb.PlayerRequest_EnterServerRequest{
+			EnterServerRequest: &playerpb.EnterServerRequest{
+				PlayerId: int32(reqDTO.Uid),
+			},
+		},
+	})
 	if err != nil {
-		return nil, wrapTechErr(err)
-	}
-	if rpcResp == nil {
-		return nil, ErrInternalServer.WithReason(ReasonUpstreamBadResponse)
-	}
-	if err = checkBizResult(rpcResp.Result); err != nil {
 		return nil, err
+	}
+	enterResp := rpcResp.GetEnterServerResponse()
+	if enterResp == nil {
+		return nil, ErrInternalServer.WithReason(ReasonUpstreamBadResponse)
 	}
 
 	resp := &model.EnterServerResp{
-		Time:  rpcResp.Time,
-		Token: rpcResp.Token,
+		Time:  enterResp.Time,
+		Token: enterResp.Token,
 	}
 
-	if rpcResp.Role != nil {
-		role := rpcResp.Role
+	if enterResp.Role != nil {
+		role := enterResp.Role
 		resp.Role = model.Role{
 			RId:      int(role.Rid),
 			UId:      int(role.Uid),
@@ -119,8 +126,8 @@ func (g *GateService) EnterServer(ctx context.Context, reqDTO model.EnterServerR
 		}
 	}
 
-	if rpcResp.Resource != nil {
-		resource := rpcResp.Resource
+	if enterResp.Resource != nil {
+		resource := enterResp.Resource
 		resp.RoleRes = model.Resource{
 			Wood:          int(resource.Wood),
 			Iron:          int(resource.Iron),
@@ -138,4 +145,94 @@ func (g *GateService) EnterServer(ctx context.Context, reqDTO model.EnterServerR
 	}
 
 	return resp, nil
+}
+
+func (g *GateService) CreateRole(ctx context.Context, uid int, req *playerpb.CreateRoleRequest, seq int64) (*playerpb.CreateRoleResponse, error) {
+	if req == nil {
+		return nil, ErrInternalServer.WithReason(ReasonUpstreamBadResponse)
+	}
+	rpcResp, err := g.callPlayer(ctx, &playerpb.PlayerRequest{
+		PlayerId: int64(uid),
+		WorldId:  defaultPlayerWorldID,
+		Seq:      seq,
+		Body: &playerpb.PlayerRequest_CreateRoleRequest{
+			CreateRoleRequest: &playerpb.CreateRoleRequest{
+				PlayerId: int64(uid),
+				NickName: req.NickName,
+				Sex:      req.Sex,
+				Sid:      req.Sid,
+				HeadId:   req.HeadId,
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	body := rpcResp.GetCreateRoleResponse()
+	if body == nil {
+		return nil, ErrInternalServer.WithReason(ReasonUpstreamBadResponse)
+	}
+	return body, nil
+}
+
+func (g *GateService) WorldMap(ctx context.Context, uid int, seq int64) (*playerpb.WorldMapResponse, error) {
+	rpcResp, err := g.callPlayer(ctx, &playerpb.PlayerRequest{
+		PlayerId: int64(uid),
+		WorldId:  defaultPlayerWorldID,
+		Seq:      seq,
+		Body: &playerpb.PlayerRequest_WorldMapRequest{
+			WorldMapRequest: &playerpb.WorldMapRequest{
+				PlayerId: int64(uid),
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	body := rpcResp.GetWorldMapResponse()
+	if body == nil {
+		return nil, ErrInternalServer.WithReason(ReasonUpstreamBadResponse)
+	}
+	return body, nil
+}
+
+func (g *GateService) MyProperty(ctx context.Context, uid int, seq int64) (*playerpb.MyPropertyResponse, error) {
+	rpcResp, err := g.callPlayer(ctx, &playerpb.PlayerRequest{
+		PlayerId: int64(uid),
+		WorldId:  defaultPlayerWorldID,
+		Seq:      seq,
+		Body: &playerpb.PlayerRequest_MyPropertyRequest{
+			MyPropertyRequest: &playerpb.MyPropertyRequest{
+				PlayerId: int32(uid),
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	body := rpcResp.GetMyPropertyResponse()
+	if body == nil {
+		return nil, ErrInternalServer.WithReason(ReasonUpstreamBadResponse)
+	}
+	return body, nil
+}
+
+func (g *GateService) callPlayer(ctx context.Context, req *playerpb.PlayerRequest) (*playerpb.PlayerResponse, error) {
+	if g.playerServiceClient == nil {
+		return nil, ErrUnavailable.WithReason(ReasonUpstreamUnavailable)
+	}
+	if req == nil {
+		return nil, ErrInternalServer.WithReason(ReasonUpstreamBadResponse)
+	}
+	rpcResp, err := g.playerServiceClient.Handle(ctx, req)
+	if err != nil {
+		return nil, wrapTechErr(err)
+	}
+	if rpcResp == nil {
+		return nil, ErrInternalServer.WithReason(ReasonUpstreamBadResponse)
+	}
+	if err = checkBizResult(rpcResp.Result); err != nil {
+		return nil, err
+	}
+	return rpcResp, nil
 }

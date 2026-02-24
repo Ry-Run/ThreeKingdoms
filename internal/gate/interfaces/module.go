@@ -5,6 +5,7 @@ import (
 	"ThreeKingdoms/internal/gate/interfaces/handler/http"
 	ws2 "ThreeKingdoms/internal/gate/interfaces/handler/ws"
 	accountpb "ThreeKingdoms/internal/shared/gen/account"
+	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/session"
 	transporthttp "ThreeKingdoms/internal/shared/transport/http"
 	"ThreeKingdoms/internal/shared/transport/ws"
@@ -17,8 +18,8 @@ type Module struct {
 	httpHandler *http.HttpHandler
 }
 
-func New(s session.Manager, accountClient accountpb.AccountServiceClient) *Module {
-	gate := handler.NewGate(s, accountClient)
+func New(s session.Manager, accountClient accountpb.AccountServiceClient, playerClient playerpb.PlayerServiceClient) *Module {
+	gate := handler.NewGate(s, accountClient, playerClient)
 	return &Module{
 		wsHandler:   ws2.NewWsHandler(gate),
 		httpHandler: http.NewHttpHandler(gate),

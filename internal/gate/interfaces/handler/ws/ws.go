@@ -5,6 +5,7 @@ import (
 	"ThreeKingdoms/internal/gate/app/model"
 	"ThreeKingdoms/internal/gate/interfaces/handler"
 	"ThreeKingdoms/internal/gate/interfaces/handler/ws/dto"
+	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/transport"
 	"ThreeKingdoms/internal/shared/transport/ws"
 	"context"
@@ -24,6 +25,11 @@ func (h *WsHandler) RegisterRoutes(r *ws.Router) {
 
 	roleGroup := r.Group("role")
 	roleGroup.Handle("enterServer", h.enterServer)
+	roleGroup.Handle("createRole", h.createRole)
+	roleGroup.Handle("myProperty", h.myProperty)
+
+	nationMapGroup := r.Group("nationMap")
+	nationMapGroup.Handle("config", h.worldMap)
 }
 
 func (h *WsHandler) Login(ctx context.Context, wsReq *ws.WsMsgReq, wsResp *ws.WsMsgResp) {
@@ -80,7 +86,7 @@ func (h *WsHandler) enterServer(ctx context.Context, wsReq *ws.WsMsgReq, wsResp 
 	}
 
 	enterReq := model.EnterServerReq{Uid: uid}
-	enterResp, err := h.gate.GateService.EnterServer(ctx, enterReq)
+	enterResp, err := h.gate.GateService.EnterServer(ctx, enterReq, wsReq.Body.Seq)
 	if err != nil {
 		h.error(ctx, wsResp, err)
 		return
@@ -100,6 +106,81 @@ func (h *WsHandler) enterServer(ctx context.Context, wsReq *ws.WsMsgReq, wsResp 
 	enterRespDTO.Time = enterResp.Time
 	enterRespDTO.Token = enterResp.Token
 	h.ok(wsResp, enterRespDTO)
+}
+
+func (h *WsHandler) createRole(ctx context.Context, wsReq *ws.WsMsgReq, wsResp *ws.WsMsgResp) {
+	if wsReq == nil || wsReq.Body == nil || wsReq.Conn == nil || wsResp == nil || wsResp.Body == nil {
+		h.fail(wsResp, transport.InvalidParam, "参数有误")
+		return
+	}
+	uid, ok := h.gate.Session.GetUID(wsReq.Conn)
+	if !ok {
+		h.fail(wsResp, transport.SessionInvalid, "session 无效")
+		return
+	}
+
+	var req playerpb.CreateRoleRequest
+	if err := ws.BindJSON(wsReq, &req); err != nil {
+		h.fail(wsResp, transport.InvalidParam, err.Error())
+		return
+	}
+
+	resp, err := h.gate.GateService.CreateRole(ctx, uid, &req, wsReq.Body.Seq)
+	if err != nil {
+		h.error(ctx, wsResp, err)
+		return
+	}
+	if resp == nil {
+		h.error(ctx, wsResp, app.ErrInternalServer.WithReason(app.ReasonUpstreamBadResponse))
+		return
+	}
+	h.ok(wsResp, dto.NewCreateRoleResp(resp))
+}
+
+func (h *WsHandler) worldMap(ctx context.Context, wsReq *ws.WsMsgReq, wsResp *ws.WsMsgResp) {
+	if wsReq == nil || wsReq.Body == nil || wsReq.Conn == nil || wsResp == nil || wsResp.Body == nil {
+		h.fail(wsResp, transport.InvalidParam, "参数有误")
+		return
+	}
+	uid, ok := h.gate.Session.GetUID(wsReq.Conn)
+	if !ok {
+		h.fail(wsResp, transport.SessionInvalid, "session 无效")
+		return
+	}
+
+	resp, err := h.gate.GateService.WorldMap(ctx, uid, wsReq.Body.Seq)
+	if err != nil {
+		h.error(ctx, wsResp, err)
+		return
+	}
+	if resp == nil {
+		h.error(ctx, wsResp, app.ErrInternalServer.WithReason(app.ReasonUpstreamBadResponse))
+		return
+	}
+	h.ok(wsResp, dto.NewWorldMapResp(resp))
+}
+
+func (h *WsHandler) myProperty(ctx context.Context, wsReq *ws.WsMsgReq, wsResp *ws.WsMsgResp) {
+	if wsReq == nil || wsReq.Body == nil || wsReq.Conn == nil || wsResp == nil || wsResp.Body == nil {
+		h.fail(wsResp, transport.InvalidParam, "参数有误")
+		return
+	}
+	uid, ok := h.gate.Session.GetUID(wsReq.Conn)
+	if !ok {
+		h.fail(wsResp, transport.SessionInvalid, "session 无效")
+		return
+	}
+
+	resp, err := h.gate.GateService.MyProperty(ctx, uid, wsReq.Body.Seq)
+	if err != nil {
+		h.error(ctx, wsResp, err)
+		return
+	}
+	if resp == nil {
+		h.error(ctx, wsResp, app.ErrInternalServer.WithReason(app.ReasonUpstreamBadResponse))
+		return
+	}
+	h.ok(wsResp, dto.NewMyPropertyResp(resp))
 }
 
 func (h *WsHandler) ok(resp *ws.WsMsgResp, data any) {

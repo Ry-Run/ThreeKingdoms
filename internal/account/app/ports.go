@@ -19,11 +19,6 @@ type LoginLastRepo interface {
 	Save(ctx context.Context, ll domain.LoginLast) error
 }
 
-type RoleRepo interface {
-	GetRoleByUid(ctx context.Context, uid int) (*domain.Role, error)
-	Save(ctx context.Context, role domain.Role) error
-}
-
 type PwdEncrypter func(pwd, passcode string) string
 
 type RandSeq func(n int) string

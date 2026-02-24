@@ -11,12 +11,14 @@ import (
 type ManagerActor struct {
 	repo         port.PlayerRepository
 	playerActors map[PlayerID]*actor.PID // player(uid) -> actor.pid
+	worldPID     *actor.PID
 }
 
-func NewManagerActor(repo port.PlayerRepository) *ManagerActor {
+func NewManagerActor(repo port.PlayerRepository, worldPID *actor.PID) *ManagerActor {
 	return &ManagerActor{
 		playerActors: make(map[PlayerID]*actor.PID),
 		repo:         repo,
+		worldPID:     worldPID,
 	}
 }
 
@@ -45,7 +47,7 @@ func (m *ManagerActor) getOrSpawn(ctx actor.Context, playerId PlayerID, worldId 
 	}
 
 	props := actor.PropsFromProducer(func() actor.Actor {
-		return NewPlayerActor(playerId, worldId, m.repo)
+		return NewPlayerActor(playerId, worldId, m.repo, m.worldPID)
 	})
 	// ManagerActor 创建 子 actor
 	pid := ctx.Spawn(props)

@@ -19,9 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AccountService_Login_FullMethodName       = "/three_kingdoms.account.AccountService/Login"
-	AccountService_Register_FullMethodName    = "/three_kingdoms.account.AccountService/Register"
-	AccountService_EnterServer_FullMethodName = "/three_kingdoms.account.AccountService/EnterServer"
+	AccountService_Login_FullMethodName    = "/three_kingdoms.account.AccountService/Login"
+	AccountService_Register_FullMethodName = "/three_kingdoms.account.AccountService/Register"
 )
 
 // AccountServiceClient is the client API for AccountService service.
@@ -34,8 +33,6 @@ type AccountServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
 	// 注册
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterReply, error)
-	// 进入游戏服
-	EnterServer(ctx context.Context, in *EnterServerRequest, opts ...grpc.CallOption) (*EnterServerReply, error)
 }
 
 type accountServiceClient struct {
@@ -66,16 +63,6 @@ func (c *accountServiceClient) Register(ctx context.Context, in *RegisterRequest
 	return out, nil
 }
 
-func (c *accountServiceClient) EnterServer(ctx context.Context, in *EnterServerRequest, opts ...grpc.CallOption) (*EnterServerReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EnterServerReply)
-	err := c.cc.Invoke(ctx, AccountService_EnterServer_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // AccountServiceServer is the server API for AccountService service.
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility.
@@ -86,8 +73,6 @@ type AccountServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	// 注册
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
-	// 进入游戏服
-	EnterServer(context.Context, *EnterServerRequest) (*EnterServerReply, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -103,9 +88,6 @@ func (UnimplementedAccountServiceServer) Login(context.Context, *LoginRequest) (
 }
 func (UnimplementedAccountServiceServer) Register(context.Context, *RegisterRequest) (*RegisterReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
-}
-func (UnimplementedAccountServiceServer) EnterServer(context.Context, *EnterServerRequest) (*EnterServerReply, error) {
-	return nil, status.Error(codes.Unimplemented, "method EnterServer not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
@@ -164,24 +146,6 @@ func _AccountService_Register_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AccountService_EnterServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EnterServerRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AccountServiceServer).EnterServer(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AccountService_EnterServer_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).EnterServer(ctx, req.(*EnterServerRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -196,10 +160,6 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Register",
 			Handler:    _AccountService_Register_Handler,
-		},
-		{
-			MethodName: "EnterServer",
-			Handler:    _AccountService_EnterServer_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

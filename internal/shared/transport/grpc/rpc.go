@@ -2,6 +2,7 @@ package grpc
 
 import (
 	accountpb "ThreeKingdoms/internal/shared/gen/account"
+	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"fmt"
 
 	"google.golang.org/grpc"
@@ -27,4 +28,18 @@ func DialAccountService(accountService string) (*grpc.ClientConn, accountpb.Acco
 		return nil, nil, fmt.Errorf("dial account service failed: %w", err)
 	}
 	return conn, accountpb.NewAccountServiceClient(conn), nil
+}
+
+// DialPlayerService 建立 player grpc 连接并返回 typed client。
+func DialPlayerService(playerService string) (*grpc.ClientConn, playerpb.PlayerServiceClient, error) {
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(UnaryClientTraceInterceptor()),
+		grpc.WithChainStreamInterceptor(StreamClientTraceInterceptor()),
+	}
+	conn, err := grpc.NewClient(playerService, opts...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("dial player service failed: %w", err)
+	}
+	return conn, playerpb.NewPlayerServiceClient(conn), nil
 }

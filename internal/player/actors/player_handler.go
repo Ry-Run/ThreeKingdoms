@@ -75,9 +75,14 @@ func (h *PlayerHandler) HandleWorldMapRequest(ctx actor.Context, p *PlayerActor,
 		},
 	}, time.Millisecond*500)
 	ctx.ReenterAfter(f, func(res interface{}, err error) {
+		if err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
 		var worldMap []*playerpb.Cell
-		wHWorldMap, ok := res.(messages.WHWorldMap)
-		if !ok {
+		wHWorldMap, worldOK := res.(messages.WHWorldMap)
+		if !worldOK {
+			ctx.Respond(fail("world map response invalid"))
 			return
 		}
 		cells := wHWorldMap.WorldMap
@@ -96,9 +101,11 @@ func (h *PlayerHandler) HandleWorldMapRequest(ctx actor.Context, p *PlayerActor,
 			}
 			worldMap = append(worldMap, &pbCell)
 		}
-		ctx.Respond(playerpb.WorldMapResponse{
-			Map: worldMap,
-		})
+		response := ok()
+		response.Body = &playerpb.PlayerResponse_WorldMapResponse{
+			WorldMapResponse: &playerpb.WorldMapResponse{Map: worldMap},
+		}
+		ctx.Respond(response)
 	})
 }
 

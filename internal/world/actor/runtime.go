@@ -75,6 +75,26 @@ func (r *Runtime) Shutdown() {
 	}
 }
 
+// WorldActorID 返回 world runtime 对外入口 actor 的 PID（当前为 ManagerActor）。
+func (r *Runtime) WorldActorID() *protoactor.PID {
+	if r == nil {
+		return nil
+	}
+	return r.manager
+}
+
+// WorldActorId 兼容调用命名（非 Go 风格），内部转发到 WorldActorID。
+func (r *Runtime) WorldActorId() *protoactor.PID {
+	return r.WorldActorID()
+}
+
+func (r *Runtime) ActorSystem() *protoactor.ActorSystem {
+	if r == nil {
+		return nil
+	}
+	return r.system
+}
+
 func (r *Runtime) request(pid *protoactor.PID, msg any, timeout time.Duration) (any, error) {
 	if r == nil || r.root == nil {
 		return nil, &RuntimeError{Code: transport.SystemError, Message: "actor runtime 未初始化"}
