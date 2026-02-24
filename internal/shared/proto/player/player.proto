@@ -27,6 +27,7 @@ message PlayerRequest {
     MyPropertyRequest myPropertyRequest = 13;
     PosTagListRequest posTagListRequest = 14;
     MyGeneralsRequest myGeneralsRequest = 15;
+    ArmyListRequest armyListRequest = 16;
   }
 
   string trace_id = 100;
@@ -42,6 +43,7 @@ message PlayerResponse {
     MyPropertyResponse myPropertyResponse = 13;
     PosTagListResponse posTagListResponse = 14;
     MyGeneralsResponse myGeneralsResponse = 15;
+    ArmyListResponse armyListResponse = 16;
   }
 }
 
@@ -97,7 +99,7 @@ message PosTagListRequest {
 }
 
 message PosTagListResponse {
-  repeated PosTag posTags	 = 1;
+  repeated PosTag posTags = 1;
 }
 
 message MyGeneralsRequest {
@@ -105,4 +107,13 @@ message MyGeneralsRequest {
 
 message MyGeneralsResponse {
   repeated General generals = 1;
+}
+
+message ArmyListRequest {
+  int32 CityId = 1;
+}
+
+message ArmyListResponse {
+  int32 CityId = 1;
+  repeated Army armies = 2;
 }

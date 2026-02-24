@@ -2,6 +2,7 @@ package domain
 
 type PlayerID int
 type WorldID int
+type CityID int
 
 // entity
 type Player struct {
@@ -13,7 +14,7 @@ type Player struct {
 	x         int
 	y         int
 	buildings []*Building
-	armies    []*Army
+	armies    map[CityID][]*Army
 	generals  []*General
 	facility  []*Facility
 }

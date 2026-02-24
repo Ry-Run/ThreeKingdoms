@@ -164,7 +164,7 @@ func (t *ArmyEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 
 type ArmyState struct {
 	Id                 int
-	CityId             int
+	CityId             CityID
 	Order              int8
 	Generals           string
 	Soldiers           string
@@ -196,7 +196,7 @@ type ArmyEntitySnap struct {
 
 type ArmyEntity struct {
 	id                 int
-	cityId             int
+	cityId             CityID
 	order              int8
 	generals           string
 	soldiers           string
@@ -560,15 +560,15 @@ func (e *ArmyEntity) SetId(v int) bool {
 	return true
 }
 
-func (e *ArmyEntity) CityId() int {
+func (e *ArmyEntity) CityId() CityID {
 	if e == nil {
-		var z int
+		var z CityID
 		return z
 	}
 	return e.cityId
 }
 
-func (e *ArmyEntity) SetCityId(v int) bool {
+func (e *ArmyEntity) SetCityId(v CityID) bool {
 	if e == nil {
 		return false
 	}

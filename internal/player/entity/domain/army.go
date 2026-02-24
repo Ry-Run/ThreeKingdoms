@@ -21,7 +21,7 @@ const (
 // entity
 type Army struct {
 	id                 int
-	cityId             int       // 城市id
+	cityId             CityID    // 城市id
 	order              int8      // 第几队 1-5队
 	generals           string    // 将领
 	soldiers           string    // 士兵

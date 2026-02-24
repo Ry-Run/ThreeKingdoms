@@ -13,6 +13,10 @@ import (
 type PlayerHandler struct {
 }
 
+// type PlayerID = entity.PlayerID
+// type WorldID = entity.WorldID
+type CityID = entity.CityID
+
 // 全局实例
 var PH = &PlayerHandler{}
 
@@ -206,4 +210,16 @@ func (h *PlayerHandler) HandleMyGeneralsRequest(ctx actor.Context, p *PlayerActo
 		return
 	}
 	ctx.Respond(resp)
+}
+
+func (h *PlayerHandler) HandleArmyListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.ArmyListRequest) {
+	armies, _ := p.Entity().GetArmies(CityID(request.CityId))
+	pbArmies := make([]*playerpb.Army, 0, len(armies))
+	for _, v := range armies {
+		pbArmies = append(pbArmies, ToPBArmy(v))
+	}
+	ctx.Respond(&playerpb.ArmyListResponse{
+		CityId: request.CityId,
+		Armies: pbArmies,
+	})
 }

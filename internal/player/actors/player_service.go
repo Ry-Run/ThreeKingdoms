@@ -60,8 +60,10 @@ func (s *PlayerService) MyProperty(player *entity.PlayerEntity) *playerpb.Player
 	})
 	//军队
 	armies := make([]*playerpb.Army, 0, player.LenArmies())
-	player.ForEachArmies(func(i int, v entity.ArmyState) {
-		armies = append(armies, ToPBArmy(v))
+	player.ForEachArmies(func(i CityID, v []entity.ArmyState) {
+		for _, arm := range v {
+			armies = append(armies, ToPBArmy(arm))
+		}
 	})
 
 	return &playerpb.PlayerResponse{

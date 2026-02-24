@@ -5,4 +5,6 @@ type PlayerID int
 
 type WorldID int
 
+type CityID int
+
 type RoleStatus int

@@ -36,6 +36,7 @@ func (d *Dispatcher) registerAll() {
 	register(d, PH.HandleMyPropertyRequest)
 	register(d, PH.HandlePosTagListRequest)
 	register(d, PH.HandleMyGeneralsRequest)
+	register(d, PH.HandleArmyListRequest)
 }
 
 // register 注册统一分发函数，要求 Req/Rep 都是 protobuf 指针消息。
@@ -99,6 +100,8 @@ func unwrapPlayerRequestBody(req *playerpb.PlayerRequest) proto.Message {
 		return body.PosTagListRequest
 	case *playerpb.PlayerRequest_MyGeneralsRequest:
 		return body.MyGeneralsRequest
+	case *playerpb.PlayerRequest_ArmyListRequest:
+		return body.ArmyListRequest
 	default:
 		return nil
 	}

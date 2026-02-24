@@ -8,7 +8,7 @@ import (
 
 type ArmyDoc struct {
 	Id                 int          `bson:"id"`
-	CityId             int          `bson:"city_id"`
+	CityId             CityID       `bson:"city_id"`
 	Order              int8         `bson:"order"`
 	Generals           string       `bson:"generals"`
 	Soldiers           string       `bson:"soldiers"`

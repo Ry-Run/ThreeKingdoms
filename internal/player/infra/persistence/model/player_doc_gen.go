@@ -6,17 +6,17 @@ import (
 )
 
 type PlayerDoc struct {
-	PlayerID  PlayerID         `bson:"player_id"`
-	WorldID   WorldID          `bson:"world_id"`
-	Profile   RoleDoc          `bson:"profile"`
-	Resource  ResourceDoc      `bson:"resource"`
-	Attribute RoleAttributeDoc `bson:"attribute"`
-	X         int              `bson:"x"`
-	Y         int              `bson:"y"`
-	Buildings []BuildingDoc    `bson:"buildings"`
-	Armies    []ArmyDoc        `bson:"armies"`
-	Generals  []GeneralDoc     `bson:"generals"`
-	Facility  []FacilityDoc    `bson:"facility"`
+	PlayerID  PlayerID             `bson:"player_id"`
+	WorldID   WorldID              `bson:"world_id"`
+	Profile   RoleDoc              `bson:"profile"`
+	Resource  ResourceDoc          `bson:"resource"`
+	Attribute RoleAttributeDoc     `bson:"attribute"`
+	X         int                  `bson:"x"`
+	Y         int                  `bson:"y"`
+	Buildings []BuildingDoc        `bson:"buildings"`
+	Armies    map[CityID][]ArmyDoc `bson:"armies"`
+	Generals  []GeneralDoc         `bson:"generals"`
+	Facility  []FacilityDoc        `bson:"facility"`
 }
 
 func toDocSlice_buildings(in []entity.BuildingState) []BuildingDoc {
@@ -41,24 +41,46 @@ func toStateSlice_buildings(in []BuildingDoc) []entity.BuildingState {
 	return out
 }
 
-func toDocSlice_armies(in []entity.ArmyState) []ArmyDoc {
+func toDoc_armies(in map[CityID][]entity.ArmyState) map[CityID][]ArmyDoc {
+	var out map[CityID][]ArmyDoc
 	if in == nil {
-		return nil
-	}
-	out := make([]ArmyDoc, len(in))
-	for i, v := range in {
-		out[i] = ArmyStateToDoc(v)
+		out = nil
+	} else {
+		out0 := make(map[CityID][]ArmyDoc, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				out0[k1] = nil
+			} else {
+				out3 := make([]ArmyDoc, len(v2))
+				for i4, v5 := range v2 {
+					out3[i4] = ArmyStateToDoc(v5)
+				}
+				out0[k1] = out3
+			}
+		}
+		out = out0
 	}
 	return out
 }
 
-func toStateSlice_armies(in []ArmyDoc) []entity.ArmyState {
+func toState_armies(in map[CityID][]ArmyDoc) map[CityID][]entity.ArmyState {
+	var out map[CityID][]entity.ArmyState
 	if in == nil {
-		return nil
-	}
-	out := make([]entity.ArmyState, len(in))
-	for i, v := range in {
-		out[i] = ArmyDocToState(v)
+		out = nil
+	} else {
+		out0 := make(map[CityID][]entity.ArmyState, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				out0[k1] = nil
+			} else {
+				out3 := make([]entity.ArmyState, len(v2))
+				for i4, v5 := range v2 {
+					out3[i4] = ArmyDocToState(v5)
+				}
+				out0[k1] = out3
+			}
+		}
+		out = out0
 	}
 	return out
 }
@@ -118,7 +140,7 @@ func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 		X:         state.X,
 		Y:         state.Y,
 		Buildings: toDocSlice_buildings(state.Buildings),
-		Armies:    toDocSlice_armies(state.Armies),
+		Armies:    toDoc_armies(state.Armies),
 		Generals:  toDocSlice_generals(state.Generals),
 		Facility:  toDocSlice_facility(state.Facility),
 	}
@@ -134,7 +156,7 @@ func PlayerDocToState(d PlayerDoc) entity.PlayerState {
 		X:         d.X,
 		Y:         d.Y,
 		Buildings: toStateSlice_buildings(d.Buildings),
-		Armies:    toStateSlice_armies(d.Armies),
+		Armies:    toState_armies(d.Armies),
 		Generals:  toStateSlice_generals(d.Generals),
 		Facility:  toStateSlice_facility(d.Facility),
 	}
