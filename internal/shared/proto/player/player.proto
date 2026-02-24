@@ -10,6 +10,7 @@ import "player/arm.proto";
 import "player/general.proto";
 import "player/city.proto";
 import "player/map.proto";
+import "player/pos_tag.proto";
 
 option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
 
@@ -24,6 +25,7 @@ message PlayerRequest {
     CreateRoleRequest createRoleRequest = 11;
     WorldMapRequest worldMapRequest = 12;
     MyPropertyRequest myPropertyRequest = 13;
+    PosTagListRequest posTagListRequest = 14;
     MyGeneralsRequest myGeneralsRequest = 23;
   }
 
@@ -38,6 +40,7 @@ message PlayerResponse {
     CreateRoleResponse createRoleResponse = 11;
     WorldMapResponse worldMapResponse = 12;
     MyPropertyResponse myPropertyResponse = 13;
+    PosTagListResponse posTagListResponse = 14;
     MyGeneralsResponse myGeneralsResponse = 24;
   }
 }
@@ -87,6 +90,14 @@ message MyPropertyResponse {
   repeated General generals = 3;
   repeated City cities = 4;
   repeated Army armies = 5;
+}
+
+message PosTagListRequest {
+  int32 player_id = 1;
+}
+
+message PosTagListResponse {
+  repeated PosTag posTags	 = 1;
 }
 
 message MyGeneralsRequest {

@@ -33,6 +33,7 @@ type PlayerRequest struct {
 	//	*PlayerRequest_CreateRoleRequest
 	//	*PlayerRequest_WorldMapRequest
 	//	*PlayerRequest_MyPropertyRequest
+	//	*PlayerRequest_PosTagListRequest
 	//	*PlayerRequest_MyGeneralsRequest
 	Body          isPlayerRequest_Body `protobuf_oneof:"body"`
 	TraceId       string               `protobuf:"bytes,100,opt,name=trace_id,json=traceId,proto3" json:"trace_id,omitempty"`
@@ -134,6 +135,15 @@ func (x *PlayerRequest) GetMyPropertyRequest() *MyPropertyRequest {
 	return nil
 }
 
+func (x *PlayerRequest) GetPosTagListRequest() *PosTagListRequest {
+	if x != nil {
+		if x, ok := x.Body.(*PlayerRequest_PosTagListRequest); ok {
+			return x.PosTagListRequest
+		}
+	}
+	return nil
+}
+
 func (x *PlayerRequest) GetMyGeneralsRequest() *MyGeneralsRequest {
 	if x != nil {
 		if x, ok := x.Body.(*PlayerRequest_MyGeneralsRequest); ok {
@@ -170,6 +180,10 @@ type PlayerRequest_MyPropertyRequest struct {
 	MyPropertyRequest *MyPropertyRequest `protobuf:"bytes,13,opt,name=myPropertyRequest,proto3,oneof"`
 }
 
+type PlayerRequest_PosTagListRequest struct {
+	PosTagListRequest *PosTagListRequest `protobuf:"bytes,14,opt,name=posTagListRequest,proto3,oneof"`
+}
+
 type PlayerRequest_MyGeneralsRequest struct {
 	MyGeneralsRequest *MyGeneralsRequest `protobuf:"bytes,23,opt,name=myGeneralsRequest,proto3,oneof"`
 }
@@ -182,6 +196,8 @@ func (*PlayerRequest_WorldMapRequest) isPlayerRequest_Body() {}
 
 func (*PlayerRequest_MyPropertyRequest) isPlayerRequest_Body() {}
 
+func (*PlayerRequest_PosTagListRequest) isPlayerRequest_Body() {}
+
 func (*PlayerRequest_MyGeneralsRequest) isPlayerRequest_Body() {}
 
 type PlayerResponse struct {
@@ -193,6 +209,7 @@ type PlayerResponse struct {
 	//	*PlayerResponse_CreateRoleResponse
 	//	*PlayerResponse_WorldMapResponse
 	//	*PlayerResponse_MyPropertyResponse
+	//	*PlayerResponse_PosTagListResponse
 	//	*PlayerResponse_MyGeneralsResponse
 	Body          isPlayerResponse_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
@@ -279,6 +296,15 @@ func (x *PlayerResponse) GetMyPropertyResponse() *MyPropertyResponse {
 	return nil
 }
 
+func (x *PlayerResponse) GetPosTagListResponse() *PosTagListResponse {
+	if x != nil {
+		if x, ok := x.Body.(*PlayerResponse_PosTagListResponse); ok {
+			return x.PosTagListResponse
+		}
+	}
+	return nil
+}
+
 func (x *PlayerResponse) GetMyGeneralsResponse() *MyGeneralsResponse {
 	if x != nil {
 		if x, ok := x.Body.(*PlayerResponse_MyGeneralsResponse); ok {
@@ -308,6 +334,10 @@ type PlayerResponse_MyPropertyResponse struct {
 	MyPropertyResponse *MyPropertyResponse `protobuf:"bytes,13,opt,name=myPropertyResponse,proto3,oneof"`
 }
 
+type PlayerResponse_PosTagListResponse struct {
+	PosTagListResponse *PosTagListResponse `protobuf:"bytes,14,opt,name=posTagListResponse,proto3,oneof"`
+}
+
 type PlayerResponse_MyGeneralsResponse struct {
 	MyGeneralsResponse *MyGeneralsResponse `protobuf:"bytes,24,opt,name=myGeneralsResponse,proto3,oneof"`
 }
@@ -319,6 +349,8 @@ func (*PlayerResponse_CreateRoleResponse) isPlayerResponse_Body() {}
 func (*PlayerResponse_WorldMapResponse) isPlayerResponse_Body() {}
 
 func (*PlayerResponse_MyPropertyResponse) isPlayerResponse_Body() {}
+
+func (*PlayerResponse_PosTagListResponse) isPlayerResponse_Body() {}
 
 func (*PlayerResponse_MyGeneralsResponse) isPlayerResponse_Body() {}
 
@@ -762,6 +794,94 @@ func (x *MyPropertyResponse) GetArmies() []*Army {
 	return nil
 }
 
+type PosTagListRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      int32                  `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PosTagListRequest) Reset() {
+	*x = PosTagListRequest{}
+	mi := &file_player_player_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PosTagListRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PosTagListRequest) ProtoMessage() {}
+
+func (x *PosTagListRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_player_player_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PosTagListRequest.ProtoReflect.Descriptor instead.
+func (*PosTagListRequest) Descriptor() ([]byte, []int) {
+	return file_player_player_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *PosTagListRequest) GetPlayerId() int32 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+type PosTagListResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PosTags       []*PosTag              `protobuf:"bytes,1,rep,name=posTags,proto3" json:"posTags,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PosTagListResponse) Reset() {
+	*x = PosTagListResponse{}
+	mi := &file_player_player_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PosTagListResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PosTagListResponse) ProtoMessage() {}
+
+func (x *PosTagListResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_player_player_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PosTagListResponse.ProtoReflect.Descriptor instead.
+func (*PosTagListResponse) Descriptor() ([]byte, []int) {
+	return file_player_player_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *PosTagListResponse) GetPosTags() []*PosTag {
+	if x != nil {
+		return x.PosTags
+	}
+	return nil
+}
+
 type MyGeneralsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      int32                  `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
@@ -771,7 +891,7 @@ type MyGeneralsRequest struct {
 
 func (x *MyGeneralsRequest) Reset() {
 	*x = MyGeneralsRequest{}
-	mi := &file_player_player_proto_msgTypes[10]
+	mi := &file_player_player_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -783,7 +903,7 @@ func (x *MyGeneralsRequest) String() string {
 func (*MyGeneralsRequest) ProtoMessage() {}
 
 func (x *MyGeneralsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_player_player_proto_msgTypes[10]
+	mi := &file_player_player_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -796,7 +916,7 @@ func (x *MyGeneralsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MyGeneralsRequest.ProtoReflect.Descriptor instead.
 func (*MyGeneralsRequest) Descriptor() ([]byte, []int) {
-	return file_player_player_proto_rawDescGZIP(), []int{10}
+	return file_player_player_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MyGeneralsRequest) GetPlayerId() int32 {
@@ -815,7 +935,7 @@ type MyGeneralsResponse struct {
 
 func (x *MyGeneralsResponse) Reset() {
 	*x = MyGeneralsResponse{}
-	mi := &file_player_player_proto_msgTypes[11]
+	mi := &file_player_player_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -827,7 +947,7 @@ func (x *MyGeneralsResponse) String() string {
 func (*MyGeneralsResponse) ProtoMessage() {}
 
 func (x *MyGeneralsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_player_player_proto_msgTypes[11]
+	mi := &file_player_player_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -840,7 +960,7 @@ func (x *MyGeneralsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MyGeneralsResponse.ProtoReflect.Descriptor instead.
 func (*MyGeneralsResponse) Descriptor() ([]byte, []int) {
-	return file_player_player_proto_rawDescGZIP(), []int{11}
+	return file_player_player_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *MyGeneralsResponse) GetPlayerId() int32 {
@@ -854,7 +974,7 @@ var File_player_player_proto protoreflect.FileDescriptor
 
 const file_player_player_proto_rawDesc = "" +
 	"\n" +
-	"\x13player/player.proto\x12\x15three_kingdoms.player\x1a\x13common/common.proto\x1a\x11player/role.proto\x1a\x15player/resource.proto\x1a\x15player/building.proto\x1a\x10player/arm.proto\x1a\x14player/general.proto\x1a\x11player/city.proto\x1a\x10player/map.proto\"\xbb\x04\n" +
+	"\x13player/player.proto\x12\x15three_kingdoms.player\x1a\x13common/common.proto\x1a\x11player/role.proto\x1a\x15player/resource.proto\x1a\x15player/building.proto\x1a\x10player/arm.proto\x1a\x14player/general.proto\x1a\x11player/city.proto\x1a\x10player/map.proto\x1a\x14player/pos_tag.proto\"\x95\x05\n" +
 	"\rPlayerRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x03R\bplayerId\x12\x19\n" +
 	"\bworld_id\x18\x02 \x01(\x03R\aworldId\x12\x10\n" +
@@ -864,9 +984,10 @@ const file_player_player_proto_rawDesc = "" +
 	"\x11createRoleRequest\x18\v \x01(\v2(.three_kingdoms.player.CreateRoleRequestH\x00R\x11createRoleRequest\x12R\n" +
 	"\x0fworldMapRequest\x18\f \x01(\v2&.three_kingdoms.player.WorldMapRequestH\x00R\x0fworldMapRequest\x12X\n" +
 	"\x11myPropertyRequest\x18\r \x01(\v2(.three_kingdoms.player.MyPropertyRequestH\x00R\x11myPropertyRequest\x12X\n" +
+	"\x11posTagListRequest\x18\x0e \x01(\v2(.three_kingdoms.player.PosTagListRequestH\x00R\x11posTagListRequest\x12X\n" +
 	"\x11myGeneralsRequest\x18\x17 \x01(\v2(.three_kingdoms.player.MyGeneralsRequestH\x00R\x11myGeneralsRequest\x12\x19\n" +
 	"\btrace_id\x18d \x01(\tR\atraceIdB\x06\n" +
-	"\x04body\"\xa0\x04\n" +
+	"\x04body\"\xfd\x04\n" +
 	"\x0ePlayerResponse\x128\n" +
 	"\x06result\x18\x01 \x01(\v2 .three_kingdoms.common.BizResultR\x06result\x12^\n" +
 	"\x13enterServerResponse\x18\n" +
@@ -874,6 +995,7 @@ const file_player_player_proto_rawDesc = "" +
 	"\x12createRoleResponse\x18\v \x01(\v2).three_kingdoms.player.CreateRoleResponseH\x00R\x12createRoleResponse\x12U\n" +
 	"\x10worldMapResponse\x18\f \x01(\v2'.three_kingdoms.player.WorldMapResponseH\x00R\x10worldMapResponse\x12[\n" +
 	"\x12myPropertyResponse\x18\r \x01(\v2).three_kingdoms.player.MyPropertyResponseH\x00R\x12myPropertyResponse\x12[\n" +
+	"\x12posTagListResponse\x18\x0e \x01(\v2).three_kingdoms.player.PosTagListResponseH\x00R\x12posTagListResponse\x12[\n" +
 	"\x12myGeneralsResponse\x18\x18 \x01(\v2).three_kingdoms.player.MyGeneralsResponseH\x00R\x12myGeneralsResponseB\x06\n" +
 	"\x04body\"1\n" +
 	"\x12EnterServerRequest\x12\x1b\n" +
@@ -903,6 +1025,10 @@ const file_player_player_proto_rawDesc = "" +
 	"\bgenerals\x18\x03 \x03(\v2\x1e.three_kingdoms.player.GeneralR\bgenerals\x123\n" +
 	"\x06cities\x18\x04 \x03(\v2\x1b.three_kingdoms.player.CityR\x06cities\x123\n" +
 	"\x06armies\x18\x05 \x03(\v2\x1b.three_kingdoms.player.ArmyR\x06armies\"0\n" +
+	"\x11PosTagListRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"M\n" +
+	"\x12PosTagListResponse\x127\n" +
+	"\aposTags\x18\x01 \x03(\v2\x1d.three_kingdoms.player.PosTagR\aposTags\"0\n" +
 	"\x11MyGeneralsRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"1\n" +
 	"\x12MyGeneralsResponse\x12\x1b\n" +
@@ -922,7 +1048,7 @@ func file_player_player_proto_rawDescGZIP() []byte {
 	return file_player_player_proto_rawDescData
 }
 
-var file_player_player_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_player_player_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_player_player_proto_goTypes = []any{
 	(*PlayerRequest)(nil),       // 0: three_kingdoms.player.PlayerRequest
 	(*PlayerResponse)(nil),      // 1: three_kingdoms.player.PlayerResponse
@@ -934,45 +1060,51 @@ var file_player_player_proto_goTypes = []any{
 	(*WorldMapResponse)(nil),    // 7: three_kingdoms.player.WorldMapResponse
 	(*MyPropertyRequest)(nil),   // 8: three_kingdoms.player.MyPropertyRequest
 	(*MyPropertyResponse)(nil),  // 9: three_kingdoms.player.MyPropertyResponse
-	(*MyGeneralsRequest)(nil),   // 10: three_kingdoms.player.MyGeneralsRequest
-	(*MyGeneralsResponse)(nil),  // 11: three_kingdoms.player.MyGeneralsResponse
-	(*common.BizResult)(nil),    // 12: three_kingdoms.common.BizResult
-	(*Role)(nil),                // 13: Role
-	(*Resource)(nil),            // 14: Resource
-	(*Cell)(nil),                // 15: three_kingdoms.player.Cell
-	(*Building)(nil),            // 16: three_kingdoms.player.Building
-	(*General)(nil),             // 17: three_kingdoms.player.General
-	(*City)(nil),                // 18: three_kingdoms.player.City
-	(*Army)(nil),                // 19: three_kingdoms.player.Army
+	(*PosTagListRequest)(nil),   // 10: three_kingdoms.player.PosTagListRequest
+	(*PosTagListResponse)(nil),  // 11: three_kingdoms.player.PosTagListResponse
+	(*MyGeneralsRequest)(nil),   // 12: three_kingdoms.player.MyGeneralsRequest
+	(*MyGeneralsResponse)(nil),  // 13: three_kingdoms.player.MyGeneralsResponse
+	(*common.BizResult)(nil),    // 14: three_kingdoms.common.BizResult
+	(*Role)(nil),                // 15: Role
+	(*Resource)(nil),            // 16: Resource
+	(*Cell)(nil),                // 17: three_kingdoms.player.Cell
+	(*Building)(nil),            // 18: three_kingdoms.player.Building
+	(*General)(nil),             // 19: three_kingdoms.player.General
+	(*City)(nil),                // 20: three_kingdoms.player.City
+	(*Army)(nil),                // 21: three_kingdoms.player.Army
+	(*PosTag)(nil),              // 22: three_kingdoms.player.PosTag
 }
 var file_player_player_proto_depIdxs = []int32{
 	2,  // 0: three_kingdoms.player.PlayerRequest.enterServerRequest:type_name -> three_kingdoms.player.EnterServerRequest
 	4,  // 1: three_kingdoms.player.PlayerRequest.createRoleRequest:type_name -> three_kingdoms.player.CreateRoleRequest
 	6,  // 2: three_kingdoms.player.PlayerRequest.worldMapRequest:type_name -> three_kingdoms.player.WorldMapRequest
 	8,  // 3: three_kingdoms.player.PlayerRequest.myPropertyRequest:type_name -> three_kingdoms.player.MyPropertyRequest
-	10, // 4: three_kingdoms.player.PlayerRequest.myGeneralsRequest:type_name -> three_kingdoms.player.MyGeneralsRequest
-	12, // 5: three_kingdoms.player.PlayerResponse.result:type_name -> three_kingdoms.common.BizResult
-	3,  // 6: three_kingdoms.player.PlayerResponse.enterServerResponse:type_name -> three_kingdoms.player.EnterServerResponse
-	5,  // 7: three_kingdoms.player.PlayerResponse.createRoleResponse:type_name -> three_kingdoms.player.CreateRoleResponse
-	7,  // 8: three_kingdoms.player.PlayerResponse.worldMapResponse:type_name -> three_kingdoms.player.WorldMapResponse
-	9,  // 9: three_kingdoms.player.PlayerResponse.myPropertyResponse:type_name -> three_kingdoms.player.MyPropertyResponse
-	11, // 10: three_kingdoms.player.PlayerResponse.myGeneralsResponse:type_name -> three_kingdoms.player.MyGeneralsResponse
-	13, // 11: three_kingdoms.player.EnterServerResponse.role:type_name -> Role
-	14, // 12: three_kingdoms.player.EnterServerResponse.resource:type_name -> Resource
-	13, // 13: three_kingdoms.player.CreateRoleResponse.role:type_name -> Role
-	15, // 14: three_kingdoms.player.WorldMapResponse.map:type_name -> three_kingdoms.player.Cell
-	14, // 15: three_kingdoms.player.MyPropertyResponse.resource:type_name -> Resource
-	16, // 16: three_kingdoms.player.MyPropertyResponse.buildings:type_name -> three_kingdoms.player.Building
-	17, // 17: three_kingdoms.player.MyPropertyResponse.generals:type_name -> three_kingdoms.player.General
-	18, // 18: three_kingdoms.player.MyPropertyResponse.cities:type_name -> three_kingdoms.player.City
-	19, // 19: three_kingdoms.player.MyPropertyResponse.armies:type_name -> three_kingdoms.player.Army
-	0,  // 20: three_kingdoms.player.PlayerService.Handle:input_type -> three_kingdoms.player.PlayerRequest
-	1,  // 21: three_kingdoms.player.PlayerService.Handle:output_type -> three_kingdoms.player.PlayerResponse
-	21, // [21:22] is the sub-list for method output_type
-	20, // [20:21] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	10, // 4: three_kingdoms.player.PlayerRequest.posTagListRequest:type_name -> three_kingdoms.player.PosTagListRequest
+	12, // 5: three_kingdoms.player.PlayerRequest.myGeneralsRequest:type_name -> three_kingdoms.player.MyGeneralsRequest
+	14, // 6: three_kingdoms.player.PlayerResponse.result:type_name -> three_kingdoms.common.BizResult
+	3,  // 7: three_kingdoms.player.PlayerResponse.enterServerResponse:type_name -> three_kingdoms.player.EnterServerResponse
+	5,  // 8: three_kingdoms.player.PlayerResponse.createRoleResponse:type_name -> three_kingdoms.player.CreateRoleResponse
+	7,  // 9: three_kingdoms.player.PlayerResponse.worldMapResponse:type_name -> three_kingdoms.player.WorldMapResponse
+	9,  // 10: three_kingdoms.player.PlayerResponse.myPropertyResponse:type_name -> three_kingdoms.player.MyPropertyResponse
+	11, // 11: three_kingdoms.player.PlayerResponse.posTagListResponse:type_name -> three_kingdoms.player.PosTagListResponse
+	13, // 12: three_kingdoms.player.PlayerResponse.myGeneralsResponse:type_name -> three_kingdoms.player.MyGeneralsResponse
+	15, // 13: three_kingdoms.player.EnterServerResponse.role:type_name -> Role
+	16, // 14: three_kingdoms.player.EnterServerResponse.resource:type_name -> Resource
+	15, // 15: three_kingdoms.player.CreateRoleResponse.role:type_name -> Role
+	17, // 16: three_kingdoms.player.WorldMapResponse.map:type_name -> three_kingdoms.player.Cell
+	16, // 17: three_kingdoms.player.MyPropertyResponse.resource:type_name -> Resource
+	18, // 18: three_kingdoms.player.MyPropertyResponse.buildings:type_name -> three_kingdoms.player.Building
+	19, // 19: three_kingdoms.player.MyPropertyResponse.generals:type_name -> three_kingdoms.player.General
+	20, // 20: three_kingdoms.player.MyPropertyResponse.cities:type_name -> three_kingdoms.player.City
+	21, // 21: three_kingdoms.player.MyPropertyResponse.armies:type_name -> three_kingdoms.player.Army
+	22, // 22: three_kingdoms.player.PosTagListResponse.posTags:type_name -> three_kingdoms.player.PosTag
+	0,  // 23: three_kingdoms.player.PlayerService.Handle:input_type -> three_kingdoms.player.PlayerRequest
+	1,  // 24: three_kingdoms.player.PlayerService.Handle:output_type -> three_kingdoms.player.PlayerResponse
+	24, // [24:25] is the sub-list for method output_type
+	23, // [23:24] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_player_player_proto_init() }
@@ -987,11 +1119,13 @@ func file_player_player_proto_init() {
 	file_player_general_proto_init()
 	file_player_city_proto_init()
 	file_player_map_proto_init()
+	file_player_pos_tag_proto_init()
 	file_player_player_proto_msgTypes[0].OneofWrappers = []any{
 		(*PlayerRequest_EnterServerRequest)(nil),
 		(*PlayerRequest_CreateRoleRequest)(nil),
 		(*PlayerRequest_WorldMapRequest)(nil),
 		(*PlayerRequest_MyPropertyRequest)(nil),
+		(*PlayerRequest_PosTagListRequest)(nil),
 		(*PlayerRequest_MyGeneralsRequest)(nil),
 	}
 	file_player_player_proto_msgTypes[1].OneofWrappers = []any{
@@ -999,6 +1133,7 @@ func file_player_player_proto_init() {
 		(*PlayerResponse_CreateRoleResponse)(nil),
 		(*PlayerResponse_WorldMapResponse)(nil),
 		(*PlayerResponse_MyPropertyResponse)(nil),
+		(*PlayerResponse_PosTagListResponse)(nil),
 		(*PlayerResponse_MyGeneralsResponse)(nil),
 	}
 	type x struct{}
@@ -1007,7 +1142,7 @@ func file_player_player_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_player_player_proto_rawDesc), len(file_player_player_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

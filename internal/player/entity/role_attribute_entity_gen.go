@@ -2,6 +2,7 @@
 package entity
 
 import (
+	"reflect"
 	"sort"
 	"time"
 )
@@ -147,7 +148,7 @@ type RoleAttributeState struct {
 	ParentId        int
 	CollectTimes    int8
 	LastCollectTime time.Time
-	PosTags         string
+	PosTags         []PosTagState
 }
 
 type RoleAttributeEntitySnap struct {
@@ -161,8 +162,53 @@ type RoleAttributeEntity struct {
 	parentId        int
 	collectTimes    int8
 	lastCollectTime time.Time
-	posTags         string
+	posTags         []*PosTagEntity
 	_dt             RoleAttributeEntityTrace
+}
+
+func hydrateSlice_posTags(in []PosTagState) []*PosTagEntity {
+	if in == nil {
+		return nil
+	}
+	out := make([]*PosTagEntity, len(in))
+	for i, v := range in {
+		out[i] = HydratePosTagEntity(v)
+	}
+	return out
+}
+
+func snapshotSlice_posTags(in []*PosTagEntity) []PosTagState {
+	if in == nil {
+		return nil
+	}
+	out := make([]PosTagState, len(in))
+	for i, v := range in {
+		if v == nil {
+			var z PosTagState
+			out[i] = z
+			continue
+		}
+		out[i] = v.Save()
+	}
+	return out
+}
+
+func slicesEqual_posTags(a, b []PosTagState) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 func HydrateRoleAttributeEntity(s RoleAttributeState) *RoleAttributeEntity {
@@ -170,7 +216,7 @@ func HydrateRoleAttributeEntity(s RoleAttributeState) *RoleAttributeEntity {
 		parentId:        s.ParentId,
 		collectTimes:    s.CollectTimes,
 		lastCollectTime: s.LastCollectTime,
-		posTags:         s.PosTags,
+		posTags:         hydrateSlice_posTags(s.PosTags),
 	}
 }
 
@@ -293,7 +339,7 @@ func (e *RoleAttributeEntity) Save() RoleAttributeState {
 	s.ParentId = e.parentId
 	s.CollectTimes = e.collectTimes
 	s.LastCollectTime = e.lastCollectTime
-	s.PosTags = e.posTags
+	s.PosTags = snapshotSlice_posTags(e.posTags)
 	return s
 }
 
@@ -324,6 +370,7 @@ func (s *RoleAttributeEntitySnap) Clone() *RoleAttributeEntitySnap {
 			out.Changes[f] = cloneRoleAttributeEntityCollectionChange(ch)
 		}
 	}
+	out.State.PosTags = append([]PosTagState(nil), s.State.PosTags...)
 	return out
 }
 
@@ -387,22 +434,156 @@ func (e *RoleAttributeEntity) SetLastCollectTime(v time.Time) bool {
 	return true
 }
 
-func (e *RoleAttributeEntity) PosTags() string {
+func (e *RoleAttributeEntity) LenPosTags() int {
 	if e == nil {
-		var z string
-		return z
+		return 0
 	}
-	return e.posTags
+	return len(e.posTags)
 }
 
-func (e *RoleAttributeEntity) SetPosTags(v string) bool {
+func (e *RoleAttributeEntity) AtPosTags(index int) (PosTagState, bool) {
+	var z PosTagState
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.posTags) {
+		return z, false
+	}
+	v := e.posTags[index]
+	if v == nil {
+		return z, true
+	}
+	return v.Save(), true
+}
+
+func (e *RoleAttributeEntity) ForEachPosTags(fn func(index int, value PosTagState)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.posTags {
+		var state PosTagState
+		if v != nil {
+			state = v.Save()
+		}
+		fn(i, state)
+	}
+}
+
+func (e *RoleAttributeEntity) RangePosTags(fn func(index int, value PosTagState) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.posTags {
+		var state PosTagState
+		if v != nil {
+			state = v.Save()
+		}
+		if !fn(i, state) {
+			return
+		}
+	}
+}
+
+func (e *RoleAttributeEntity) ReplacePosTags(v []PosTagState) bool {
 	if e == nil {
 		return false
 	}
-	if e.posTags == v {
+	if slicesEqual_posTags(snapshotSlice_posTags(e.posTags), v) {
 		return false
 	}
-	e.posTags = v
-	e._dt.mark(FieldRoleAttribute_posTags)
+	e.posTags = hydrateSlice_posTags(v)
+	e._dt.markFullReplace(FieldRoleAttribute_posTags)
+	return true
+}
+
+func (e *RoleAttributeEntity) AppendPosTags(values ...PosTagState) bool {
+	if e == nil || len(values) == 0 {
+		return false
+	}
+	for _, v := range values {
+		rv := HydratePosTagEntity(v)
+		e.posTags = append(e.posTags, rv)
+		e._dt.markSliceAppend(FieldRoleAttribute_posTags, v)
+	}
+	return true
+}
+
+func (e *RoleAttributeEntity) SetPosTagsAt(index int, value PosTagState) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.posTags) {
+		return false
+	}
+	var oldState PosTagState
+	if e.posTags[index] != nil {
+		oldState = e.posTags[index].Save()
+	}
+	if reflect.DeepEqual(oldState, value) {
+		return false
+	}
+	e.posTags[index] = HydratePosTagEntity(value)
+	e._dt.markSliceSet(FieldRoleAttribute_posTags, index, value)
+	return true
+}
+
+func (e *RoleAttributeEntity) UpdatePosTagsAt(index int, fn func(value *PosTagEntity)) bool {
+	if e == nil || fn == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.posTags) {
+		return false
+	}
+	v := e.posTags[index]
+	if v == nil {
+		return false
+	}
+	before := v.Save()
+	fn(v)
+	after := v.Save()
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markSliceSet(FieldRoleAttribute_posTags, index, after)
+	return true
+}
+
+func (e *RoleAttributeEntity) RemovePosTagsAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.posTags) {
+		return false
+	}
+	e.posTags = append(e.posTags[:index], e.posTags[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldRoleAttribute_posTags, index)
+	return true
+}
+
+func (e *RoleAttributeEntity) SwapRemovePosTagsAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.posTags) {
+		return false
+	}
+	last := len(e.posTags) - 1
+	if index != last {
+		e.posTags[index] = e.posTags[last]
+	}
+	e.posTags = e.posTags[:last]
+	e._dt.markSliceSwapRemoveAt(FieldRoleAttribute_posTags, index)
+	return true
+}
+
+func (e *RoleAttributeEntity) ClearPosTags() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.posTags) == 0 {
+		return false
+	}
+	e.posTags = nil
+	e._dt.markFullReplace(FieldRoleAttribute_posTags)
 	return true
 }

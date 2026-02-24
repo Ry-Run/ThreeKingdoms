@@ -4,6 +4,7 @@ import (
 	playeractor "ThreeKingdoms/internal/player/actor"
 	playermongo "ThreeKingdoms/internal/player/infra/persistence/mongodb"
 	"ThreeKingdoms/internal/shared/gameconfig/basic"
+	"ThreeKingdoms/internal/shared/gameconfig/facility"
 	_map "ThreeKingdoms/internal/shared/gameconfig/map"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	sharedmongo "ThreeKingdoms/internal/shared/infrastructure/mongo"
@@ -39,6 +40,7 @@ func LoadGameConfig(logger *zap.Logger) {
 	basic.Load()
 	_map.LoadMapBuilding()
 	_map.LoadMap()
+	facility.Load()
 	//logger.Info()
 }
 

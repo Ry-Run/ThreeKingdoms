@@ -6,9 +6,3 @@ type PlayerID int
 type WorldID int
 
 type RoleStatus int
-
-type PosTag struct {
-	X    int    `json:"x"`
-	Y    int    `json:"y"`
-	Name string `json:"name"`
-}

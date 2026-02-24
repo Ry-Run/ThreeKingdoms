@@ -185,6 +185,20 @@ func (h *PlayerHandler) HandleMyPropertyRequest(ctx actor.Context, p *PlayerActo
 	})
 }
 
+func (h *PlayerHandler) HandlePosTagListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.PosTagListRequest) {
+	attribute := p.Entity().Attribute()
+	tags := make([]*playerpb.PosTag, 0, attribute.LenPosTags())
+	attribute.ForEachPosTags(func(i int, v entity.PosTagState) {
+		tags = append(tags, &playerpb.PosTag{
+			Name: v.Name,
+			X:    int32(v.X),
+			Y:    int32(v.Y),
+		})
+	})
+
+	ctx.Respond(&playerpb.PosTagListResponse{PosTags: tags})
+}
+
 func (h *PlayerHandler) HandleMyGeneralsRequest(ctx actor.Context, p *PlayerActor, request *playerpb.MyGeneralsRequest) {
 	resp, err := PS.MyGenerals(request)
 	if err != nil {

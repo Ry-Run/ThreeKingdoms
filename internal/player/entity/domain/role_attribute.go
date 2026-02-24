@@ -10,20 +10,12 @@ type RoleAttribute struct {
 	parentId        int
 	collectTimes    int8
 	lastCollectTime time.Time
-	posTags         string   // `decode:"PosTagsToPosTagArray" encode:"PosTagArrayToPosTags"`,
-	posTagArray     []PosTag // mapper:ignore
+	posTags         []PosTag
 }
 
+// entity
 type PosTag struct {
-	X    int    `json:"x"`
-	Y    int    `json:"y"`
-	Name string `json:"name"`
-}
-
-func (p *RoleAttribute) PosTagsToPosTagArray() {
-
-}
-
-func (p *RoleAttribute) PosTagArrayToPosTags() {
-
+	X    int
+	Y    int
+	Name string
 }

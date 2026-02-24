@@ -7,10 +7,32 @@ import (
 )
 
 type RoleAttributeDoc struct {
-	ParentId        int       `bson:"parent_id"`
-	CollectTimes    int8      `bson:"collect_times"`
-	LastCollectTime time.Time `bson:"last_collect_time"`
-	PosTags         string    `bson:"pos_tags"`
+	ParentId        int         `bson:"parent_id"`
+	CollectTimes    int8        `bson:"collect_times"`
+	LastCollectTime time.Time   `bson:"last_collect_time"`
+	PosTags         []PosTagDoc `bson:"pos_tags"`
+}
+
+func toDocSlice_posTags(in []entity.PosTagState) []PosTagDoc {
+	if in == nil {
+		return nil
+	}
+	out := make([]PosTagDoc, len(in))
+	for i, v := range in {
+		out[i] = PosTagStateToDoc(v)
+	}
+	return out
+}
+
+func toStateSlice_posTags(in []PosTagDoc) []entity.PosTagState {
+	if in == nil {
+		return nil
+	}
+	out := make([]entity.PosTagState, len(in))
+	for i, v := range in {
+		out[i] = PosTagDocToState(v)
+	}
+	return out
 }
 
 func RoleAttributeStateToDoc(s entity.RoleAttributeState) RoleAttributeDoc {
@@ -19,7 +41,7 @@ func RoleAttributeStateToDoc(s entity.RoleAttributeState) RoleAttributeDoc {
 		ParentId:        state.ParentId,
 		CollectTimes:    state.CollectTimes,
 		LastCollectTime: state.LastCollectTime,
-		PosTags:         state.PosTags,
+		PosTags:         toDocSlice_posTags(state.PosTags),
 	}
 }
 
@@ -28,7 +50,7 @@ func RoleAttributeDocToState(d RoleAttributeDoc) entity.RoleAttributeState {
 		ParentId:        d.ParentId,
 		CollectTimes:    d.CollectTimes,
 		LastCollectTime: d.LastCollectTime,
-		PosTags:         d.PosTags,
+		PosTags:         toStateSlice_posTags(d.PosTags),
 	}
 	return entity.HydrateRoleAttributeEntity(state).Save()
 }

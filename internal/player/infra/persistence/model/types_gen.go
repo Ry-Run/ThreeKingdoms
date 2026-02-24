@@ -10,5 +10,3 @@ type PlayerID = entity.PlayerID
 type WorldID = entity.WorldID
 
 type RoleStatus = entity.RoleStatus
-
-type PosTag = entity.PosTag

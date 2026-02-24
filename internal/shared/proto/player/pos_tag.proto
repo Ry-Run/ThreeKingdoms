@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message PosTag {
+  int32 x = 1;
+  int32 y = 2;
+  string name = 3 ;
+}

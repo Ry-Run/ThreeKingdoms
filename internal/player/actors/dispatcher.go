@@ -34,6 +34,7 @@ func (d *Dispatcher) registerAll() {
 	register(d, PH.HandleCreateRole)
 	register(d, PH.HandleWorldMapRequest)
 	register(d, PH.HandleMyPropertyRequest)
+	register(d, PH.HandlePosTagListRequest)
 	register(d, PH.HandleMyGeneralsRequest)
 }
 
@@ -94,6 +95,8 @@ func unwrapPlayerRequestBody(req *playerpb.PlayerRequest) proto.Message {
 		return body.WorldMapRequest
 	case *playerpb.PlayerRequest_MyPropertyRequest:
 		return body.MyPropertyRequest
+	case *playerpb.PlayerRequest_PosTagListRequest:
+		return body.PosTagListRequest
 	case *playerpb.PlayerRequest_MyGeneralsRequest:
 		return body.MyGeneralsRequest
 	default:
