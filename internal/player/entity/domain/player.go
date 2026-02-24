@@ -15,4 +15,5 @@ type Player struct {
 	buildings []*Building
 	armies    []*Army
 	generals  []*General
+	facility  []*Facility
 }

@@ -4,7 +4,6 @@ import (
 	"ThreeKingdoms/internal/player/dc"
 	"ThreeKingdoms/internal/player/entity"
 	"ThreeKingdoms/internal/player/service/port"
-	"ThreeKingdoms/internal/shared/actor/messages"
 	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"context"
@@ -147,12 +146,6 @@ func (p *PlayerActor) init(ctx context.Context, actorCtx actor.Context, respondO
 		return err
 	}
 
-	err = p.initPlayer(ctx, actorCtx)
-
-	if err != nil {
-		return err
-	}
-
 	p.state = Online
 	p.startFlushLoop(actorCtx)
 
@@ -204,53 +197,8 @@ func (p *PlayerActor) Entity() *entity.PlayerEntity {
 	return p.dc.Entity()
 }
 
-func (p *PlayerActor) initPlayer(ctx context.Context, actorCtx actor.Context) error {
-	if p == nil {
-		return errors.New("player is nil")
-	}
-	player := p.Entity()
-
-	var needFlush bool
-	if player.Profile() == nil {
-		needFlush = player.SetProfile(p.buildInitialProfile())
-	}
-
-	if player.Resource() == nil {
-		needFlush = player.SetResource(p.buildInitialResource())
-	}
-
-	if player.Attribute() == nil {
-		needFlush = player.SetAttribute(p.buildInitialAttribute())
-	}
-
-	if needFlush {
-		_ = p.dc.FlushSync(context.TODO())
-	}
-
-	// todo 可以在第一次打开地图时获取位置
-	future := actorCtx.RequestFuture(
-		p.worldPID,
-		messages.HWCreateCity{
-			WorldBaseMessage: messages.WorldBaseMessage{
-				PlayerId: int(*p.PlayerId),
-				WorldId:  0,
-			},
-			NickName: player.Profile().NickName(),
-		},
-		5*time.Second,
-	)
-	result, err := future.Result()
-	if err != nil {
-		return err
-	}
-
-	if WHPosition, ok := result.(messages.WHCreateCity); ok {
-		actorCtx.Logger().Info("position", "x", WHPosition.X, "y", WHPosition.Y)
-	} else {
-		return entity.ErrCreateCity
-	}
-
-	return nil
+func (p *PlayerActor) DC() *dc.PlayerDC {
+	return p.dc
 }
 
 func (p *PlayerActor) acceptSeq(seq int64) error {
@@ -269,32 +217,4 @@ func (p *PlayerActor) acceptSeq(seq int64) error {
 		delete(p.seenSeq, evict)
 	}
 	return nil
-}
-
-func (p *PlayerActor) buildInitialProfile() entity.RoleState {
-	return entity.RoleState{
-		Headid:    0,
-		Sex:       0,
-		NickName:  "momo",
-		CreatedAt: time.Now(),
-	}
-}
-
-func (p *PlayerActor) buildInitialResource() entity.ResourceState {
-	config := basic.BasicConf.Role
-
-	return entity.ResourceState{
-		Wood:   config.Wood,
-		Iron:   config.Iron,
-		Stone:  config.Stone,
-		Grain:  config.Grain,
-		Gold:   config.Gold,
-		Decree: config.Decree,
-	}
-}
-
-func (p *PlayerActor) buildInitialAttribute() entity.RoleAttributeState {
-	return entity.RoleAttributeState{
-		ParentId: 0,
-	}
 }

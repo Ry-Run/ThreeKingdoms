@@ -2,7 +2,6 @@ package actors
 
 import (
 	"ThreeKingdoms/internal/player/entity"
-	"ThreeKingdoms/internal/player/service"
 	"ThreeKingdoms/internal/shared/actor/messages"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"context"
@@ -22,12 +21,38 @@ func (h *PlayerHandler) HandleEnterServerRequest(ctx actor.Context, p *PlayerAct
 		ctx.Respond(fail("request parameter error"))
 		return
 	}
-	resp, err := service.PS.EnterServer(p.Entity())
+	resp, err := PS.EnterServer(p)
 	if err != nil {
 		ctx.Respond(fail(err.Error()))
 		return
 	}
-	ctx.Respond(resp)
+
+	player := p.Entity()
+	f := ctx.RequestFuture(
+		p.worldPID,
+		messages.HWCreateCity{
+			WorldBaseMessage: messages.WorldBaseMessage{
+				PlayerId: int(*p.PlayerId),
+				WorldId:  0,
+			},
+			NickName: player.Profile().NickName(),
+		},
+		5*time.Second,
+	)
+	ctx.ReenterAfter(f, func(res interface{}, err error) {
+		if err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
+
+		if WHPosition, ok := res.(messages.WHCreateCity); ok {
+			ctx.Logger().Info("position", "x", WHPosition.X, "y", WHPosition.Y)
+		} else {
+			ctx.Logger().Info("position", entity.ErrCreateCity)
+		}
+
+		ctx.Respond(resp)
+	})
 }
 
 func (h *PlayerHandler) HandleCreateRole(ctx actor.Context, p *PlayerActor, request *playerpb.CreateRoleRequest) {
@@ -110,7 +135,7 @@ func (h *PlayerHandler) HandleWorldMapRequest(ctx actor.Context, p *PlayerActor,
 }
 
 func (h *PlayerHandler) HandleMyPropertyRequest(ctx actor.Context, p *PlayerActor, request *playerpb.MyPropertyRequest) {
-	resp := service.PS.MyProperty(p.Entity())
+	resp := PS.MyProperty(p.Entity())
 	if resp == nil {
 		ctx.Respond(fail("myProperty response is nil"))
 		return
@@ -161,7 +186,7 @@ func (h *PlayerHandler) HandleMyPropertyRequest(ctx actor.Context, p *PlayerActo
 }
 
 func (h *PlayerHandler) HandleMyGeneralsRequest(ctx actor.Context, p *PlayerActor, request *playerpb.MyGeneralsRequest) {
-	resp, err := service.PS.MyGenerals(request)
+	resp, err := PS.MyGenerals(request)
 	if err != nil {
 		ctx.Respond(fail(err.Error()))
 		return

@@ -35,6 +35,13 @@ func (s *playerGRPCServer) Handle(ctx context.Context, req *playerpb.PlayerReque
 	return s.rt.Handle(ctx, req)
 }
 
+func LoadGameConfig(logger *zap.Logger) {
+	basic.Load()
+	_map.LoadMapBuilding()
+	_map.LoadMap()
+	//logger.Info()
+}
+
 func main() {
 	serverconfig.Load()
 	if err := logs.Init("player", serverconfig.Conf.Log); err != nil {
@@ -42,8 +49,8 @@ func main() {
 	}
 	logs.Info("conf", zap.Any("conf", serverconfig.Conf))
 
-	basic.Load()
-	_map.Load()
+	logger := logs.Logger()
+	LoadGameConfig(logger)
 
 	playerHost := serverconfig.Conf.PlayerServer.Host
 	if playerHost == "" {
@@ -51,7 +58,7 @@ func main() {
 	}
 	playerAddr := fmt.Sprintf("%s:%d", playerHost, serverconfig.Conf.PlayerServer.Port)
 
-	mongoClient, err := sharedmongo.Open(serverconfig.Conf.MongoDB, logs.Logger())
+	mongoClient, err := sharedmongo.Open(serverconfig.Conf.MongoDB, logger)
 	if err != nil {
 		logs.Fatal("open mongodb failed", zap.Error(err))
 	}
@@ -65,7 +72,7 @@ func main() {
 	defer worldRT.Shutdown()
 
 	repo := playermongo.NewPlayerRepo(db)
-	rt := playeractor.NewRuntimeWithWorldPID(logs.Logger(), worldRT.ActorSystem(), repo, worldRT.WorldActorID(), 0)
+	rt := playeractor.NewRuntimeWithWorldPID(logger, worldRT.ActorSystem(), repo, worldRT.WorldActorID(), 0)
 	defer rt.Shutdown()
 
 	server := grpc.NewServer(

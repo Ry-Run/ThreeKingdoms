@@ -17,6 +17,7 @@ const (
 	FieldPlayer_buildings Field = "buildings"
 	FieldPlayer_armies    Field = "armies"
 	FieldPlayer_generals  Field = "generals"
+	FieldPlayer_facility  Field = "facility"
 )
 
 type PlayerEntityCollectionChange struct {
@@ -160,6 +161,7 @@ type PlayerState struct {
 	Buildings []BuildingState
 	Armies    []ArmyState
 	Generals  []GeneralState
+	Facility  []FacilityState
 }
 
 type PlayerEntitySnap struct {
@@ -180,6 +182,7 @@ type PlayerEntity struct {
 	buildings []*BuildingEntity
 	armies    []*ArmyEntity
 	generals  []*GeneralEntity
+	facility  []*FacilityEntity
 	_dt       PlayerEntityTrace
 }
 
@@ -318,6 +321,51 @@ func slicesEqual_generals(a, b []GeneralState) bool {
 	return true
 }
 
+func hydrateSlice_facility(in []FacilityState) []*FacilityEntity {
+	if in == nil {
+		return nil
+	}
+	out := make([]*FacilityEntity, len(in))
+	for i, v := range in {
+		out[i] = HydrateFacilityEntity(v)
+	}
+	return out
+}
+
+func snapshotSlice_facility(in []*FacilityEntity) []FacilityState {
+	if in == nil {
+		return nil
+	}
+	out := make([]FacilityState, len(in))
+	for i, v := range in {
+		if v == nil {
+			var z FacilityState
+			out[i] = z
+			continue
+		}
+		out[i] = v.Save()
+	}
+	return out
+}
+
+func slicesEqual_facility(a, b []FacilityState) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 func HydratePlayerEntity(s PlayerState) *PlayerEntity {
 	return &PlayerEntity{
 		playerID:  s.PlayerID,
@@ -330,6 +378,7 @@ func HydratePlayerEntity(s PlayerState) *PlayerEntity {
 		buildings: hydrateSlice_buildings(s.Buildings),
 		armies:    hydrateSlice_armies(s.Armies),
 		generals:  hydrateSlice_generals(s.Generals),
+		facility:  hydrateSlice_facility(s.Facility),
 	}
 }
 
@@ -501,6 +550,7 @@ func (e *PlayerEntity) Save() PlayerState {
 	s.Buildings = snapshotSlice_buildings(e.buildings)
 	s.Armies = snapshotSlice_armies(e.armies)
 	s.Generals = snapshotSlice_generals(e.generals)
+	s.Facility = snapshotSlice_facility(e.facility)
 	return s
 }
 
@@ -534,6 +584,7 @@ func (s *PlayerEntitySnap) Clone() *PlayerEntitySnap {
 	out.State.Buildings = append([]BuildingState(nil), s.State.Buildings...)
 	out.State.Armies = append([]ArmyState(nil), s.State.Armies...)
 	out.State.Generals = append([]GeneralState(nil), s.State.Generals...)
+	out.State.Facility = append([]FacilityState(nil), s.State.Facility...)
 	return out
 }
 
@@ -1208,5 +1259,159 @@ func (e *PlayerEntity) ClearGenerals() bool {
 	}
 	e.generals = nil
 	e._dt.markFullReplace(FieldPlayer_generals)
+	return true
+}
+
+func (e *PlayerEntity) LenFacility() int {
+	if e == nil {
+		return 0
+	}
+	return len(e.facility)
+}
+
+func (e *PlayerEntity) AtFacility(index int) (FacilityState, bool) {
+	var z FacilityState
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return z, false
+	}
+	v := e.facility[index]
+	if v == nil {
+		return z, true
+	}
+	return v.Save(), true
+}
+
+func (e *PlayerEntity) ForEachFacility(fn func(index int, value FacilityState)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.facility {
+		var state FacilityState
+		if v != nil {
+			state = v.Save()
+		}
+		fn(i, state)
+	}
+}
+
+func (e *PlayerEntity) RangeFacility(fn func(index int, value FacilityState) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.facility {
+		var state FacilityState
+		if v != nil {
+			state = v.Save()
+		}
+		if !fn(i, state) {
+			return
+		}
+	}
+}
+
+func (e *PlayerEntity) ReplaceFacility(v []FacilityState) bool {
+	if e == nil {
+		return false
+	}
+	if slicesEqual_facility(snapshotSlice_facility(e.facility), v) {
+		return false
+	}
+	e.facility = hydrateSlice_facility(v)
+	e._dt.markFullReplace(FieldPlayer_facility)
+	return true
+}
+
+func (e *PlayerEntity) AppendFacility(values ...FacilityState) bool {
+	if e == nil || len(values) == 0 {
+		return false
+	}
+	for _, v := range values {
+		rv := HydrateFacilityEntity(v)
+		e.facility = append(e.facility, rv)
+		e._dt.markSliceAppend(FieldPlayer_facility, v)
+	}
+	return true
+}
+
+func (e *PlayerEntity) SetFacilityAt(index int, value FacilityState) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return false
+	}
+	var oldState FacilityState
+	if e.facility[index] != nil {
+		oldState = e.facility[index].Save()
+	}
+	if reflect.DeepEqual(oldState, value) {
+		return false
+	}
+	e.facility[index] = HydrateFacilityEntity(value)
+	e._dt.markSliceSet(FieldPlayer_facility, index, value)
+	return true
+}
+
+func (e *PlayerEntity) UpdateFacilityAt(index int, fn func(value *FacilityEntity)) bool {
+	if e == nil || fn == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return false
+	}
+	v := e.facility[index]
+	if v == nil {
+		return false
+	}
+	before := v.Save()
+	fn(v)
+	after := v.Save()
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markSliceSet(FieldPlayer_facility, index, after)
+	return true
+}
+
+func (e *PlayerEntity) RemoveFacilityAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return false
+	}
+	e.facility = append(e.facility[:index], e.facility[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldPlayer_facility, index)
+	return true
+}
+
+func (e *PlayerEntity) SwapRemoveFacilityAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return false
+	}
+	last := len(e.facility) - 1
+	if index != last {
+		e.facility[index] = e.facility[last]
+	}
+	e.facility = e.facility[:last]
+	e._dt.markSliceSwapRemoveAt(FieldPlayer_facility, index)
+	return true
+}
+
+func (e *PlayerEntity) ClearFacility() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.facility) == 0 {
+		return false
+	}
+	e.facility = nil
+	e._dt.markFullReplace(FieldPlayer_facility)
 	return true
 }

@@ -16,6 +16,7 @@ type PlayerDoc struct {
 	Buildings []BuildingDoc    `bson:"buildings"`
 	Armies    []ArmyDoc        `bson:"armies"`
 	Generals  []GeneralDoc     `bson:"generals"`
+	Facility  []FacilityDoc    `bson:"facility"`
 }
 
 func toDocSlice_buildings(in []entity.BuildingState) []BuildingDoc {
@@ -84,6 +85,28 @@ func toStateSlice_generals(in []GeneralDoc) []entity.GeneralState {
 	return out
 }
 
+func toDocSlice_facility(in []entity.FacilityState) []FacilityDoc {
+	if in == nil {
+		return nil
+	}
+	out := make([]FacilityDoc, len(in))
+	for i, v := range in {
+		out[i] = FacilityStateToDoc(v)
+	}
+	return out
+}
+
+func toStateSlice_facility(in []FacilityDoc) []entity.FacilityState {
+	if in == nil {
+		return nil
+	}
+	out := make([]entity.FacilityState, len(in))
+	for i, v := range in {
+		out[i] = FacilityDocToState(v)
+	}
+	return out
+}
+
 func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 	state := entity.HydratePlayerEntity(s).Save()
 	return PlayerDoc{
@@ -97,6 +120,7 @@ func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 		Buildings: toDocSlice_buildings(state.Buildings),
 		Armies:    toDocSlice_armies(state.Armies),
 		Generals:  toDocSlice_generals(state.Generals),
+		Facility:  toDocSlice_facility(state.Facility),
 	}
 }
 
@@ -112,6 +136,7 @@ func PlayerDocToState(d PlayerDoc) entity.PlayerState {
 		Buildings: toStateSlice_buildings(d.Buildings),
 		Armies:    toStateSlice_armies(d.Armies),
 		Generals:  toStateSlice_generals(d.Generals),
+		Facility:  toStateSlice_facility(d.Facility),
 	}
 	return entity.HydratePlayerEntity(state).Save()
 }

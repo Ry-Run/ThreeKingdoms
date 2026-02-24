@@ -1,10 +1,13 @@
-package service
+package actors
 
 import (
 	"ThreeKingdoms/internal/player/entity"
+	"ThreeKingdoms/internal/shared/gameconfig/basic"
+	"ThreeKingdoms/internal/shared/gameconfig/facility"
 	commonpb "ThreeKingdoms/internal/shared/gen/common"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/security"
+	"context"
 	"errors"
 	"time"
 )
@@ -13,9 +16,14 @@ type PlayerService struct{}
 
 var PS = &PlayerService{}
 
-func (s *PlayerService) EnterServer(player *entity.PlayerEntity) (*playerpb.PlayerResponse, error) {
+func (s *PlayerService) EnterServer(p *PlayerActor) (*playerpb.PlayerResponse, error) {
+	player := p.Entity()
 	if player == nil {
 		return nil, errors.New("player not loaded")
+	}
+
+	if err := s.initPlayer(p); err != nil {
+		// 暂时忽略 flushSync 的 err
 	}
 
 	token, err := security.Award(int(player.PlayerID()))
@@ -66,6 +74,73 @@ func (s *PlayerService) MyProperty(player *entity.PlayerEntity) *playerpb.Player
 			},
 		},
 	}
+}
+
+func (s *PlayerService) initPlayer(p *PlayerActor) error {
+	if p == nil {
+		return errors.New("player is nil")
+	}
+	player := p.Entity()
+
+	var needFlush bool
+	if player.Profile() == nil {
+		needFlush = player.SetProfile(s.buildInitialProfile())
+	}
+
+	if player.Resource() == nil {
+		needFlush = player.SetResource(s.buildInitialResource())
+	}
+
+	if player.Attribute() == nil {
+		needFlush = player.SetAttribute(s.buildInitialAttribute())
+	}
+
+	if player.LenFacility() <= 0 {
+		needFlush = player.ReplaceFacility(s.buildInitialFacility())
+	}
+
+	if needFlush {
+		return p.DC().FlushSync(context.TODO())
+	}
+	return nil
+}
+
+func (s *PlayerService) buildInitialProfile() entity.RoleState {
+	return entity.RoleState{
+		Headid:    0,
+		Sex:       0,
+		NickName:  "momo",
+		CreatedAt: time.Now(),
+	}
+}
+
+func (s *PlayerService) buildInitialResource() entity.ResourceState {
+	config := basic.BasicConf.Role
+
+	return entity.ResourceState{
+		Wood:   config.Wood,
+		Iron:   config.Iron,
+		Stone:  config.Stone,
+		Grain:  config.Grain,
+		Gold:   config.Gold,
+		Decree: config.Decree,
+	}
+}
+
+func (s *PlayerService) buildInitialAttribute() entity.RoleAttributeState {
+	return entity.RoleAttributeState{
+		ParentId: 0,
+	}
+}
+
+func (s *PlayerService) buildInitialFacility() []entity.FacilityState {
+	facilityList := facility.FacilityConf.List
+	facilities := make([]entity.FacilityState, 0, len(facilityList))
+	for _, v := range facilityList {
+		f := entity.FacilityState{Name: v.Name, PrivateLevel: 0, FType: v.Type, UpTime: 0}
+		facilities = append(facilities, f)
+	}
+	return facilities
 }
 
 func (s *PlayerService) MyGenerals(request *playerpb.MyGeneralsRequest) (*playerpb.PlayerResponse, error) {
