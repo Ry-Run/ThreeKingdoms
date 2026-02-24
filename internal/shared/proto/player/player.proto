@@ -26,7 +26,7 @@ message PlayerRequest {
     WorldMapRequest worldMapRequest = 12;
     MyPropertyRequest myPropertyRequest = 13;
     PosTagListRequest posTagListRequest = 14;
-    MyGeneralsRequest myGeneralsRequest = 23;
+    MyGeneralsRequest myGeneralsRequest = 15;
   }
 
   string trace_id = 100;
@@ -41,7 +41,7 @@ message PlayerResponse {
     WorldMapResponse worldMapResponse = 12;
     MyPropertyResponse myPropertyResponse = 13;
     PosTagListResponse posTagListResponse = 14;
-    MyGeneralsResponse myGeneralsResponse = 24;
+    MyGeneralsResponse myGeneralsResponse = 15;
   }
 }
 
@@ -101,9 +101,8 @@ message PosTagListResponse {
 }
 
 message MyGeneralsRequest {
-  int32 player_id = 1;
 }
 
 message MyGeneralsResponse {
-  int32 player_id = 1;
+  repeated General generals = 1;
 }

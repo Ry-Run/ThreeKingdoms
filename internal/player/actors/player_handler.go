@@ -200,7 +200,7 @@ func (h *PlayerHandler) HandlePosTagListRequest(ctx actor.Context, p *PlayerActo
 }
 
 func (h *PlayerHandler) HandleMyGeneralsRequest(ctx actor.Context, p *PlayerActor, request *playerpb.MyGeneralsRequest) {
-	resp, err := PS.MyGenerals(request)
+	resp, err := PS.GetGenerals(p.Entity())
 	if err != nil {
 		ctx.Respond(fail(err.Error()))
 		return

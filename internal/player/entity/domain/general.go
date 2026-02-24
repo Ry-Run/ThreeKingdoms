@@ -2,14 +2,6 @@ package domain
 
 import "time"
 
-const (
-	GeneralNormal      = 0 //正常
-	GeneralComposeStar = 1 //星级合成
-	GeneralConvert     = 2 //转换
-)
-
-const SkillLimit = 3
-
 // entity
 type General struct {
 	id             int
@@ -32,7 +24,6 @@ type General struct {
 	starLv         int8      // 稀有度(星级)进阶等级级
 	star           int8      // 稀有度(星级)
 	parentId       int       // 已合成到武将的id
-	skills         string    // 携带的技能
-	skillsArray    []*GSkill //
+	skills         []*GSkill //携带的技能
 	state          int8      // 0:正常，1:转换掉了
 }

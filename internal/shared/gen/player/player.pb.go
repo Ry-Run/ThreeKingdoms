@@ -185,7 +185,7 @@ type PlayerRequest_PosTagListRequest struct {
 }
 
 type PlayerRequest_MyGeneralsRequest struct {
-	MyGeneralsRequest *MyGeneralsRequest `protobuf:"bytes,23,opt,name=myGeneralsRequest,proto3,oneof"`
+	MyGeneralsRequest *MyGeneralsRequest `protobuf:"bytes,15,opt,name=myGeneralsRequest,proto3,oneof"`
 }
 
 func (*PlayerRequest_EnterServerRequest) isPlayerRequest_Body() {}
@@ -339,7 +339,7 @@ type PlayerResponse_PosTagListResponse struct {
 }
 
 type PlayerResponse_MyGeneralsResponse struct {
-	MyGeneralsResponse *MyGeneralsResponse `protobuf:"bytes,24,opt,name=myGeneralsResponse,proto3,oneof"`
+	MyGeneralsResponse *MyGeneralsResponse `protobuf:"bytes,15,opt,name=myGeneralsResponse,proto3,oneof"`
 }
 
 func (*PlayerResponse_EnterServerResponse) isPlayerResponse_Body() {}
@@ -884,7 +884,6 @@ func (x *PosTagListResponse) GetPosTags() []*PosTag {
 
 type MyGeneralsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      int32                  `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -919,16 +918,9 @@ func (*MyGeneralsRequest) Descriptor() ([]byte, []int) {
 	return file_player_player_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *MyGeneralsRequest) GetPlayerId() int32 {
-	if x != nil {
-		return x.PlayerId
-	}
-	return 0
-}
-
 type MyGeneralsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      int32                  `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Generals      []*General             `protobuf:"bytes,1,rep,name=generals,proto3" json:"generals,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -963,11 +955,11 @@ func (*MyGeneralsResponse) Descriptor() ([]byte, []int) {
 	return file_player_player_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *MyGeneralsResponse) GetPlayerId() int32 {
+func (x *MyGeneralsResponse) GetGenerals() []*General {
 	if x != nil {
-		return x.PlayerId
+		return x.Generals
 	}
-	return 0
+	return nil
 }
 
 var File_player_player_proto protoreflect.FileDescriptor
@@ -985,7 +977,7 @@ const file_player_player_proto_rawDesc = "" +
 	"\x0fworldMapRequest\x18\f \x01(\v2&.three_kingdoms.player.WorldMapRequestH\x00R\x0fworldMapRequest\x12X\n" +
 	"\x11myPropertyRequest\x18\r \x01(\v2(.three_kingdoms.player.MyPropertyRequestH\x00R\x11myPropertyRequest\x12X\n" +
 	"\x11posTagListRequest\x18\x0e \x01(\v2(.three_kingdoms.player.PosTagListRequestH\x00R\x11posTagListRequest\x12X\n" +
-	"\x11myGeneralsRequest\x18\x17 \x01(\v2(.three_kingdoms.player.MyGeneralsRequestH\x00R\x11myGeneralsRequest\x12\x19\n" +
+	"\x11myGeneralsRequest\x18\x0f \x01(\v2(.three_kingdoms.player.MyGeneralsRequestH\x00R\x11myGeneralsRequest\x12\x19\n" +
 	"\btrace_id\x18d \x01(\tR\atraceIdB\x06\n" +
 	"\x04body\"\xfd\x04\n" +
 	"\x0ePlayerResponse\x128\n" +
@@ -996,7 +988,7 @@ const file_player_player_proto_rawDesc = "" +
 	"\x10worldMapResponse\x18\f \x01(\v2'.three_kingdoms.player.WorldMapResponseH\x00R\x10worldMapResponse\x12[\n" +
 	"\x12myPropertyResponse\x18\r \x01(\v2).three_kingdoms.player.MyPropertyResponseH\x00R\x12myPropertyResponse\x12[\n" +
 	"\x12posTagListResponse\x18\x0e \x01(\v2).three_kingdoms.player.PosTagListResponseH\x00R\x12posTagListResponse\x12[\n" +
-	"\x12myGeneralsResponse\x18\x18 \x01(\v2).three_kingdoms.player.MyGeneralsResponseH\x00R\x12myGeneralsResponseB\x06\n" +
+	"\x12myGeneralsResponse\x18\x0f \x01(\v2).three_kingdoms.player.MyGeneralsResponseH\x00R\x12myGeneralsResponseB\x06\n" +
 	"\x04body\"1\n" +
 	"\x12EnterServerRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"\x81\x01\n" +
@@ -1028,11 +1020,10 @@ const file_player_player_proto_rawDesc = "" +
 	"\x11PosTagListRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"M\n" +
 	"\x12PosTagListResponse\x127\n" +
-	"\aposTags\x18\x01 \x03(\v2\x1d.three_kingdoms.player.PosTagR\aposTags\"0\n" +
-	"\x11MyGeneralsRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"1\n" +
-	"\x12MyGeneralsResponse\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId2f\n" +
+	"\aposTags\x18\x01 \x03(\v2\x1d.three_kingdoms.player.PosTagR\aposTags\"\x13\n" +
+	"\x11MyGeneralsRequest\"P\n" +
+	"\x12MyGeneralsResponse\x12:\n" +
+	"\bgenerals\x18\x01 \x03(\v2\x1e.three_kingdoms.player.GeneralR\bgenerals2f\n" +
 	"\rPlayerService\x12U\n" +
 	"\x06Handle\x12$.three_kingdoms.player.PlayerRequest\x1a%.three_kingdoms.player.PlayerResponseB3Z1ThreeKingdoms/internal/shared/gen/player;playerpbb\x06proto3"
 
@@ -1098,13 +1089,14 @@ var file_player_player_proto_depIdxs = []int32{
 	20, // 20: three_kingdoms.player.MyPropertyResponse.cities:type_name -> three_kingdoms.player.City
 	21, // 21: three_kingdoms.player.MyPropertyResponse.armies:type_name -> three_kingdoms.player.Army
 	22, // 22: three_kingdoms.player.PosTagListResponse.posTags:type_name -> three_kingdoms.player.PosTag
-	0,  // 23: three_kingdoms.player.PlayerService.Handle:input_type -> three_kingdoms.player.PlayerRequest
-	1,  // 24: three_kingdoms.player.PlayerService.Handle:output_type -> three_kingdoms.player.PlayerResponse
-	24, // [24:25] is the sub-list for method output_type
-	23, // [23:24] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	19, // 23: three_kingdoms.player.MyGeneralsResponse.generals:type_name -> three_kingdoms.player.General
+	0,  // 24: three_kingdoms.player.PlayerService.Handle:input_type -> three_kingdoms.player.PlayerRequest
+	1,  // 25: three_kingdoms.player.PlayerService.Handle:output_type -> three_kingdoms.player.PlayerResponse
+	25, // [25:26] is the sub-list for method output_type
+	24, // [24:25] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_player_player_proto_init() }

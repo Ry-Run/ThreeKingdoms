@@ -4,6 +4,7 @@ import (
 	"ThreeKingdoms/internal/player/entity"
 	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	"ThreeKingdoms/internal/shared/gameconfig/facility"
+	"ThreeKingdoms/internal/shared/gameconfig/general"
 	commonpb "ThreeKingdoms/internal/shared/gen/common"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/security"
@@ -143,15 +144,50 @@ func (s *PlayerService) buildInitialFacility() []entity.FacilityState {
 	return facilities
 }
 
-func (s *PlayerService) MyGenerals(request *playerpb.MyGeneralsRequest) (*playerpb.PlayerResponse, error) {
-	if request == nil {
-		return nil, errors.New("request parameter error")
+func (s *PlayerService) GetGenerals(player *entity.PlayerEntity) (*playerpb.PlayerResponse, error) {
+	// 随机三个武将 做为初始武将
+	needGenerals := general.SkillLimit - player.LenGenerals()
+	if needGenerals > 0 {
+		for i := 0; i < needGenerals; i++ {
+			cfgId := general.Rand()
+			// 创建 general
+			cfg := general.General.GMap[cfgId]
+			generalState := entity.GeneralState{
+				Power:          basic.BasicConf.General.PowerLimit,
+				CfgId:          cfg.CfgId,
+				Order:          0,
+				CityId:         0,
+				Level:          0,
+				CreatedAt:      time.Now(),
+				CurArms:        cfg.Arms[0],
+				HasPrPoint:     0,
+				UsePrPoint:     0,
+				AttackDistance: 0,
+				ForceAdded:     0,
+				StrategyAdded:  0,
+				DefenseAdded:   0,
+				SpeedAdded:     0,
+				DestroyAdded:   0,
+				Star:           cfg.Star,
+				StarLv:         0,
+				ParentId:       0,
+				Skills:         make([]entity.GSkillState, 0),
+				State:          general.GeneralNormal,
+			}
+			player.AppendGenerals(generalState)
+		}
 	}
+
+	generals := make([]*playerpb.General, 0)
+	player.ForEachGenerals(func(i int, v entity.GeneralState) {
+		generals = append(generals, ToPBGeneral(v))
+	})
+
 	return &playerpb.PlayerResponse{
 		Result: &commonpb.BizResult{Ok: true},
 		Body: &playerpb.PlayerResponse_MyGeneralsResponse{
 			MyGeneralsResponse: &playerpb.MyGeneralsResponse{
-				PlayerId: request.PlayerId,
+				Generals: generals,
 			},
 		},
 	}, nil
@@ -226,8 +262,8 @@ func ToPBBuilding(b entity.BuildingState) *playerpb.Building {
 }
 
 func ToPBGeneral(g entity.GeneralState) *playerpb.General {
-	skills := make([]*playerpb.GSkill, 0, len(g.SkillsArray))
-	for _, value := range g.SkillsArray {
+	skills := make([]*playerpb.GSkill, 0, len(g.Skills))
+	for _, value := range g.Skills {
 		skills = append(skills, ToPBGSkill(value))
 	}
 	return &playerpb.General{

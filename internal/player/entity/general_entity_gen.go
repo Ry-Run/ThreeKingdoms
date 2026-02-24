@@ -29,7 +29,6 @@ const (
 	FieldGeneral_star           Field = "star"
 	FieldGeneral_parentId       Field = "parentId"
 	FieldGeneral_skills         Field = "skills"
-	FieldGeneral_skillsArray    Field = "skillsArray"
 	FieldGeneral_state          Field = "state"
 )
 
@@ -184,8 +183,7 @@ type GeneralState struct {
 	StarLv         int8
 	Star           int8
 	ParentId       int
-	Skills         string
-	SkillsArray    []GSkillState
+	Skills         []GSkillState
 	State          int8
 }
 
@@ -217,13 +215,12 @@ type GeneralEntity struct {
 	starLv         int8
 	star           int8
 	parentId       int
-	skills         string
-	skillsArray    []*GSkillEntity
+	skills         []*GSkillEntity
 	state          int8
 	_dt            GeneralEntityTrace
 }
 
-func hydrateSlice_skillsArray(in []GSkillState) []*GSkillEntity {
+func hydrateSlice_skills(in []GSkillState) []*GSkillEntity {
 	if in == nil {
 		return nil
 	}
@@ -234,7 +231,7 @@ func hydrateSlice_skillsArray(in []GSkillState) []*GSkillEntity {
 	return out
 }
 
-func snapshotSlice_skillsArray(in []*GSkillEntity) []GSkillState {
+func snapshotSlice_skills(in []*GSkillEntity) []GSkillState {
 	if in == nil {
 		return nil
 	}
@@ -250,7 +247,7 @@ func snapshotSlice_skillsArray(in []*GSkillEntity) []GSkillState {
 	return out
 }
 
-func slicesEqual_skillsArray(a, b []GSkillState) bool {
+func slicesEqual_skills(a, b []GSkillState) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -290,8 +287,7 @@ func HydrateGeneralEntity(s GeneralState) *GeneralEntity {
 		starLv:         s.StarLv,
 		star:           s.Star,
 		parentId:       s.ParentId,
-		skills:         s.Skills,
-		skillsArray:    hydrateSlice_skillsArray(s.SkillsArray),
+		skills:         hydrateSlice_skills(s.Skills),
 		state:          s.State,
 	}
 }
@@ -432,8 +428,7 @@ func (e *GeneralEntity) Save() GeneralState {
 	s.StarLv = e.starLv
 	s.Star = e.star
 	s.ParentId = e.parentId
-	s.Skills = e.skills
-	s.SkillsArray = snapshotSlice_skillsArray(e.skillsArray)
+	s.Skills = snapshotSlice_skills(e.skills)
 	s.State = e.state
 	return s
 }
@@ -465,7 +460,7 @@ func (s *GeneralEntitySnap) Clone() *GeneralEntitySnap {
 			out.Changes[f] = cloneGeneralEntityCollectionChange(ch)
 		}
 	}
-	out.State.SkillsArray = append([]GSkillState(nil), s.State.SkillsArray...)
+	out.State.Skills = append([]GSkillState(nil), s.State.Skills...)
 	return out
 }
 
@@ -869,53 +864,33 @@ func (e *GeneralEntity) SetParentId(v int) bool {
 	return true
 }
 
-func (e *GeneralEntity) Skills() string {
-	if e == nil {
-		var z string
-		return z
-	}
-	return e.skills
-}
-
-func (e *GeneralEntity) SetSkills(v string) bool {
-	if e == nil {
-		return false
-	}
-	if e.skills == v {
-		return false
-	}
-	e.skills = v
-	e._dt.mark(FieldGeneral_skills)
-	return true
-}
-
-func (e *GeneralEntity) LenSkillsArray() int {
+func (e *GeneralEntity) LenSkills() int {
 	if e == nil {
 		return 0
 	}
-	return len(e.skillsArray)
+	return len(e.skills)
 }
 
-func (e *GeneralEntity) AtSkillsArray(index int) (GSkillState, bool) {
+func (e *GeneralEntity) AtSkills(index int) (GSkillState, bool) {
 	var z GSkillState
 	if e == nil {
 		return z, false
 	}
-	if index < 0 || index >= len(e.skillsArray) {
+	if index < 0 || index >= len(e.skills) {
 		return z, false
 	}
-	v := e.skillsArray[index]
+	v := e.skills[index]
 	if v == nil {
 		return z, true
 	}
 	return v.Save(), true
 }
 
-func (e *GeneralEntity) ForEachSkillsArray(fn func(index int, value GSkillState)) {
+func (e *GeneralEntity) ForEachSkills(fn func(index int, value GSkillState)) {
 	if e == nil || fn == nil {
 		return
 	}
-	for i, v := range e.skillsArray {
+	for i, v := range e.skills {
 		var state GSkillState
 		if v != nil {
 			state = v.Save()
@@ -924,11 +899,11 @@ func (e *GeneralEntity) ForEachSkillsArray(fn func(index int, value GSkillState)
 	}
 }
 
-func (e *GeneralEntity) RangeSkillsArray(fn func(index int, value GSkillState) bool) {
+func (e *GeneralEntity) RangeSkills(fn func(index int, value GSkillState) bool) {
 	if e == nil || fn == nil {
 		return
 	}
-	for i, v := range e.skillsArray {
+	for i, v := range e.skills {
 		var state GSkillState
 		if v != nil {
 			state = v.Save()
@@ -939,57 +914,57 @@ func (e *GeneralEntity) RangeSkillsArray(fn func(index int, value GSkillState) b
 	}
 }
 
-func (e *GeneralEntity) ReplaceSkillsArray(v []GSkillState) bool {
+func (e *GeneralEntity) ReplaceSkills(v []GSkillState) bool {
 	if e == nil {
 		return false
 	}
-	if slicesEqual_skillsArray(snapshotSlice_skillsArray(e.skillsArray), v) {
+	if slicesEqual_skills(snapshotSlice_skills(e.skills), v) {
 		return false
 	}
-	e.skillsArray = hydrateSlice_skillsArray(v)
-	e._dt.markFullReplace(FieldGeneral_skillsArray)
+	e.skills = hydrateSlice_skills(v)
+	e._dt.markFullReplace(FieldGeneral_skills)
 	return true
 }
 
-func (e *GeneralEntity) AppendSkillsArray(values ...GSkillState) bool {
+func (e *GeneralEntity) AppendSkills(values ...GSkillState) bool {
 	if e == nil || len(values) == 0 {
 		return false
 	}
 	for _, v := range values {
 		rv := HydrateGSkillEntity(v)
-		e.skillsArray = append(e.skillsArray, rv)
-		e._dt.markSliceAppend(FieldGeneral_skillsArray, v)
+		e.skills = append(e.skills, rv)
+		e._dt.markSliceAppend(FieldGeneral_skills, v)
 	}
 	return true
 }
 
-func (e *GeneralEntity) SetSkillsArrayAt(index int, value GSkillState) bool {
+func (e *GeneralEntity) SetSkillsAt(index int, value GSkillState) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.skillsArray) {
+	if index < 0 || index >= len(e.skills) {
 		return false
 	}
 	var oldState GSkillState
-	if e.skillsArray[index] != nil {
-		oldState = e.skillsArray[index].Save()
+	if e.skills[index] != nil {
+		oldState = e.skills[index].Save()
 	}
 	if reflect.DeepEqual(oldState, value) {
 		return false
 	}
-	e.skillsArray[index] = HydrateGSkillEntity(value)
-	e._dt.markSliceSet(FieldGeneral_skillsArray, index, value)
+	e.skills[index] = HydrateGSkillEntity(value)
+	e._dt.markSliceSet(FieldGeneral_skills, index, value)
 	return true
 }
 
-func (e *GeneralEntity) UpdateSkillsArrayAt(index int, fn func(value *GSkillEntity)) bool {
+func (e *GeneralEntity) UpdateSkillsAt(index int, fn func(value *GSkillEntity)) bool {
 	if e == nil || fn == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.skillsArray) {
+	if index < 0 || index >= len(e.skills) {
 		return false
 	}
-	v := e.skillsArray[index]
+	v := e.skills[index]
 	if v == nil {
 		return false
 	}
@@ -999,47 +974,47 @@ func (e *GeneralEntity) UpdateSkillsArrayAt(index int, fn func(value *GSkillEnti
 	if reflect.DeepEqual(before, after) {
 		return false
 	}
-	e._dt.markSliceSet(FieldGeneral_skillsArray, index, after)
+	e._dt.markSliceSet(FieldGeneral_skills, index, after)
 	return true
 }
 
-func (e *GeneralEntity) RemoveSkillsArrayAt(index int) bool {
+func (e *GeneralEntity) RemoveSkillsAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.skillsArray) {
+	if index < 0 || index >= len(e.skills) {
 		return false
 	}
-	e.skillsArray = append(e.skillsArray[:index], e.skillsArray[index+1:]...)
-	e._dt.markSliceRemoveAt(FieldGeneral_skillsArray, index)
+	e.skills = append(e.skills[:index], e.skills[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldGeneral_skills, index)
 	return true
 }
 
-func (e *GeneralEntity) SwapRemoveSkillsArrayAt(index int) bool {
+func (e *GeneralEntity) SwapRemoveSkillsAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.skillsArray) {
+	if index < 0 || index >= len(e.skills) {
 		return false
 	}
-	last := len(e.skillsArray) - 1
+	last := len(e.skills) - 1
 	if index != last {
-		e.skillsArray[index] = e.skillsArray[last]
+		e.skills[index] = e.skills[last]
 	}
-	e.skillsArray = e.skillsArray[:last]
-	e._dt.markSliceSwapRemoveAt(FieldGeneral_skillsArray, index)
+	e.skills = e.skills[:last]
+	e._dt.markSliceSwapRemoveAt(FieldGeneral_skills, index)
 	return true
 }
 
-func (e *GeneralEntity) ClearSkillsArray() bool {
+func (e *GeneralEntity) ClearSkills() bool {
 	if e == nil {
 		return false
 	}
-	if len(e.skillsArray) == 0 {
+	if len(e.skills) == 0 {
 		return false
 	}
-	e.skillsArray = nil
-	e._dt.markFullReplace(FieldGeneral_skillsArray)
+	e.skills = nil
+	e._dt.markFullReplace(FieldGeneral_skills)
 	return true
 }
 

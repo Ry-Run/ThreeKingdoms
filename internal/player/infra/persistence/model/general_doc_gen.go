@@ -27,12 +27,11 @@ type GeneralDoc struct {
 	StarLv         int8        `bson:"star_lv"`
 	Star           int8        `bson:"star"`
 	ParentId       int         `bson:"parent_id"`
-	Skills         string      `bson:"skills"`
-	SkillsArray    []GSkillDoc `bson:"skills_array"`
+	Skills         []GSkillDoc `bson:"skills"`
 	State          int8        `bson:"state"`
 }
 
-func toDocSlice_skillsArray(in []entity.GSkillState) []GSkillDoc {
+func toDocSlice_skills(in []entity.GSkillState) []GSkillDoc {
 	if in == nil {
 		return nil
 	}
@@ -43,7 +42,7 @@ func toDocSlice_skillsArray(in []entity.GSkillState) []GSkillDoc {
 	return out
 }
 
-func toStateSlice_skillsArray(in []GSkillDoc) []entity.GSkillState {
+func toStateSlice_skills(in []GSkillDoc) []entity.GSkillState {
 	if in == nil {
 		return nil
 	}
@@ -77,8 +76,7 @@ func GeneralStateToDoc(s entity.GeneralState) GeneralDoc {
 		StarLv:         state.StarLv,
 		Star:           state.Star,
 		ParentId:       state.ParentId,
-		Skills:         state.Skills,
-		SkillsArray:    toDocSlice_skillsArray(state.SkillsArray),
+		Skills:         toDocSlice_skills(state.Skills),
 		State:          state.State,
 	}
 }
@@ -105,8 +103,7 @@ func GeneralDocToState(d GeneralDoc) entity.GeneralState {
 		StarLv:         d.StarLv,
 		Star:           d.Star,
 		ParentId:       d.ParentId,
-		Skills:         d.Skills,
-		SkillsArray:    toStateSlice_skillsArray(d.SkillsArray),
+		Skills:         toStateSlice_skills(d.Skills),
 		State:          d.State,
 	}
 	return entity.HydrateGeneralEntity(state).Save()
