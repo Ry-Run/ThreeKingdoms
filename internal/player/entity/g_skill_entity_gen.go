@@ -11,6 +11,8 @@ const (
 	FieldGSkill_cfgId Field = "cfgId"
 )
 
+var emptyGSkillEntity = &GSkillEntity{}
+
 type GSkillEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any

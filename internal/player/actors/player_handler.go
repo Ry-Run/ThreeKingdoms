@@ -234,3 +234,14 @@ func (h *PlayerHandler) HandleWarReportRequest(ctx actor.Context, p *PlayerActor
 		WarReports: warReports,
 	})
 }
+
+func (h *PlayerHandler) HandleSkillListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.SkillListRequest) {
+	player := p.Entity()
+	skills := make([]*playerpb.Skill, 0, player.LenSkills())
+	player.ForEachSkills(func(i int, v entity.SkillState) {
+		skills = append(skills, ToPBSkill(v))
+	})
+	ctx.Respond(&playerpb.SkillListResponse{
+		Skills: skills,
+	})
+}

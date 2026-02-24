@@ -32,6 +32,8 @@ const (
 	FieldArmy_cellY              Field = "cellY"
 )
 
+var emptyArmyEntity = &ArmyEntity{}
+
 type ArmyEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any
@@ -220,7 +222,7 @@ type ArmyEntity struct {
 	_dt                ArmyEntityTrace
 }
 
-func slicesEqual_generalArray(a, b []int) bool {
+func (e *ArmyEntity) slicesEqualGeneralArray(a, b []int) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -238,7 +240,7 @@ func slicesEqual_generalArray(a, b []int) bool {
 	return true
 }
 
-func slicesEqual_soldierArray(a, b []int) bool {
+func (e *ArmyEntity) slicesEqualSoldierArray(a, b []int) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -256,7 +258,7 @@ func slicesEqual_soldierArray(a, b []int) bool {
 	return true
 }
 
-func slicesEqual_conscriptTimeArray(a, b []int64) bool {
+func (e *ArmyEntity) slicesEqualConscriptTimeArray(a, b []int64) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -274,7 +276,7 @@ func slicesEqual_conscriptTimeArray(a, b []int64) bool {
 	return true
 }
 
-func slicesEqual_conscriptCntArray(a, b []int) bool {
+func (e *ArmyEntity) slicesEqualConscriptCntArray(a, b []int) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -292,7 +294,7 @@ func slicesEqual_conscriptCntArray(a, b []int) bool {
 	return true
 }
 
-func hydrateSlice_gens(in []GeneralState) []*GeneralEntity {
+func (e *ArmyEntity) hydrateSliceGens(in []GeneralState) []*GeneralEntity {
 	if in == nil {
 		return nil
 	}
@@ -303,7 +305,7 @@ func hydrateSlice_gens(in []GeneralState) []*GeneralEntity {
 	return out
 }
 
-func snapshotSlice_gens(in []*GeneralEntity) []GeneralState {
+func (e *ArmyEntity) snapshotSliceGens(in []*GeneralEntity) []GeneralState {
 	if in == nil {
 		return nil
 	}
@@ -319,7 +321,7 @@ func snapshotSlice_gens(in []*GeneralEntity) []GeneralState {
 	return out
 }
 
-func slicesEqual_gens(a, b []GeneralState) bool {
+func (e *ArmyEntity) slicesEqualGens(a, b []GeneralState) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -358,7 +360,7 @@ func HydrateArmyEntity(s ArmyState) *ArmyEntity {
 		soldierArray:       append([]int(nil), s.SoldierArray...),
 		conscriptTimeArray: append([]int64(nil), s.ConscriptTimeArray...),
 		conscriptCntArray:  append([]int(nil), s.ConscriptCntArray...),
-		gens:               hydrateSlice_gens(s.Gens),
+		gens:               emptyArmyEntity.hydrateSliceGens(s.Gens),
 		cellX:              s.CellX,
 		cellY:              s.CellY,
 	}
@@ -499,7 +501,7 @@ func (e *ArmyEntity) Save() ArmyState {
 	s.SoldierArray = append([]int(nil), e.soldierArray...)
 	s.ConscriptTimeArray = append([]int64(nil), e.conscriptTimeArray...)
 	s.ConscriptCntArray = append([]int(nil), e.conscriptCntArray...)
-	s.Gens = snapshotSlice_gens(e.gens)
+	s.Gens = e.snapshotSliceGens(e.gens)
 	s.CellX = e.cellX
 	s.CellY = e.cellY
 	return s
@@ -882,7 +884,7 @@ func (e *ArmyEntity) ReplaceGeneralArray(v []int) bool {
 	if e == nil {
 		return false
 	}
-	if slicesEqual_generalArray(e.generalArray, v) {
+	if e.slicesEqualGeneralArray(e.generalArray, v) {
 		return false
 	}
 	e.generalArray = append([]int(nil), v...)
@@ -998,7 +1000,7 @@ func (e *ArmyEntity) ReplaceSoldierArray(v []int) bool {
 	if e == nil {
 		return false
 	}
-	if slicesEqual_soldierArray(e.soldierArray, v) {
+	if e.slicesEqualSoldierArray(e.soldierArray, v) {
 		return false
 	}
 	e.soldierArray = append([]int(nil), v...)
@@ -1114,7 +1116,7 @@ func (e *ArmyEntity) ReplaceConscriptTimeArray(v []int64) bool {
 	if e == nil {
 		return false
 	}
-	if slicesEqual_conscriptTimeArray(e.conscriptTimeArray, v) {
+	if e.slicesEqualConscriptTimeArray(e.conscriptTimeArray, v) {
 		return false
 	}
 	e.conscriptTimeArray = append([]int64(nil), v...)
@@ -1230,7 +1232,7 @@ func (e *ArmyEntity) ReplaceConscriptCntArray(v []int) bool {
 	if e == nil {
 		return false
 	}
-	if slicesEqual_conscriptCntArray(e.conscriptCntArray, v) {
+	if e.slicesEqualConscriptCntArray(e.conscriptCntArray, v) {
 		return false
 	}
 	e.conscriptCntArray = append([]int(nil), v...)
@@ -1358,10 +1360,10 @@ func (e *ArmyEntity) ReplaceGens(v []GeneralState) bool {
 	if e == nil {
 		return false
 	}
-	if slicesEqual_gens(snapshotSlice_gens(e.gens), v) {
+	if e.slicesEqualGens(e.snapshotSliceGens(e.gens), v) {
 		return false
 	}
-	e.gens = hydrateSlice_gens(v)
+	e.gens = e.hydrateSliceGens(v)
 	e._dt.markFullReplace(FieldArmy_gens)
 	return true
 }

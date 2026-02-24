@@ -18,6 +18,7 @@ type PlayerDoc struct {
 	Generals   []GeneralDoc         `bson:"generals"`
 	Facility   []FacilityDoc        `bson:"facility"`
 	WarReports map[int]WarReportDoc `bson:"war_reports"`
+	Skills     map[int]SkillDoc     `bson:"skills"`
 }
 
 func toDocSlice_buildings(in []entity.BuildingState) []BuildingDoc {
@@ -152,6 +153,28 @@ func toStateMap_warReports(in map[int]WarReportDoc) map[int]entity.WarReportStat
 	return out
 }
 
+func toDocMap_skills(in map[int]entity.SkillState) map[int]SkillDoc {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]SkillDoc, len(in))
+	for k, v := range in {
+		out[k] = SkillStateToDoc(v)
+	}
+	return out
+}
+
+func toStateMap_skills(in map[int]SkillDoc) map[int]entity.SkillState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]entity.SkillState, len(in))
+	for k, v := range in {
+		out[k] = SkillDocToState(v)
+	}
+	return out
+}
+
 func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 	state := entity.HydratePlayerEntity(s).Save()
 	return PlayerDoc{
@@ -167,6 +190,7 @@ func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 		Generals:   toDocSlice_generals(state.Generals),
 		Facility:   toDocSlice_facility(state.Facility),
 		WarReports: toDocMap_warReports(state.WarReports),
+		Skills:     toDocMap_skills(state.Skills),
 	}
 }
 
@@ -184,6 +208,7 @@ func PlayerDocToState(d PlayerDoc) entity.PlayerState {
 		Generals:   toStateSlice_generals(d.Generals),
 		Facility:   toStateSlice_facility(d.Facility),
 		WarReports: toStateMap_warReports(d.WarReports),
+		Skills:     toStateMap_skills(d.Skills),
 	}
 	return entity.HydratePlayerEntity(state).Save()
 }

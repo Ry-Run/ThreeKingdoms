@@ -13,6 +13,8 @@ const (
 	FieldFacility_upTime       Field = "upTime"
 )
 
+var emptyFacilityEntity = &FacilityEntity{}
+
 type FacilityEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any

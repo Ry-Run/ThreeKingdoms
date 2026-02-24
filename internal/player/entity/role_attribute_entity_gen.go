@@ -14,6 +14,8 @@ const (
 	FieldRoleAttribute_posTags         Field = "posTags"
 )
 
+var emptyRoleAttributeEntity = &RoleAttributeEntity{}
+
 type RoleAttributeEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any
@@ -166,7 +168,7 @@ type RoleAttributeEntity struct {
 	_dt             RoleAttributeEntityTrace
 }
 
-func hydrateSlice_posTags(in []PosTagState) []*PosTagEntity {
+func (e *RoleAttributeEntity) hydrateSlicePosTags(in []PosTagState) []*PosTagEntity {
 	if in == nil {
 		return nil
 	}
@@ -177,7 +179,7 @@ func hydrateSlice_posTags(in []PosTagState) []*PosTagEntity {
 	return out
 }
 
-func snapshotSlice_posTags(in []*PosTagEntity) []PosTagState {
+func (e *RoleAttributeEntity) snapshotSlicePosTags(in []*PosTagEntity) []PosTagState {
 	if in == nil {
 		return nil
 	}
@@ -193,7 +195,7 @@ func snapshotSlice_posTags(in []*PosTagEntity) []PosTagState {
 	return out
 }
 
-func slicesEqual_posTags(a, b []PosTagState) bool {
+func (e *RoleAttributeEntity) slicesEqualPosTags(a, b []PosTagState) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -216,7 +218,7 @@ func HydrateRoleAttributeEntity(s RoleAttributeState) *RoleAttributeEntity {
 		parentId:        s.ParentId,
 		collectTimes:    s.CollectTimes,
 		lastCollectTime: s.LastCollectTime,
-		posTags:         hydrateSlice_posTags(s.PosTags),
+		posTags:         emptyRoleAttributeEntity.hydrateSlicePosTags(s.PosTags),
 	}
 }
 
@@ -339,7 +341,7 @@ func (e *RoleAttributeEntity) Save() RoleAttributeState {
 	s.ParentId = e.parentId
 	s.CollectTimes = e.collectTimes
 	s.LastCollectTime = e.lastCollectTime
-	s.PosTags = snapshotSlice_posTags(e.posTags)
+	s.PosTags = e.snapshotSlicePosTags(e.posTags)
 	return s
 }
 
@@ -488,10 +490,10 @@ func (e *RoleAttributeEntity) ReplacePosTags(v []PosTagState) bool {
 	if e == nil {
 		return false
 	}
-	if slicesEqual_posTags(snapshotSlice_posTags(e.posTags), v) {
+	if e.slicesEqualPosTags(e.snapshotSlicePosTags(e.posTags), v) {
 		return false
 	}
-	e.posTags = hydrateSlice_posTags(v)
+	e.posTags = e.hydrateSlicePosTags(v)
 	e._dt.markFullReplace(FieldRoleAttribute_posTags)
 	return true
 }

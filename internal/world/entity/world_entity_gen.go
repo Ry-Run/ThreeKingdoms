@@ -13,6 +13,8 @@ const (
 	FieldWorld_worldMap     Field = "worldMap"
 )
 
+var emptyWorldEntity = &WorldEntity{}
+
 type WorldEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any
@@ -163,7 +165,7 @@ type WorldEntity struct {
 	_dt          WorldEntityTrace
 }
 
-func copyMapValue_cityByPlayer(in map[CityID]CityState) map[CityID]CityState {
+func (e *WorldEntity) copyMapValueCityByPlayer(in map[CityID]CityState) map[CityID]CityState {
 	var out map[CityID]CityState
 	if in == nil {
 		out = nil
@@ -177,7 +179,7 @@ func copyMapValue_cityByPlayer(in map[CityID]CityState) map[CityID]CityState {
 	return out
 }
 
-func hydrateMapValue_cityByPlayer(in map[CityID]CityState) map[CityID]*CityEntity {
+func (e *WorldEntity) hydrateMapValueCityByPlayer(in map[CityID]CityState) map[CityID]*CityEntity {
 	var out map[CityID]*CityEntity
 	if in == nil {
 		out = nil
@@ -191,7 +193,7 @@ func hydrateMapValue_cityByPlayer(in map[CityID]CityState) map[CityID]*CityEntit
 	return out
 }
 
-func snapshotMapValue_cityByPlayer(in map[CityID]*CityEntity) map[CityID]CityState {
+func (e *WorldEntity) snapshotMapValueCityByPlayer(in map[CityID]*CityEntity) map[CityID]CityState {
 	var out map[CityID]CityState
 	if in == nil {
 		out = nil
@@ -210,46 +212,46 @@ func snapshotMapValue_cityByPlayer(in map[CityID]*CityEntity) map[CityID]CitySta
 	return out
 }
 
-func copyMap_cityByPlayer(in map[PlayerID]map[CityID]CityState) map[PlayerID]map[CityID]CityState {
+func (e *WorldEntity) copyMapCityByPlayer(in map[PlayerID]map[CityID]CityState) map[PlayerID]map[CityID]CityState {
 	if in == nil {
 		return nil
 	}
 	out := make(map[PlayerID]map[CityID]CityState, len(in))
 	for k, v := range in {
-		out[k] = copyMapValue_cityByPlayer(v)
+		out[k] = e.copyMapValueCityByPlayer(v)
 	}
 	return out
 }
 
-func mapsEqual_cityByPlayer(a, b map[PlayerID]map[CityID]CityState) bool {
+func (e *WorldEntity) mapsEqualCityByPlayer(a, b map[PlayerID]map[CityID]CityState) bool {
 	return reflect.DeepEqual(a, b)
 }
 
-func hydrateMap_cityByPlayer(in map[PlayerID]map[CityID]CityState) map[PlayerID]map[CityID]*CityEntity {
+func (e *WorldEntity) hydrateMapCityByPlayer(in map[PlayerID]map[CityID]CityState) map[PlayerID]map[CityID]*CityEntity {
 	if in == nil {
 		return nil
 	}
 	out := make(map[PlayerID]map[CityID]*CityEntity, len(in))
 	for k, v := range in {
-		out[k] = hydrateMapValue_cityByPlayer(v)
+		out[k] = e.hydrateMapValueCityByPlayer(v)
 	}
 	return out
 }
 
-func snapshotMap_cityByPlayer(in map[PlayerID]map[CityID]*CityEntity) map[PlayerID]map[CityID]CityState {
+func (e *WorldEntity) snapshotMapCityByPlayer(in map[PlayerID]map[CityID]*CityEntity) map[PlayerID]map[CityID]CityState {
 	if in == nil {
 		return nil
 	}
 	out := make(map[PlayerID]map[CityID]CityState, len(in))
 	for k, v := range in {
 		var sv map[CityID]CityState
-		sv = snapshotMapValue_cityByPlayer(v)
+		sv = e.snapshotMapValueCityByPlayer(v)
 		out[k] = sv
 	}
 	return out
 }
 
-func hydrateSlice_worldMap(in []CellState) []*CellEntity {
+func (e *WorldEntity) hydrateSliceWorldMap(in []CellState) []*CellEntity {
 	if in == nil {
 		return nil
 	}
@@ -260,7 +262,7 @@ func hydrateSlice_worldMap(in []CellState) []*CellEntity {
 	return out
 }
 
-func snapshotSlice_worldMap(in []*CellEntity) []CellState {
+func (e *WorldEntity) snapshotSliceWorldMap(in []*CellEntity) []CellState {
 	if in == nil {
 		return nil
 	}
@@ -276,7 +278,7 @@ func snapshotSlice_worldMap(in []*CellEntity) []CellState {
 	return out
 }
 
-func slicesEqual_worldMap(a, b []CellState) bool {
+func (e *WorldEntity) slicesEqualWorldMap(a, b []CellState) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -297,8 +299,8 @@ func slicesEqual_worldMap(a, b []CellState) bool {
 func HydrateWorldEntity(s WorldState) *WorldEntity {
 	return &WorldEntity{
 		worldId:      s.WorldId,
-		cityByPlayer: hydrateMap_cityByPlayer(s.CityByPlayer),
-		worldMap:     hydrateSlice_worldMap(s.WorldMap),
+		cityByPlayer: emptyWorldEntity.hydrateMapCityByPlayer(s.CityByPlayer),
+		worldMap:     emptyWorldEntity.hydrateSliceWorldMap(s.WorldMap),
 	}
 }
 
@@ -419,8 +421,8 @@ func (e *WorldEntity) Save() WorldState {
 		return s
 	}
 	s.WorldId = e.worldId
-	s.CityByPlayer = snapshotMap_cityByPlayer(e.cityByPlayer)
-	s.WorldMap = snapshotSlice_worldMap(e.worldMap)
+	s.CityByPlayer = e.snapshotMapCityByPlayer(e.cityByPlayer)
+	s.WorldMap = e.snapshotSliceWorldMap(e.worldMap)
 	return s
 }
 
@@ -451,7 +453,7 @@ func (s *WorldEntitySnap) Clone() *WorldEntitySnap {
 			out.Changes[f] = cloneWorldEntityCollectionChange(ch)
 		}
 	}
-	out.State.CityByPlayer = copyMap_cityByPlayer(s.State.CityByPlayer)
+	out.State.CityByPlayer = emptyWorldEntity.copyMapCityByPlayer(s.State.CityByPlayer)
 	out.State.WorldMap = append([]CellState(nil), s.State.WorldMap...)
 	return out
 }
@@ -485,7 +487,7 @@ func (e *WorldEntity) GetCityByPlayer(key PlayerID) (map[CityID]CityState, bool)
 	if !ok {
 		return z, false
 	}
-	return snapshotMapValue_cityByPlayer(v), true
+	return e.snapshotMapValueCityByPlayer(v), true
 }
 
 func (e *WorldEntity) LenCityByPlayer() int {
@@ -500,7 +502,7 @@ func (e *WorldEntity) ForEachCityByPlayer(fn func(key PlayerID, value map[CityID
 		return
 	}
 	for k, v := range e.cityByPlayer {
-		fn(k, snapshotMapValue_cityByPlayer(v))
+		fn(k, e.snapshotMapValueCityByPlayer(v))
 	}
 }
 
@@ -509,7 +511,7 @@ func (e *WorldEntity) RangeCityByPlayer(fn func(key PlayerID, value map[CityID]C
 		return
 	}
 	for k, v := range e.cityByPlayer {
-		if !fn(k, snapshotMapValue_cityByPlayer(v)) {
+		if !fn(k, e.snapshotMapValueCityByPlayer(v)) {
 			return
 		}
 	}
@@ -519,10 +521,10 @@ func (e *WorldEntity) ReplaceCityByPlayer(v map[PlayerID]map[CityID]CityState) b
 	if e == nil {
 		return false
 	}
-	if mapsEqual_cityByPlayer(snapshotMap_cityByPlayer(e.cityByPlayer), v) {
+	if e.mapsEqualCityByPlayer(e.snapshotMapCityByPlayer(e.cityByPlayer), v) {
 		return false
 	}
-	e.cityByPlayer = hydrateMap_cityByPlayer(v)
+	e.cityByPlayer = e.hydrateMapCityByPlayer(v)
 	e._dt.markFullReplace(FieldWorld_cityByPlayer)
 	return true
 }
@@ -534,11 +536,11 @@ func (e *WorldEntity) PutCityByPlayer(key PlayerID, value map[CityID]CityState) 
 	if e.cityByPlayer == nil {
 		e.cityByPlayer = make(map[PlayerID]map[CityID]*CityEntity)
 	}
-	if old, ok := e.cityByPlayer[key]; ok && reflect.DeepEqual(snapshotMapValue_cityByPlayer(old), value) {
+	if old, ok := e.cityByPlayer[key]; ok && reflect.DeepEqual(e.snapshotMapValueCityByPlayer(old), value) {
 		return false
 	}
-	e.cityByPlayer[key] = hydrateMapValue_cityByPlayer(value)
-	e._dt.markMapSet(FieldWorld_cityByPlayer, fmt.Sprint(key), copyMapValue_cityByPlayer(value))
+	e.cityByPlayer[key] = e.hydrateMapValueCityByPlayer(value)
+	e._dt.markMapSet(FieldWorld_cityByPlayer, fmt.Sprint(key), e.copyMapValueCityByPlayer(value))
 	return true
 }
 
@@ -551,11 +553,11 @@ func (e *WorldEntity) PutCityByPlayerMany(entries map[PlayerID]map[CityID]CitySt
 	}
 	changed := false
 	for k, v := range entries {
-		if old, ok := e.cityByPlayer[k]; ok && reflect.DeepEqual(snapshotMapValue_cityByPlayer(old), v) {
+		if old, ok := e.cityByPlayer[k]; ok && reflect.DeepEqual(e.snapshotMapValueCityByPlayer(old), v) {
 			continue
 		}
-		e.cityByPlayer[k] = hydrateMapValue_cityByPlayer(v)
-		e._dt.markMapSet(FieldWorld_cityByPlayer, fmt.Sprint(k), copyMapValue_cityByPlayer(v))
+		e.cityByPlayer[k] = e.hydrateMapValueCityByPlayer(v)
+		e._dt.markMapSet(FieldWorld_cityByPlayer, fmt.Sprint(k), e.copyMapValueCityByPlayer(v))
 		changed = true
 	}
 	return changed
@@ -569,13 +571,13 @@ func (e *WorldEntity) UpdateCityByPlayer(key PlayerID, fn func(value map[CityID]
 	if !ok {
 		return false
 	}
-	before := snapshotMapValue_cityByPlayer(v)
+	before := e.snapshotMapValueCityByPlayer(v)
 	fn(v)
-	after := snapshotMapValue_cityByPlayer(v)
+	after := e.snapshotMapValueCityByPlayer(v)
 	if reflect.DeepEqual(before, after) {
 		return false
 	}
-	e._dt.markMapSet(FieldWorld_cityByPlayer, fmt.Sprint(key), copyMapValue_cityByPlayer(after))
+	e._dt.markMapSet(FieldWorld_cityByPlayer, fmt.Sprint(key), e.copyMapValueCityByPlayer(after))
 	return true
 }
 
@@ -673,10 +675,10 @@ func (e *WorldEntity) ReplaceWorldMap(v []CellState) bool {
 	if e == nil {
 		return false
 	}
-	if slicesEqual_worldMap(snapshotSlice_worldMap(e.worldMap), v) {
+	if e.slicesEqualWorldMap(e.snapshotSliceWorldMap(e.worldMap), v) {
 		return false
 	}
-	e.worldMap = hydrateSlice_worldMap(v)
+	e.worldMap = e.hydrateSliceWorldMap(v)
 	e._dt.markFullReplace(FieldWorld_worldMap)
 	return true
 }

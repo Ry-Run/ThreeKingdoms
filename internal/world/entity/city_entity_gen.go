@@ -21,6 +21,8 @@ const (
 	FieldCity_occupyTime Field = "occupyTime"
 )
 
+var emptyCityEntity = &CityEntity{}
+
 type CityEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any

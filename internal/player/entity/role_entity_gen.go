@@ -17,6 +17,8 @@ const (
 	FieldRole_createdAt  Field = "createdAt"
 )
 
+var emptyRoleEntity = &RoleEntity{}
+
 type RoleEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any

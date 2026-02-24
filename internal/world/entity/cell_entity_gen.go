@@ -17,6 +17,8 @@ const (
 	FieldCell_defender Field = "defender"
 )
 
+var emptyCellEntity = &CellEntity{}
+
 type CellEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any

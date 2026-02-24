@@ -18,4 +18,5 @@ type Player struct {
 	generals   []*General
 	facility   []*Facility
 	warReports map[int]*WarReport
+	skills     map[int]*Skill
 }

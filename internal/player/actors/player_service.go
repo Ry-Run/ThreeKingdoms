@@ -367,3 +367,19 @@ func ToPBWarReport(v entity.WarReportState) *playerpb.WarReport {
 		Ctime:             int64(v.CTime),
 	}
 }
+
+func ToPBSkill(v entity.SkillState) *playerpb.Skill {
+	return &playerpb.Skill{
+		Id:       int32(v.Id),
+		CfgId:    int32(v.CfgId),
+		Generals: ConvertIntToInt32(v.Generals),
+	}
+}
+
+func ConvertIntToInt32(src []int) []int32 {
+	dst := make([]int32, len(src))
+	for i := range src {
+		dst[i] = int32(src[i])
+	}
+	return dst
+}

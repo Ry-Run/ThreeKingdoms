@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message Skill {
+  int32 id = 1;
+  int32 CfgId = 2;
+  repeated int32 generals = 3;
+}

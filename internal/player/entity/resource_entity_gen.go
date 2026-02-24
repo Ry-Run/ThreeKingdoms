@@ -14,6 +14,8 @@ const (
 	FieldResource_decree Field = "decree"
 )
 
+var emptyResourceEntity = &ResourceEntity{}
+
 type ResourceEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any

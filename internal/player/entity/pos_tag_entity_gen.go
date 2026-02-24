@@ -11,6 +11,8 @@ const (
 	FieldPosTag_name Field = "name"
 )
 
+var emptyPosTagEntity = &PosTagEntity{}
+
 type PosTagEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any

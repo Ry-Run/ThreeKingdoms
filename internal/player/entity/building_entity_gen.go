@@ -26,6 +26,8 @@ const (
 	FieldBuilding_giveUpTime   Field = "giveUpTime"
 )
 
+var emptyBuildingEntity = &BuildingEntity{}
+
 type BuildingEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any

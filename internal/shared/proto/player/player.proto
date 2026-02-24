@@ -12,6 +12,7 @@ import "player/city.proto";
 import "player/map.proto";
 import "player/pos_tag.proto";
 import "player/war_report.proto";
+import "player/skill.proto";
 
 option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
 
@@ -30,6 +31,7 @@ message PlayerRequest {
     MyGeneralsRequest myGeneralsRequest = 15;
     ArmyListRequest armyListRequest = 16;
     WarReportRequest WarReportRequest = 17;
+    SkillListRequest skillListRequest = 18;
   }
 
   string trace_id = 100;
@@ -47,6 +49,7 @@ message PlayerResponse {
     MyGeneralsResponse myGeneralsResponse = 15;
     ArmyListResponse armyListResponse = 16;
     WarReportResponse WarReportResponse = 17;
+    SkillListResponse skillListResponse = 18;
   }
 }
 
@@ -126,4 +129,11 @@ message WarReportRequest {
 
 message WarReportResponse {
   repeated WarReport warReports = 1;
+}
+
+message SkillListRequest {
+}
+
+message SkillListResponse {
+  repeated Skill skills = 1;
 }

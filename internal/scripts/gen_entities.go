@@ -909,6 +909,21 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 	stateName := e.Name + "State"
 	entitySnapName := e.Name + "EntitySnap"
 	fieldPrefix := "Field" + e.Name + "_" // ✅ 关键：实体前缀
+	helperVarName := "empty" + entityName
+	helperStaticExpr := helperVarName
+	helperMethodSuffix := func(rawName string) string {
+		for _, field := range e.Fields {
+			if field.RawName == rawName {
+				return field.ExportName
+			}
+		}
+		return upperFirst(rawName)
+	}
+	wrapEntityHelperMethod := func(code, funcName string) string {
+		oldDecl := "func " + funcName + "("
+		newDecl := "func (e *" + entityName + ") " + funcName + "("
+		return strings.Replace(code, oldDecl, newDecl, 1)
+	}
 
 	// Field constants (value is raw field name)
 	buf.WriteString("const (\n")
@@ -919,6 +934,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 		buf.WriteString(fmt.Sprintf("\t%s%s Field = %q\n", fieldPrefix, f.RawName, f.RawName))
 	}
 	buf.WriteString(")\n\n")
+	buf.WriteString(fmt.Sprintf("var %s = &%s{}\n\n", helperVarName, entityName))
 
 	// trace
 	buf.WriteString(fmt.Sprintf("type %sCollectionChange struct {\n", entityName))
@@ -1083,19 +1099,19 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 				runtimeMapType := fmt.Sprintf("map[%s]*%sEntity", keyType, nestedEntity)
 				stateValueType := nestedEntity + "State"
 
-				buf.WriteString(fmt.Sprintf("func copyMap_%s(in %s) %s {\n", f.RawName, stateMapType, stateMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") copyMap%s(in %s) %s {\n", helperMethodSuffix(f.RawName), stateMapType, stateMapType))
 				buf.WriteString("\tif in == nil {\n\t\treturn nil\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tout := make(%s, len(in))\n", stateMapType))
 				buf.WriteString("\tfor k, v := range in {\n\t\tout[k] = v\n\t}\n")
 				buf.WriteString("\treturn out\n")
 				buf.WriteString("}\n\n")
 
-				buf.WriteString(fmt.Sprintf("func mapsEqual_%s(a, b %s) bool {\n", f.RawName, stateMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") mapsEqual%s(a, b %s) bool {\n", helperMethodSuffix(f.RawName), stateMapType))
 				buf.WriteString("\tif a == nil && b == nil {\n\t\treturn true\n\t}\n")
 				buf.WriteString("\treturn false\n")
 				buf.WriteString("}\n\n")
 
-				buf.WriteString(fmt.Sprintf("func hydrateMap_%s(in %s) %s {\n", f.RawName, stateMapType, runtimeMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") hydrateMap%s(in %s) %s {\n", helperMethodSuffix(f.RawName), stateMapType, runtimeMapType))
 				buf.WriteString("\tif in == nil {\n\t\treturn nil\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tout := make(%s, len(in))\n", runtimeMapType))
 				buf.WriteString("\tfor k, v := range in {\n")
@@ -1104,7 +1120,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 				buf.WriteString("\treturn out\n")
 				buf.WriteString("}\n\n")
 
-				buf.WriteString(fmt.Sprintf("func snapshotMap_%s(in %s) %s {\n", f.RawName, runtimeMapType, stateMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") snapshotMap%s(in %s) %s {\n", helperMethodSuffix(f.RawName), runtimeMapType, stateMapType))
 				buf.WriteString("\tif in == nil {\n\t\treturn nil\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tout := make(%s, len(in))\n", stateMapType))
 				buf.WriteString("\tfor k, v := range in {\n")
@@ -1123,58 +1139,58 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 				_, valueType, _ := parseMapType(f.TypeExpr)
 				stateValueType := stateTypeExpr(valueType, entityNames)
 
-				if code, ok := genRecursiveConvertFunc("copyMapValue_"+f.RawName, valueType, entityNames, recursiveConvCloneState, "", "", ""); ok {
-					buf.WriteString(code)
+				if code, ok := genRecursiveConvertFunc("copyMapValue"+helperMethodSuffix(f.RawName), valueType, entityNames, recursiveConvCloneState, "", "", ""); ok {
+					buf.WriteString(wrapEntityHelperMethod(code, "copyMapValue"+helperMethodSuffix(f.RawName)))
 				}
-				if code, ok := genRecursiveConvertFunc("hydrateMapValue_"+f.RawName, valueType, entityNames, recursiveConvStateToRuntime, "", "", ""); ok {
-					buf.WriteString(code)
+				if code, ok := genRecursiveConvertFunc("hydrateMapValue"+helperMethodSuffix(f.RawName), valueType, entityNames, recursiveConvStateToRuntime, "", "", ""); ok {
+					buf.WriteString(wrapEntityHelperMethod(code, "hydrateMapValue"+helperMethodSuffix(f.RawName)))
 				}
-				if code, ok := genRecursiveConvertFunc("snapshotMapValue_"+f.RawName, valueType, entityNames, recursiveConvRuntimeToState, "", "", ""); ok {
-					buf.WriteString(code)
+				if code, ok := genRecursiveConvertFunc("snapshotMapValue"+helperMethodSuffix(f.RawName), valueType, entityNames, recursiveConvRuntimeToState, "", "", ""); ok {
+					buf.WriteString(wrapEntityHelperMethod(code, "snapshotMapValue"+helperMethodSuffix(f.RawName)))
 				}
 
-				buf.WriteString(fmt.Sprintf("func copyMap_%s(in %s) %s {\n", f.RawName, stateMapType, stateMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") copyMap%s(in %s) %s {\n", helperMethodSuffix(f.RawName), stateMapType, stateMapType))
 				buf.WriteString("\tif in == nil {\n\t\treturn nil\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tout := make(%s, len(in))\n", stateMapType))
 				buf.WriteString("\tfor k, v := range in {\n")
-				buf.WriteString(fmt.Sprintf("\t\tout[k] = copyMapValue_%s(v)\n", f.RawName))
+				buf.WriteString(fmt.Sprintf("\t\tout[k] = e.copyMapValue%s(v)\n", helperMethodSuffix(f.RawName)))
 				buf.WriteString("\t}\n")
 				buf.WriteString("\treturn out\n")
 				buf.WriteString("}\n\n")
 
-				buf.WriteString(fmt.Sprintf("func mapsEqual_%s(a, b %s) bool {\n", f.RawName, stateMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") mapsEqual%s(a, b %s) bool {\n", helperMethodSuffix(f.RawName), stateMapType))
 				buf.WriteString("\treturn reflect.DeepEqual(a, b)\n")
 				buf.WriteString("}\n\n")
 
-				buf.WriteString(fmt.Sprintf("func hydrateMap_%s(in %s) %s {\n", f.RawName, stateMapType, runtimeMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") hydrateMap%s(in %s) %s {\n", helperMethodSuffix(f.RawName), stateMapType, runtimeMapType))
 				buf.WriteString("\tif in == nil {\n\t\treturn nil\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tout := make(%s, len(in))\n", runtimeMapType))
 				buf.WriteString("\tfor k, v := range in {\n")
-				buf.WriteString(fmt.Sprintf("\t\tout[k] = hydrateMapValue_%s(v)\n", f.RawName))
+				buf.WriteString(fmt.Sprintf("\t\tout[k] = e.hydrateMapValue%s(v)\n", helperMethodSuffix(f.RawName)))
 				buf.WriteString("\t}\n")
 				buf.WriteString("\treturn out\n")
 				buf.WriteString("}\n\n")
 
-				buf.WriteString(fmt.Sprintf("func snapshotMap_%s(in %s) %s {\n", f.RawName, runtimeMapType, stateMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") snapshotMap%s(in %s) %s {\n", helperMethodSuffix(f.RawName), runtimeMapType, stateMapType))
 				buf.WriteString("\tif in == nil {\n\t\treturn nil\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tout := make(%s, len(in))\n", stateMapType))
 				buf.WriteString("\tfor k, v := range in {\n")
 				buf.WriteString(fmt.Sprintf("\t\tvar sv %s\n", stateValueType))
-				buf.WriteString(fmt.Sprintf("\t\tsv = snapshotMapValue_%s(v)\n", f.RawName))
+				buf.WriteString(fmt.Sprintf("\t\tsv = e.snapshotMapValue%s(v)\n", helperMethodSuffix(f.RawName)))
 				buf.WriteString("\t\tout[k] = sv\n")
 				buf.WriteString("\t}\n")
 				buf.WriteString("\treturn out\n")
 				buf.WriteString("}\n\n")
 			} else {
 				stateMapType := stateTypeExpr(f.TypeExpr, entityNames)
-				buf.WriteString(fmt.Sprintf("func copyMap_%s(in %s) %s {\n", f.RawName, stateMapType, stateMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") copyMap%s(in %s) %s {\n", helperMethodSuffix(f.RawName), stateMapType, stateMapType))
 				buf.WriteString("\tif in == nil {\n\t\treturn nil\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tout := make(%s, len(in))\n", stateMapType))
 				buf.WriteString("\tfor k, v := range in {\n\t\tout[k] = v\n\t}\n")
 				buf.WriteString("\treturn out\n")
 				buf.WriteString("}\n\n")
 
-				buf.WriteString(fmt.Sprintf("func mapsEqual_%s(a, b %s) bool {\n", f.RawName, stateMapType))
+				buf.WriteString(fmt.Sprintf("func (e *"+entityName+") mapsEqual%s(a, b %s) bool {\n", helperMethodSuffix(f.RawName), stateMapType))
 				buf.WriteString("\tif a == nil && b == nil {\n\t\treturn true\n\t}\n")
 				buf.WriteString("\tif (a == nil) != (b == nil) {\n\t\treturn false\n\t}\n")
 				buf.WriteString("\tif len(a) != len(b) {\n\t\treturn false\n\t}\n")
@@ -1190,7 +1206,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 					runtimeSliceType := "[]*" + nestedEntity + "Entity"
 					stateElemType := nestedEntity + "State"
 
-					buf.WriteString(fmt.Sprintf("func hydrateSlice_%s(in %s) %s {\n", f.RawName, stateSliceType, runtimeSliceType))
+					buf.WriteString(fmt.Sprintf("func (e *"+entityName+") hydrateSlice%s(in %s) %s {\n", helperMethodSuffix(f.RawName), stateSliceType, runtimeSliceType))
 					buf.WriteString("\tif in == nil {\n\t\treturn nil\n\t}\n")
 					buf.WriteString(fmt.Sprintf("\tout := make(%s, len(in))\n", runtimeSliceType))
 					buf.WriteString("\tfor i, v := range in {\n")
@@ -1199,7 +1215,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 					buf.WriteString("\treturn out\n")
 					buf.WriteString("}\n\n")
 
-					buf.WriteString(fmt.Sprintf("func snapshotSlice_%s(in %s) %s {\n", f.RawName, runtimeSliceType, stateSliceType))
+					buf.WriteString(fmt.Sprintf("func (e *"+entityName+") snapshotSlice%s(in %s) %s {\n", helperMethodSuffix(f.RawName), runtimeSliceType, stateSliceType))
 					buf.WriteString("\tif in == nil {\n\t\treturn nil\n\t}\n")
 					buf.WriteString(fmt.Sprintf("\tout := make(%s, len(in))\n", stateSliceType))
 					buf.WriteString("\tfor i, v := range in {\n")
@@ -1213,7 +1229,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 					buf.WriteString("\treturn out\n")
 					buf.WriteString("}\n\n")
 
-					buf.WriteString(fmt.Sprintf("func slicesEqual_%s(a, b %s) bool {\n", f.RawName, stateSliceType))
+					buf.WriteString(fmt.Sprintf("func (e *"+entityName+") slicesEqual%s(a, b %s) bool {\n", helperMethodSuffix(f.RawName), stateSliceType))
 					buf.WriteString("\tif a == nil && b == nil {\n\t\treturn true\n\t}\n")
 					buf.WriteString("\tif (a == nil) != (b == nil) {\n\t\treturn false\n\t}\n")
 					buf.WriteString("\tif len(a) != len(b) {\n\t\treturn false\n\t}\n")
@@ -1225,7 +1241,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 					break
 				}
 			}
-			buf.WriteString(fmt.Sprintf("func slicesEqual_%s(a, b %s) bool {\n", f.RawName, f.TypeExpr))
+			buf.WriteString(fmt.Sprintf("func (e *"+entityName+") slicesEqual%s(a, b %s) bool {\n", helperMethodSuffix(f.RawName), f.TypeExpr))
 			buf.WriteString("\tif a == nil && b == nil {\n\t\treturn true\n\t}\n")
 			buf.WriteString("\tif (a == nil) != (b == nil) {\n\t\treturn false\n\t}\n")
 			buf.WriteString("\tif len(a) != len(b) {\n\t\treturn false\n\t}\n")
@@ -1246,18 +1262,18 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 		case kindSlice:
 			if elemType, ok := parseSliceElemType(f.TypeExpr); ok {
 				if _, nested := directNestedEntity(elemType, entityNames); nested {
-					buf.WriteString(fmt.Sprintf("\t\t%s: hydrateSlice_%s(s.%s),\n", f.RawName, f.RawName, f.ExportName))
+					buf.WriteString(fmt.Sprintf("\t\t%s: "+helperStaticExpr+".hydrateSlice%s(s.%s),\n", f.RawName, helperMethodSuffix(f.RawName), f.ExportName))
 					break
 				}
 			}
 			buf.WriteString(fmt.Sprintf("\t\t%s: append(%s(nil), s.%s...),\n", f.RawName, stateTypeExpr(f.TypeExpr, entityNames), f.ExportName))
 		case kindMap:
 			if _, _, ok := mapNestedEntity(f.TypeExpr, entityNames); ok {
-				buf.WriteString(fmt.Sprintf("\t\t%s: hydrateMap_%s(s.%s),\n", f.RawName, f.RawName, f.ExportName))
+				buf.WriteString(fmt.Sprintf("\t\t%s: "+helperStaticExpr+".hydrateMap%s(s.%s),\n", f.RawName, helperMethodSuffix(f.RawName), f.ExportName))
 			} else if containsNestedEntityInMapValue(f.TypeExpr, entityNames) {
-				buf.WriteString(fmt.Sprintf("\t\t%s: hydrateMap_%s(s.%s),\n", f.RawName, f.RawName, f.ExportName))
+				buf.WriteString(fmt.Sprintf("\t\t%s: "+helperStaticExpr+".hydrateMap%s(s.%s),\n", f.RawName, helperMethodSuffix(f.RawName), f.ExportName))
 			} else {
-				buf.WriteString(fmt.Sprintf("\t\t%s: copyMap_%s(s.%s),\n", f.RawName, f.RawName, f.ExportName))
+				buf.WriteString(fmt.Sprintf("\t\t%s: "+helperStaticExpr+".copyMap%s(s.%s),\n", f.RawName, helperMethodSuffix(f.RawName), f.ExportName))
 			}
 		default:
 			if nestedEntity, ok := directNestedEntity(f.TypeExpr, entityNames); ok {
@@ -1400,18 +1416,18 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 		case kindSlice:
 			if elemType, ok := parseSliceElemType(f.TypeExpr); ok {
 				if _, nested := directNestedEntity(elemType, entityNames); nested {
-					buf.WriteString(fmt.Sprintf("\ts.%s = snapshotSlice_%s(e.%s)\n", f.ExportName, f.RawName, f.RawName))
+					buf.WriteString(fmt.Sprintf("\ts.%s = e.snapshotSlice%s(e.%s)\n", f.ExportName, helperMethodSuffix(f.RawName), f.RawName))
 					break
 				}
 			}
 			buf.WriteString(fmt.Sprintf("\ts.%s = append(%s(nil), e.%s...)\n", f.ExportName, stateTypeExpr(f.TypeExpr, entityNames), f.RawName))
 		case kindMap:
 			if _, _, ok := mapNestedEntity(f.TypeExpr, entityNames); ok {
-				buf.WriteString(fmt.Sprintf("\ts.%s = snapshotMap_%s(e.%s)\n", f.ExportName, f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\ts.%s = e.snapshotMap%s(e.%s)\n", f.ExportName, helperMethodSuffix(f.RawName), f.RawName))
 			} else if containsNestedEntityInMapValue(f.TypeExpr, entityNames) {
-				buf.WriteString(fmt.Sprintf("\ts.%s = snapshotMap_%s(e.%s)\n", f.ExportName, f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\ts.%s = e.snapshotMap%s(e.%s)\n", f.ExportName, helperMethodSuffix(f.RawName), f.RawName))
 			} else {
-				buf.WriteString(fmt.Sprintf("\ts.%s = copyMap_%s(e.%s)\n", f.ExportName, f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\ts.%s = e.copyMap%s(e.%s)\n", f.ExportName, helperMethodSuffix(f.RawName), f.RawName))
 			}
 		default:
 			if nestedEntity, ok := directNestedEntity(f.TypeExpr, entityNames); ok {
@@ -1467,7 +1483,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 		case kindSlice:
 			buf.WriteString(fmt.Sprintf("\tout.State.%s = append(%s(nil), s.State.%s...)\n", f.ExportName, stateTypeExpr(f.TypeExpr, entityNames), f.ExportName))
 		case kindMap:
-			buf.WriteString(fmt.Sprintf("\tout.State.%s = copyMap_%s(s.State.%s)\n", f.ExportName, f.RawName, f.ExportName))
+			buf.WriteString(fmt.Sprintf("\tout.State.%s = "+helperStaticExpr+".copyMap%s(s.State.%s)\n", f.ExportName, helperMethodSuffix(f.RawName), f.ExportName))
 		}
 	}
 	buf.WriteString("\treturn out\n")
@@ -1550,8 +1566,8 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 
 				buf.WriteString(fmt.Sprintf("func (e *%s) Replace%s(v %s) bool {\n", entityName, f.ExportName, stateMapType))
 				buf.WriteString("\tif e == nil {\n\t\treturn false\n\t}\n")
-				buf.WriteString(fmt.Sprintf("\tif mapsEqual_%s(snapshotMap_%s(e.%s), v) {\n\t\treturn false\n\t}\n", f.RawName, f.RawName, f.RawName))
-				buf.WriteString(fmt.Sprintf("\te.%s = hydrateMap_%s(v)\n", f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\tif e.mapsEqual%s(e.snapshotMap%s(e.%s), v) {\n\t\treturn false\n\t}\n", helperMethodSuffix(f.RawName), helperMethodSuffix(f.RawName), f.RawName))
+				buf.WriteString(fmt.Sprintf("\te.%s = e.hydrateMap%s(v)\n", f.RawName, helperMethodSuffix(f.RawName)))
 				buf.WriteString(fmt.Sprintf("\te._dt.markFullReplace(%s%s)\n", fieldPrefix, f.RawName))
 				buf.WriteString("\treturn true\n")
 				buf.WriteString("}\n\n")
@@ -1631,7 +1647,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 				buf.WriteString("\tif e == nil || e." + f.RawName + " == nil {\n\t\treturn z, false\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tv, ok := e.%s[key]\n", f.RawName))
 				buf.WriteString("\tif !ok {\n\t\treturn z, false\n\t}\n")
-				buf.WriteString(fmt.Sprintf("\treturn snapshotMapValue_%s(v), true\n", f.RawName))
+				buf.WriteString(fmt.Sprintf("\treturn e.snapshotMapValue%s(v), true\n", helperMethodSuffix(f.RawName)))
 				buf.WriteString("}\n\n")
 
 				buf.WriteString(fmt.Sprintf("func (e *%s) Len%s() int {\n", entityName, f.ExportName))
@@ -1642,21 +1658,21 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 				buf.WriteString(fmt.Sprintf("func (e *%s) ForEach%s(fn func(key %s, value %s)) {\n", entityName, f.ExportName, keyType, stateValueType))
 				buf.WriteString("\tif e == nil || e." + f.RawName + " == nil || fn == nil {\n\t\treturn\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tfor k, v := range e.%s {\n", f.RawName))
-				buf.WriteString(fmt.Sprintf("\t\tfn(k, snapshotMapValue_%s(v))\n", f.RawName))
+				buf.WriteString(fmt.Sprintf("\t\tfn(k, e.snapshotMapValue%s(v))\n", helperMethodSuffix(f.RawName)))
 				buf.WriteString("\t}\n")
 				buf.WriteString("}\n\n")
 
 				buf.WriteString(fmt.Sprintf("func (e *%s) Range%s(fn func(key %s, value %s) bool) {\n", entityName, f.ExportName, keyType, stateValueType))
 				buf.WriteString("\tif e == nil || e." + f.RawName + " == nil || fn == nil {\n\t\treturn\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tfor k, v := range e.%s {\n", f.RawName))
-				buf.WriteString(fmt.Sprintf("\t\tif !fn(k, snapshotMapValue_%s(v)) {\n\t\t\treturn\n\t\t}\n", f.RawName))
+				buf.WriteString(fmt.Sprintf("\t\tif !fn(k, e.snapshotMapValue%s(v)) {\n\t\t\treturn\n\t\t}\n", helperMethodSuffix(f.RawName)))
 				buf.WriteString("\t}\n")
 				buf.WriteString("}\n\n")
 
 				buf.WriteString(fmt.Sprintf("func (e *%s) Replace%s(v %s) bool {\n", entityName, f.ExportName, stateMapType))
 				buf.WriteString("\tif e == nil {\n\t\treturn false\n\t}\n")
-				buf.WriteString(fmt.Sprintf("\tif mapsEqual_%s(snapshotMap_%s(e.%s), v) {\n\t\treturn false\n\t}\n", f.RawName, f.RawName, f.RawName))
-				buf.WriteString(fmt.Sprintf("\te.%s = hydrateMap_%s(v)\n", f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\tif e.mapsEqual%s(e.snapshotMap%s(e.%s), v) {\n\t\treturn false\n\t}\n", helperMethodSuffix(f.RawName), helperMethodSuffix(f.RawName), f.RawName))
+				buf.WriteString(fmt.Sprintf("\te.%s = e.hydrateMap%s(v)\n", f.RawName, helperMethodSuffix(f.RawName)))
 				buf.WriteString(fmt.Sprintf("\te._dt.markFullReplace(%s%s)\n", fieldPrefix, f.RawName))
 				buf.WriteString("\treturn true\n")
 				buf.WriteString("}\n\n")
@@ -1666,9 +1682,9 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 				buf.WriteString(fmt.Sprintf("\tif e.%s == nil {\n", f.RawName))
 				buf.WriteString(fmt.Sprintf("\t\te.%s = make(%s)\n", f.RawName, runtimeMapType))
 				buf.WriteString("\t}\n")
-				buf.WriteString(fmt.Sprintf("\tif old, ok := e.%s[key]; ok && reflect.DeepEqual(snapshotMapValue_%s(old), value) {\n\t\treturn false\n\t}\n", f.RawName, f.RawName))
-				buf.WriteString(fmt.Sprintf("\te.%s[key] = hydrateMapValue_%s(value)\n", f.RawName, f.RawName))
-				buf.WriteString(fmt.Sprintf("\te._dt.markMapSet(%s%s, fmt.Sprint(key), copyMapValue_%s(value))\n", fieldPrefix, f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\tif old, ok := e.%s[key]; ok && reflect.DeepEqual(e.snapshotMapValue%s(old), value) {\n\t\treturn false\n\t}\n", f.RawName, helperMethodSuffix(f.RawName)))
+				buf.WriteString(fmt.Sprintf("\te.%s[key] = e.hydrateMapValue%s(value)\n", f.RawName, helperMethodSuffix(f.RawName)))
+				buf.WriteString(fmt.Sprintf("\te._dt.markMapSet(%s%s, fmt.Sprint(key), e.copyMapValue%s(value))\n", fieldPrefix, f.RawName, helperMethodSuffix(f.RawName)))
 				buf.WriteString("\treturn true\n")
 				buf.WriteString("}\n\n")
 
@@ -1679,9 +1695,9 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 				buf.WriteString("\t}\n")
 				buf.WriteString("\tchanged := false\n")
 				buf.WriteString("\tfor k, v := range entries {\n")
-				buf.WriteString(fmt.Sprintf("\t\tif old, ok := e.%s[k]; ok && reflect.DeepEqual(snapshotMapValue_%s(old), v) {\n\t\t\tcontinue\n\t\t}\n", f.RawName, f.RawName))
-				buf.WriteString(fmt.Sprintf("\t\te.%s[k] = hydrateMapValue_%s(v)\n", f.RawName, f.RawName))
-				buf.WriteString(fmt.Sprintf("\t\te._dt.markMapSet(%s%s, fmt.Sprint(k), copyMapValue_%s(v))\n", fieldPrefix, f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\t\tif old, ok := e.%s[k]; ok && reflect.DeepEqual(e.snapshotMapValue%s(old), v) {\n\t\t\tcontinue\n\t\t}\n", f.RawName, helperMethodSuffix(f.RawName)))
+				buf.WriteString(fmt.Sprintf("\t\te.%s[k] = e.hydrateMapValue%s(v)\n", f.RawName, helperMethodSuffix(f.RawName)))
+				buf.WriteString(fmt.Sprintf("\t\te._dt.markMapSet(%s%s, fmt.Sprint(k), e.copyMapValue%s(v))\n", fieldPrefix, f.RawName, helperMethodSuffix(f.RawName)))
 				buf.WriteString("\t\tchanged = true\n")
 				buf.WriteString("\t}\n")
 				buf.WriteString("\treturn changed\n")
@@ -1691,11 +1707,11 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 				buf.WriteString("\tif e == nil || fn == nil || e." + f.RawName + " == nil {\n\t\treturn false\n\t}\n")
 				buf.WriteString(fmt.Sprintf("\tv, ok := e.%s[key]\n", f.RawName))
 				buf.WriteString("\tif !ok {\n\t\treturn false\n\t}\n")
-				buf.WriteString(fmt.Sprintf("\tbefore := snapshotMapValue_%s(v)\n", f.RawName))
+				buf.WriteString(fmt.Sprintf("\tbefore := e.snapshotMapValue%s(v)\n", helperMethodSuffix(f.RawName)))
 				buf.WriteString("\tfn(v)\n")
-				buf.WriteString(fmt.Sprintf("\tafter := snapshotMapValue_%s(v)\n", f.RawName))
+				buf.WriteString(fmt.Sprintf("\tafter := e.snapshotMapValue%s(v)\n", helperMethodSuffix(f.RawName)))
 				buf.WriteString("\tif reflect.DeepEqual(before, after) {\n\t\treturn false\n\t}\n")
-				buf.WriteString(fmt.Sprintf("\te._dt.markMapSet(%s%s, fmt.Sprint(key), copyMapValue_%s(after))\n", fieldPrefix, f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\te._dt.markMapSet(%s%s, fmt.Sprint(key), e.copyMapValue%s(after))\n", fieldPrefix, f.RawName, helperMethodSuffix(f.RawName)))
 				buf.WriteString("\treturn true\n")
 				buf.WriteString("}\n\n")
 
@@ -1756,8 +1772,8 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 
 				buf.WriteString(fmt.Sprintf("func (e *%s) Replace%s(v %s) bool {\n", entityName, f.ExportName, stateTypeExpr(f.TypeExpr, entityNames)))
 				buf.WriteString("\tif e == nil {\n\t\treturn false\n\t}\n")
-				buf.WriteString(fmt.Sprintf("\tif mapsEqual_%s(e.%s, v) {\n\t\treturn false\n\t}\n", f.RawName, f.RawName))
-				buf.WriteString(fmt.Sprintf("\te.%s = copyMap_%s(v)\n", f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\tif e.mapsEqual%s(e.%s, v) {\n\t\treturn false\n\t}\n", helperMethodSuffix(f.RawName), f.RawName))
+				buf.WriteString(fmt.Sprintf("\te.%s = e.copyMap%s(v)\n", f.RawName, helperMethodSuffix(f.RawName)))
 				buf.WriteString(fmt.Sprintf("\te._dt.markFullReplace(%s%s)\n", fieldPrefix, f.RawName))
 				buf.WriteString("\treturn true\n")
 				buf.WriteString("}\n\n")
@@ -1860,8 +1876,8 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 
 				buf.WriteString(fmt.Sprintf("func (e *%s) Replace%s(v %s) bool {\n", entityName, f.ExportName, stateTypeExpr(f.TypeExpr, entityNames)))
 				buf.WriteString("\tif e == nil {\n\t\treturn false\n\t}\n")
-				buf.WriteString(fmt.Sprintf("\tif slicesEqual_%s(snapshotSlice_%s(e.%s), v) {\n\t\treturn false\n\t}\n", f.RawName, f.RawName, f.RawName))
-				buf.WriteString(fmt.Sprintf("\te.%s = hydrateSlice_%s(v)\n", f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\tif e.slicesEqual%s(e.snapshotSlice%s(e.%s), v) {\n\t\treturn false\n\t}\n", helperMethodSuffix(f.RawName), helperMethodSuffix(f.RawName), f.RawName))
+				buf.WriteString(fmt.Sprintf("\te.%s = e.hydrateSlice%s(v)\n", f.RawName, helperMethodSuffix(f.RawName)))
 				buf.WriteString(fmt.Sprintf("\te._dt.markFullReplace(%s%s)\n", fieldPrefix, f.RawName))
 				buf.WriteString("\treturn true\n")
 				buf.WriteString("}\n\n")
@@ -1958,7 +1974,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 
 				buf.WriteString(fmt.Sprintf("func (e *%s) Replace%s(v %s) bool {\n", entityName, f.ExportName, stateTypeExpr(f.TypeExpr, entityNames)))
 				buf.WriteString("\tif e == nil {\n\t\treturn false\n\t}\n")
-				buf.WriteString(fmt.Sprintf("\tif slicesEqual_%s(e.%s, v) {\n\t\treturn false\n\t}\n", f.RawName, f.RawName))
+				buf.WriteString(fmt.Sprintf("\tif e.slicesEqual%s(e.%s, v) {\n\t\treturn false\n\t}\n", helperMethodSuffix(f.RawName), f.RawName))
 				buf.WriteString(fmt.Sprintf("\te.%s = append(%s(nil), v...)\n", f.RawName, runtimeTypeExpr(f.TypeExpr, entityNames)))
 				buf.WriteString(fmt.Sprintf("\te._dt.markFullReplace(%s%s)\n", fieldPrefix, f.RawName))
 				buf.WriteString("\treturn true\n")

@@ -3,9 +3,7 @@ package main
 import (
 	playeractor "ThreeKingdoms/internal/player/actor"
 	playermongo "ThreeKingdoms/internal/player/infra/persistence/mongodb"
-	"ThreeKingdoms/internal/shared/gameconfig/basic"
-	"ThreeKingdoms/internal/shared/gameconfig/facility"
-	_map "ThreeKingdoms/internal/shared/gameconfig/map"
+	"ThreeKingdoms/internal/shared/gameconfig"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	sharedmongo "ThreeKingdoms/internal/shared/infrastructure/mongo"
 	"ThreeKingdoms/internal/shared/logs"
@@ -36,14 +34,6 @@ func (s *playerGRPCServer) Handle(ctx context.Context, req *playerpb.PlayerReque
 	return s.rt.Handle(ctx, req)
 }
 
-func LoadGameConfig(logger *zap.Logger) {
-	basic.Load()
-	_map.LoadMapBuilding()
-	_map.LoadMap()
-	facility.Load()
-	//logger.Info()
-}
-
 func main() {
 	serverconfig.Load()
 	if err := logs.Init("player", serverconfig.Conf.Log); err != nil {
@@ -52,7 +42,7 @@ func main() {
 	logs.Info("conf", zap.Any("conf", serverconfig.Conf))
 
 	logger := logs.Logger()
-	LoadGameConfig(logger)
+	gameconfig.LoadGameConfig(logger)
 
 	playerHost := serverconfig.Conf.PlayerServer.Host
 	if playerHost == "" {

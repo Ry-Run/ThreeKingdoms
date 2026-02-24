@@ -32,6 +32,8 @@ const (
 	FieldGeneral_state          Field = "state"
 )
 
+var emptyGeneralEntity = &GeneralEntity{}
+
 type GeneralEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any
@@ -220,7 +222,7 @@ type GeneralEntity struct {
 	_dt            GeneralEntityTrace
 }
 
-func hydrateSlice_skills(in []GSkillState) []*GSkillEntity {
+func (e *GeneralEntity) hydrateSliceSkills(in []GSkillState) []*GSkillEntity {
 	if in == nil {
 		return nil
 	}
@@ -231,7 +233,7 @@ func hydrateSlice_skills(in []GSkillState) []*GSkillEntity {
 	return out
 }
 
-func snapshotSlice_skills(in []*GSkillEntity) []GSkillState {
+func (e *GeneralEntity) snapshotSliceSkills(in []*GSkillEntity) []GSkillState {
 	if in == nil {
 		return nil
 	}
@@ -247,7 +249,7 @@ func snapshotSlice_skills(in []*GSkillEntity) []GSkillState {
 	return out
 }
 
-func slicesEqual_skills(a, b []GSkillState) bool {
+func (e *GeneralEntity) slicesEqualSkills(a, b []GSkillState) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -287,7 +289,7 @@ func HydrateGeneralEntity(s GeneralState) *GeneralEntity {
 		starLv:         s.StarLv,
 		star:           s.Star,
 		parentId:       s.ParentId,
-		skills:         hydrateSlice_skills(s.Skills),
+		skills:         emptyGeneralEntity.hydrateSliceSkills(s.Skills),
 		state:          s.State,
 	}
 }
@@ -428,7 +430,7 @@ func (e *GeneralEntity) Save() GeneralState {
 	s.StarLv = e.starLv
 	s.Star = e.star
 	s.ParentId = e.parentId
-	s.Skills = snapshotSlice_skills(e.skills)
+	s.Skills = e.snapshotSliceSkills(e.skills)
 	s.State = e.state
 	return s
 }
@@ -918,10 +920,10 @@ func (e *GeneralEntity) ReplaceSkills(v []GSkillState) bool {
 	if e == nil {
 		return false
 	}
-	if slicesEqual_skills(snapshotSlice_skills(e.skills), v) {
+	if e.slicesEqualSkills(e.snapshotSliceSkills(e.skills), v) {
 		return false
 	}
-	e.skills = hydrateSlice_skills(v)
+	e.skills = e.hydrateSliceSkills(v)
 	e._dt.markFullReplace(FieldGeneral_skills)
 	return true
 }

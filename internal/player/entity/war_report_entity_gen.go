@@ -28,6 +28,8 @@ const (
 	FieldWarReport_cTime             Field = "cTime"
 )
 
+var emptyWarReportEntity = &WarReportEntity{}
+
 type WarReportEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any
