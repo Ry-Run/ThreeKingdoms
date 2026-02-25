@@ -8,6 +8,7 @@ import (
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/transport"
 	"ThreeKingdoms/internal/shared/transport/ws"
+	"ThreeKingdoms/internal/shared/transport/ws/middlewares"
 	"context"
 )
 
@@ -21,14 +22,17 @@ func NewWsHandler(g *handler.Gate) *WsHandler {
 
 func (h *WsHandler) RegisterRoutes(r *ws.Router) {
 	accountGroup := r.Group("account")
+	accountGroup.Use(middlewares.Log())
 	accountGroup.Handle("login", h.Login)
 
 	roleGroup := r.Group("role")
+	roleGroup.Use(middlewares.Log())
 	roleGroup.Handle("enterServer", h.enterServer)
 	roleGroup.Handle("createRole", h.createRole)
 	roleGroup.Handle("myProperty", h.myProperty)
 
 	nationMapGroup := r.Group("nationMap")
+	nationMapGroup.Use(middlewares.Log())
 	nationMapGroup.Handle("config", h.worldMap)
 }
 

@@ -5,16 +5,33 @@ import (
 	"ThreeKingdoms/modules/kit/logx"
 	"context"
 	"strings"
+	"sync"
 
 	"ThreeKingdoms/internal/shared/logs"
 )
 
 type Group struct {
-	prefix   string
-	handlers map[string]HandlerFunc
+	sync.RWMutex
+	prefix        string
+	handlers      map[string]HandlerFunc
+	middlewareMap map[string][]MiddlewareFunc // 某个handler的中间件
+	middlewares   []MiddlewareFunc            // 组中间件
 }
 
 type HandlerFunc func(ctx context.Context, req *WsMsgReq, resp *WsMsgResp)
+
+type MiddlewareFunc func(next HandlerFunc) HandlerFunc
+
+func (g *Group) Use(middlewares ...MiddlewareFunc) {
+	g.middlewares = append(g.middlewares, middlewares...)
+}
+
+func (g *Group) HandleWithMiddleware(name string, handlerFunc HandlerFunc, middlewares ...MiddlewareFunc) {
+	g.Lock()
+	defer g.Unlock()
+	g.handlers[name] = handlerFunc
+	g.middlewareMap[name] = middlewares
+}
 
 func (g *Group) Handle(name string, h HandlerFunc) {
 	g.handlers[name] = h
@@ -56,9 +73,20 @@ func (r *Router) Dispatch(req *WsMsgReq, resp *WsMsgResp) {
 		return
 	}
 
-	handlerFunc := r.findHandler(req.Body.Name, resp)
+	g, router, handlerFunc := r.findHandler(req.Body.Name, resp)
 	if handlerFunc == nil {
 		return
+	}
+
+	// 顺序执行组全局的中间件
+	for _, middleware := range g.middlewares {
+		handlerFunc = middleware(handlerFunc)
+	}
+
+	// 顺序执行此 Handler 方法的中间件
+	routerMiddlewares := g.middlewareMap[router]
+	for _, middleware := range routerMiddlewares {
+		handlerFunc = middleware(handlerFunc)
 	}
 
 	handlerFunc(ctx, req, resp)
@@ -87,25 +115,25 @@ func (r *Router) validateDispatchInput(req *WsMsgReq, resp *WsMsgResp) bool {
 	return false
 }
 
-func (r *Router) findHandler(route string, resp *WsMsgResp) HandlerFunc {
+func (r *Router) findHandler(route string, resp *WsMsgResp) (*Group, string, HandlerFunc) {
 	prefix, handler, ok := parseRouteName(route)
 	if !ok {
 		r.setErrorResponse(resp, transport.InvalidParam, "路由参数有误")
-		return nil
+		return nil, "", nil
 	}
 
 	group := r.groups[prefix]
 	if group == nil {
 		r.setErrorResponse(resp, transport.InvalidParam, "路由组不存在")
-		return nil
+		return nil, "", nil
 	}
 
 	handlerFunc := group.handlers[handler]
 	if handlerFunc == nil {
 		r.setErrorResponse(resp, transport.InvalidParam, "路由处理器不存在")
-		return nil
+		return nil, "", nil
 	}
-	return handlerFunc
+	return group, handler, handlerFunc
 }
 
 func parseRouteName(name string) (string, string, bool) {
