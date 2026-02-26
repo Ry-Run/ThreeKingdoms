@@ -11,6 +11,9 @@ const (
 	FieldWorld_worldId      Field = "worldId"
 	FieldWorld_cityByPlayer Field = "cityByPlayer"
 	FieldWorld_worldMap     Field = "worldMap"
+	FieldWorld_armies       Field = "armies"
+	FieldWorld_marches      Field = "marches"
+	FieldWorld_cellToMarch  Field = "cellToMarch"
 )
 
 var emptyWorldEntity = &WorldEntity{}
@@ -36,9 +39,10 @@ type WorldEntityCollectionChangeInner struct {
 }
 
 type WorldEntityTrace struct {
-	dirty   bool
-	trace   map[Field]bool
-	changes map[Field]*WorldEntityCollectionChangeInner
+	dirty               bool
+	trace               map[Field]bool
+	changes             map[Field]*WorldEntityCollectionChangeInner
+	childDirty_worldMap map[int]struct{}
 }
 
 func (t *WorldEntityTrace) mark(f Field) {
@@ -145,23 +149,57 @@ func (t *WorldEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 	ch.sliceSwapRemoveAt = append(ch.sliceSwapRemoveAt, index)
 }
 
+func (t *WorldEntityTrace) markChildDirty_worldMap(f Field, key int) {
+	t.mark(f)
+	if t.childDirty_worldMap == nil {
+		t.childDirty_worldMap = make(map[int]struct{}, 8)
+	}
+	t.childDirty_worldMap[key] = struct{}{}
+}
+
+func (t *WorldEntityTrace) clearChildDirty_worldMap(key int) {
+	if t.childDirty_worldMap == nil {
+		return
+	}
+	delete(t.childDirty_worldMap, key)
+}
+
+func (t *WorldEntityTrace) childDirtyKeys_worldMap() []int {
+	if len(t.childDirty_worldMap) == 0 {
+		return nil
+	}
+	out := make([]int, 0, len(t.childDirty_worldMap))
+	for key := range t.childDirty_worldMap {
+		out = append(out, key)
+	}
+	sort.Slice(out, func(i, j int) bool { return fmt.Sprint(out[i]) < fmt.Sprint(out[j]) })
+	return out
+}
+
 type WorldState struct {
 	WorldId      WorldID
 	CityByPlayer map[PlayerID]map[CityID]CityState
-	WorldMap     []CellState
+	WorldMap     map[int]CellState
+	Armies       map[PlayerID]map[ArmyID]ArmyState
+	Marches      map[PlayerID]map[ArmyID]MarchState
+	CellToMarch  map[int][]MarchState
 }
 
 type WorldEntitySnap struct {
-	Version     uint64
-	State       WorldState
-	DirtyFields []Field
-	Changes     map[Field]WorldEntityCollectionChange
+	Version           uint64
+	State             WorldState
+	DirtyFields       []Field
+	Changes           map[Field]WorldEntityCollectionChange
+	WorldMapDirtyKeys []int
 }
 
 type WorldEntity struct {
 	worldId      WorldID
 	cityByPlayer map[PlayerID]map[CityID]*CityEntity
-	worldMap     []*CellEntity
+	worldMap     map[int]*CellEntity
+	armies       map[PlayerID]map[ArmyID]*ArmyEntity
+	marches      map[PlayerID]map[ArmyID]*MarchEntity
+	cellToMarch  map[int][]*MarchEntity
 	_dt          WorldEntityTrace
 }
 
@@ -251,56 +289,317 @@ func (e *WorldEntity) snapshotMapCityByPlayer(in map[PlayerID]map[CityID]*CityEn
 	return out
 }
 
-func (e *WorldEntity) hydrateSliceWorldMap(in []CellState) []*CellEntity {
+func (e *WorldEntity) copyMapWorldMap(in map[int]CellState) map[int]CellState {
 	if in == nil {
 		return nil
 	}
-	out := make([]*CellEntity, len(in))
-	for i, v := range in {
-		out[i] = HydrateCellEntity(v)
+	out := make(map[int]CellState, len(in))
+	for k, v := range in {
+		out[k] = v
 	}
 	return out
 }
 
-func (e *WorldEntity) snapshotSliceWorldMap(in []*CellEntity) []CellState {
-	if in == nil {
-		return nil
-	}
-	out := make([]CellState, len(in))
-	for i, v := range in {
-		if v == nil {
-			var z CellState
-			out[i] = z
-			continue
-		}
-		out[i] = v.Save()
-	}
-	return out
-}
-
-func (e *WorldEntity) slicesEqualWorldMap(a, b []CellState) bool {
+func (e *WorldEntity) mapsEqualWorldMap(a, b map[int]CellState) bool {
 	if a == nil && b == nil {
 		return true
 	}
-	if (a == nil) != (b == nil) {
-		return false
+	return false
+}
+
+func (e *WorldEntity) hydrateMapWorldMap(in map[int]CellState) map[int]*CellEntity {
+	if in == nil {
+		return nil
 	}
-	if len(a) != len(b) {
-		return false
+	out := make(map[int]*CellEntity, len(in))
+	for k, v := range in {
+		out[k] = HydrateCellEntity(v)
 	}
-	for i := range a {
-		if !reflect.DeepEqual(a[i], b[i]) {
-			return false
+	return out
+}
+
+func (e *WorldEntity) snapshotMapWorldMap(in map[int]*CellEntity) map[int]CellState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]CellState, len(in))
+	for k, v := range in {
+		if v == nil {
+			var z CellState
+			out[k] = z
+			continue
 		}
+		out[k] = v.Save()
 	}
-	return true
+	return out
+}
+
+func (e *WorldEntity) copyMapValueArmies(in map[ArmyID]ArmyState) map[ArmyID]ArmyState {
+	var out map[ArmyID]ArmyState
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[ArmyID]ArmyState, len(in))
+		for k1, v2 := range in {
+			out0[k1] = v2
+		}
+		out = out0
+	}
+	return out
+}
+
+func (e *WorldEntity) hydrateMapValueArmies(in map[ArmyID]ArmyState) map[ArmyID]*ArmyEntity {
+	var out map[ArmyID]*ArmyEntity
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[ArmyID]*ArmyEntity, len(in))
+		for k1, v2 := range in {
+			out0[k1] = HydrateArmyEntity(v2)
+		}
+		out = out0
+	}
+	return out
+}
+
+func (e *WorldEntity) snapshotMapValueArmies(in map[ArmyID]*ArmyEntity) map[ArmyID]ArmyState {
+	var out map[ArmyID]ArmyState
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[ArmyID]ArmyState, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				var z ArmyState
+				out0[k1] = z
+			} else {
+				out0[k1] = v2.Save()
+			}
+		}
+		out = out0
+	}
+	return out
+}
+
+func (e *WorldEntity) copyMapArmies(in map[PlayerID]map[ArmyID]ArmyState) map[PlayerID]map[ArmyID]ArmyState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[PlayerID]map[ArmyID]ArmyState, len(in))
+	for k, v := range in {
+		out[k] = e.copyMapValueArmies(v)
+	}
+	return out
+}
+
+func (e *WorldEntity) mapsEqualArmies(a, b map[PlayerID]map[ArmyID]ArmyState) bool {
+	return reflect.DeepEqual(a, b)
+}
+
+func (e *WorldEntity) hydrateMapArmies(in map[PlayerID]map[ArmyID]ArmyState) map[PlayerID]map[ArmyID]*ArmyEntity {
+	if in == nil {
+		return nil
+	}
+	out := make(map[PlayerID]map[ArmyID]*ArmyEntity, len(in))
+	for k, v := range in {
+		out[k] = e.hydrateMapValueArmies(v)
+	}
+	return out
+}
+
+func (e *WorldEntity) snapshotMapArmies(in map[PlayerID]map[ArmyID]*ArmyEntity) map[PlayerID]map[ArmyID]ArmyState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[PlayerID]map[ArmyID]ArmyState, len(in))
+	for k, v := range in {
+		var sv map[ArmyID]ArmyState
+		sv = e.snapshotMapValueArmies(v)
+		out[k] = sv
+	}
+	return out
+}
+
+func (e *WorldEntity) copyMapValueMarches(in map[ArmyID]MarchState) map[ArmyID]MarchState {
+	var out map[ArmyID]MarchState
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[ArmyID]MarchState, len(in))
+		for k1, v2 := range in {
+			out0[k1] = v2
+		}
+		out = out0
+	}
+	return out
+}
+
+func (e *WorldEntity) hydrateMapValueMarches(in map[ArmyID]MarchState) map[ArmyID]*MarchEntity {
+	var out map[ArmyID]*MarchEntity
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[ArmyID]*MarchEntity, len(in))
+		for k1, v2 := range in {
+			out0[k1] = HydrateMarchEntity(v2)
+		}
+		out = out0
+	}
+	return out
+}
+
+func (e *WorldEntity) snapshotMapValueMarches(in map[ArmyID]*MarchEntity) map[ArmyID]MarchState {
+	var out map[ArmyID]MarchState
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[ArmyID]MarchState, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				var z MarchState
+				out0[k1] = z
+			} else {
+				out0[k1] = v2.Save()
+			}
+		}
+		out = out0
+	}
+	return out
+}
+
+func (e *WorldEntity) copyMapMarches(in map[PlayerID]map[ArmyID]MarchState) map[PlayerID]map[ArmyID]MarchState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[PlayerID]map[ArmyID]MarchState, len(in))
+	for k, v := range in {
+		out[k] = e.copyMapValueMarches(v)
+	}
+	return out
+}
+
+func (e *WorldEntity) mapsEqualMarches(a, b map[PlayerID]map[ArmyID]MarchState) bool {
+	return reflect.DeepEqual(a, b)
+}
+
+func (e *WorldEntity) hydrateMapMarches(in map[PlayerID]map[ArmyID]MarchState) map[PlayerID]map[ArmyID]*MarchEntity {
+	if in == nil {
+		return nil
+	}
+	out := make(map[PlayerID]map[ArmyID]*MarchEntity, len(in))
+	for k, v := range in {
+		out[k] = e.hydrateMapValueMarches(v)
+	}
+	return out
+}
+
+func (e *WorldEntity) snapshotMapMarches(in map[PlayerID]map[ArmyID]*MarchEntity) map[PlayerID]map[ArmyID]MarchState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[PlayerID]map[ArmyID]MarchState, len(in))
+	for k, v := range in {
+		var sv map[ArmyID]MarchState
+		sv = e.snapshotMapValueMarches(v)
+		out[k] = sv
+	}
+	return out
+}
+
+func (e *WorldEntity) copyMapValueCellToMarch(in []MarchState) []MarchState {
+	var out []MarchState
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make([]MarchState, len(in))
+		for i1, v2 := range in {
+			out0[i1] = v2
+		}
+		out = out0
+	}
+	return out
+}
+
+func (e *WorldEntity) hydrateMapValueCellToMarch(in []MarchState) []*MarchEntity {
+	var out []*MarchEntity
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make([]*MarchEntity, len(in))
+		for i1, v2 := range in {
+			out0[i1] = HydrateMarchEntity(v2)
+		}
+		out = out0
+	}
+	return out
+}
+
+func (e *WorldEntity) snapshotMapValueCellToMarch(in []*MarchEntity) []MarchState {
+	var out []MarchState
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make([]MarchState, len(in))
+		for i1, v2 := range in {
+			if v2 == nil {
+				var z MarchState
+				out0[i1] = z
+			} else {
+				out0[i1] = v2.Save()
+			}
+		}
+		out = out0
+	}
+	return out
+}
+
+func (e *WorldEntity) copyMapCellToMarch(in map[int][]MarchState) map[int][]MarchState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int][]MarchState, len(in))
+	for k, v := range in {
+		out[k] = e.copyMapValueCellToMarch(v)
+	}
+	return out
+}
+
+func (e *WorldEntity) mapsEqualCellToMarch(a, b map[int][]MarchState) bool {
+	return reflect.DeepEqual(a, b)
+}
+
+func (e *WorldEntity) hydrateMapCellToMarch(in map[int][]MarchState) map[int][]*MarchEntity {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int][]*MarchEntity, len(in))
+	for k, v := range in {
+		out[k] = e.hydrateMapValueCellToMarch(v)
+	}
+	return out
+}
+
+func (e *WorldEntity) snapshotMapCellToMarch(in map[int][]*MarchEntity) map[int][]MarchState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int][]MarchState, len(in))
+	for k, v := range in {
+		var sv []MarchState
+		sv = e.snapshotMapValueCellToMarch(v)
+		out[k] = sv
+	}
+	return out
 }
 
 func HydrateWorldEntity(s WorldState) *WorldEntity {
 	return &WorldEntity{
 		worldId:      s.WorldId,
 		cityByPlayer: emptyWorldEntity.hydrateMapCityByPlayer(s.CityByPlayer),
-		worldMap:     emptyWorldEntity.hydrateSliceWorldMap(s.WorldMap),
+		worldMap:     emptyWorldEntity.hydrateMapWorldMap(s.WorldMap),
+		armies:       emptyWorldEntity.hydrateMapArmies(s.Armies),
+		marches:      emptyWorldEntity.hydrateMapMarches(s.Marches),
+		cellToMarch:  emptyWorldEntity.hydrateMapCellToMarch(s.CellToMarch),
 	}
 }
 
@@ -422,7 +721,10 @@ func (e *WorldEntity) Save() WorldState {
 	}
 	s.WorldId = e.worldId
 	s.CityByPlayer = e.snapshotMapCityByPlayer(e.cityByPlayer)
-	s.WorldMap = e.snapshotSliceWorldMap(e.worldMap)
+	s.WorldMap = e.snapshotMapWorldMap(e.worldMap)
+	s.Armies = e.snapshotMapArmies(e.armies)
+	s.Marches = e.snapshotMapMarches(e.marches)
+	s.CellToMarch = e.snapshotMapCellToMarch(e.cellToMarch)
 	return s
 }
 
@@ -433,10 +735,11 @@ func NewWorldEntitySnap(version uint64, e *WorldEntity) *WorldEntitySnap {
 	dirtyFields := e.DirtyFields()
 	changes := e.DirtyChanges()
 	return &WorldEntitySnap{
-		Version:     version,
-		State:       e.Save(),
-		DirtyFields: dirtyFields,
-		Changes:     changes,
+		Version:           version,
+		State:             e.Save(),
+		DirtyFields:       dirtyFields,
+		Changes:           changes,
+		WorldMapDirtyKeys: e._dt.childDirtyKeys_worldMap(),
 	}
 }
 
@@ -453,8 +756,12 @@ func (s *WorldEntitySnap) Clone() *WorldEntitySnap {
 			out.Changes[f] = cloneWorldEntityCollectionChange(ch)
 		}
 	}
+	out.WorldMapDirtyKeys = append([]int(nil), s.WorldMapDirtyKeys...)
 	out.State.CityByPlayer = emptyWorldEntity.copyMapCityByPlayer(s.State.CityByPlayer)
-	out.State.WorldMap = append([]CellState(nil), s.State.WorldMap...)
+	out.State.WorldMap = emptyWorldEntity.copyMapWorldMap(s.State.WorldMap)
+	out.State.Armies = emptyWorldEntity.copyMapArmies(s.State.Armies)
+	out.State.Marches = emptyWorldEntity.copyMapMarches(s.State.Marches)
+	out.State.CellToMarch = emptyWorldEntity.copyMapCellToMarch(s.State.CellToMarch)
 	return out
 }
 
@@ -621,146 +928,141 @@ func (e *WorldEntity) ClearCityByPlayer() bool {
 	return true
 }
 
+func (e *WorldEntity) GetWorldMap(key int) (CellState, bool) {
+	var z CellState
+	if e == nil || e.worldMap == nil {
+		return z, false
+	}
+	v, ok := e.worldMap[key]
+	if !ok || v == nil {
+		return z, false
+	}
+	return v.Save(), true
+}
+
 func (e *WorldEntity) LenWorldMap() int {
-	if e == nil {
+	if e == nil || e.worldMap == nil {
 		return 0
 	}
 	return len(e.worldMap)
 }
 
-func (e *WorldEntity) AtWorldMap(index int) (CellState, bool) {
-	var z CellState
-	if e == nil {
-		return z, false
-	}
-	if index < 0 || index >= len(e.worldMap) {
-		return z, false
-	}
-	v := e.worldMap[index]
-	if v == nil {
-		return z, true
-	}
-	return v.Save(), true
-}
-
-func (e *WorldEntity) ForEachWorldMap(fn func(index int, value CellState)) {
-	if e == nil || fn == nil {
+func (e *WorldEntity) ForEachWorldMap(fn func(key int, value CellState)) {
+	if e == nil || e.worldMap == nil || fn == nil {
 		return
 	}
-	for i, v := range e.worldMap {
-		var state CellState
-		if v != nil {
-			state = v.Save()
+	for k, v := range e.worldMap {
+		if v == nil {
+			continue
 		}
-		fn(i, state)
+		fn(k, v.Save())
 	}
 }
 
-func (e *WorldEntity) RangeWorldMap(fn func(index int, value CellState) bool) {
-	if e == nil || fn == nil {
+func (e *WorldEntity) RangeWorldMap(fn func(key int, value CellState) bool) {
+	if e == nil || e.worldMap == nil || fn == nil {
 		return
 	}
-	for i, v := range e.worldMap {
-		var state CellState
-		if v != nil {
-			state = v.Save()
+	for k, v := range e.worldMap {
+		if v == nil {
+			continue
 		}
-		if !fn(i, state) {
+		if !fn(k, v.Save()) {
 			return
 		}
 	}
 }
 
-func (e *WorldEntity) ReplaceWorldMap(v []CellState) bool {
+func (e *WorldEntity) DirtyWorldMapKeys() []int {
+	if e == nil {
+		return nil
+	}
+	return e._dt.childDirtyKeys_worldMap()
+}
+
+func (e *WorldEntity) ReplaceWorldMap(v map[int]CellState) bool {
 	if e == nil {
 		return false
 	}
-	if e.slicesEqualWorldMap(e.snapshotSliceWorldMap(e.worldMap), v) {
+	if e.mapsEqualWorldMap(e.snapshotMapWorldMap(e.worldMap), v) {
 		return false
 	}
-	e.worldMap = e.hydrateSliceWorldMap(v)
+	e.worldMap = e.hydrateMapWorldMap(v)
 	e._dt.markFullReplace(FieldWorld_worldMap)
 	return true
 }
 
-func (e *WorldEntity) AppendWorldMap(values ...CellState) bool {
-	if e == nil || len(values) == 0 {
-		return false
-	}
-	for _, v := range values {
-		rv := HydrateCellEntity(v)
-		e.worldMap = append(e.worldMap, rv)
-		e._dt.markSliceAppend(FieldWorld_worldMap, v)
-	}
-	return true
-}
-
-func (e *WorldEntity) SetWorldMapAt(index int, value CellState) bool {
+func (e *WorldEntity) PutWorldMap(key int, value CellState) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.worldMap) {
-		return false
+	if e.worldMap == nil {
+		e.worldMap = make(map[int]*CellEntity)
 	}
-	var oldState CellState
-	if e.worldMap[index] != nil {
-		oldState = e.worldMap[index].Save()
-	}
-	if reflect.DeepEqual(oldState, value) {
-		return false
-	}
-	e.worldMap[index] = HydrateCellEntity(value)
-	e._dt.markSliceSet(FieldWorld_worldMap, index, value)
+	e.worldMap[key] = HydrateCellEntity(value)
+	e._dt.markMapSet(FieldWorld_worldMap, fmt.Sprint(key), value)
+	e._dt.markChildDirty_worldMap(FieldWorld_worldMap, key)
 	return true
 }
 
-func (e *WorldEntity) UpdateWorldMapAt(index int, fn func(value *CellEntity)) bool {
-	if e == nil || fn == nil {
+func (e *WorldEntity) PutWorldMapMany(entries map[int]CellState) bool {
+	if e == nil || len(entries) == 0 {
 		return false
 	}
-	if index < 0 || index >= len(e.worldMap) {
+	if e.worldMap == nil {
+		e.worldMap = make(map[int]*CellEntity, len(entries))
+	}
+	changed := false
+	for k, v := range entries {
+		e.worldMap[k] = HydrateCellEntity(v)
+		e._dt.markMapSet(FieldWorld_worldMap, fmt.Sprint(k), v)
+		e._dt.markChildDirty_worldMap(FieldWorld_worldMap, k)
+		changed = true
+	}
+	return changed
+}
+
+func (e *WorldEntity) UpdateWorldMap(key int, fn func(value *CellEntity)) bool {
+	if e == nil || fn == nil || e.worldMap == nil {
 		return false
 	}
-	v := e.worldMap[index]
-	if v == nil {
+	v, ok := e.worldMap[key]
+	if !ok || v == nil {
 		return false
 	}
-	before := v.Save()
 	fn(v)
-	after := v.Save()
-	if reflect.DeepEqual(before, after) {
-		return false
-	}
-	e._dt.markSliceSet(FieldWorld_worldMap, index, after)
+	e._dt.markChildDirty_worldMap(FieldWorld_worldMap, key)
 	return true
 }
 
-func (e *WorldEntity) RemoveWorldMapAt(index int) bool {
-	if e == nil {
+func (e *WorldEntity) DelWorldMap(key int) bool {
+	if e == nil || e.worldMap == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.worldMap) {
+	if _, ok := e.worldMap[key]; !ok {
 		return false
 	}
-	e.worldMap = append(e.worldMap[:index], e.worldMap[index+1:]...)
-	e._dt.markSliceRemoveAt(FieldWorld_worldMap, index)
+	delete(e.worldMap, key)
+	e._dt.markMapDelete(FieldWorld_worldMap, fmt.Sprint(key))
+	e._dt.clearChildDirty_worldMap(key)
 	return true
 }
 
-func (e *WorldEntity) SwapRemoveWorldMapAt(index int) bool {
-	if e == nil {
+func (e *WorldEntity) DelWorldMapMany(keys []int) bool {
+	if e == nil || e.worldMap == nil || len(keys) == 0 {
 		return false
 	}
-	if index < 0 || index >= len(e.worldMap) {
-		return false
+	changed := false
+	for _, key := range keys {
+		if _, ok := e.worldMap[key]; !ok {
+			continue
+		}
+		delete(e.worldMap, key)
+		e._dt.markMapDelete(FieldWorld_worldMap, fmt.Sprint(key))
+		e._dt.clearChildDirty_worldMap(key)
+		changed = true
 	}
-	last := len(e.worldMap) - 1
-	if index != last {
-		e.worldMap[index] = e.worldMap[last]
-	}
-	e.worldMap = e.worldMap[:last]
-	e._dt.markSliceSwapRemoveAt(FieldWorld_worldMap, index)
-	return true
+	return changed
 }
 
 func (e *WorldEntity) ClearWorldMap() bool {
@@ -772,5 +1074,435 @@ func (e *WorldEntity) ClearWorldMap() bool {
 	}
 	e.worldMap = nil
 	e._dt.markFullReplace(FieldWorld_worldMap)
+	e._dt.childDirty_worldMap = nil
+	return true
+}
+
+func (e *WorldEntity) GetArmies(key PlayerID) (map[ArmyID]ArmyState, bool) {
+	var z map[ArmyID]ArmyState
+	if e == nil || e.armies == nil {
+		return z, false
+	}
+	v, ok := e.armies[key]
+	if !ok {
+		return z, false
+	}
+	return e.snapshotMapValueArmies(v), true
+}
+
+func (e *WorldEntity) LenArmies() int {
+	if e == nil || e.armies == nil {
+		return 0
+	}
+	return len(e.armies)
+}
+
+func (e *WorldEntity) ForEachArmies(fn func(key PlayerID, value map[ArmyID]ArmyState)) {
+	if e == nil || e.armies == nil || fn == nil {
+		return
+	}
+	for k, v := range e.armies {
+		fn(k, e.snapshotMapValueArmies(v))
+	}
+}
+
+func (e *WorldEntity) RangeArmies(fn func(key PlayerID, value map[ArmyID]ArmyState) bool) {
+	if e == nil || e.armies == nil || fn == nil {
+		return
+	}
+	for k, v := range e.armies {
+		if !fn(k, e.snapshotMapValueArmies(v)) {
+			return
+		}
+	}
+}
+
+func (e *WorldEntity) ReplaceArmies(v map[PlayerID]map[ArmyID]ArmyState) bool {
+	if e == nil {
+		return false
+	}
+	if e.mapsEqualArmies(e.snapshotMapArmies(e.armies), v) {
+		return false
+	}
+	e.armies = e.hydrateMapArmies(v)
+	e._dt.markFullReplace(FieldWorld_armies)
+	return true
+}
+
+func (e *WorldEntity) PutArmies(key PlayerID, value map[ArmyID]ArmyState) bool {
+	if e == nil {
+		return false
+	}
+	if e.armies == nil {
+		e.armies = make(map[PlayerID]map[ArmyID]*ArmyEntity)
+	}
+	if old, ok := e.armies[key]; ok && reflect.DeepEqual(e.snapshotMapValueArmies(old), value) {
+		return false
+	}
+	e.armies[key] = e.hydrateMapValueArmies(value)
+	e._dt.markMapSet(FieldWorld_armies, fmt.Sprint(key), e.copyMapValueArmies(value))
+	return true
+}
+
+func (e *WorldEntity) PutArmiesMany(entries map[PlayerID]map[ArmyID]ArmyState) bool {
+	if e == nil || len(entries) == 0 {
+		return false
+	}
+	if e.armies == nil {
+		e.armies = make(map[PlayerID]map[ArmyID]*ArmyEntity, len(entries))
+	}
+	changed := false
+	for k, v := range entries {
+		if old, ok := e.armies[k]; ok && reflect.DeepEqual(e.snapshotMapValueArmies(old), v) {
+			continue
+		}
+		e.armies[k] = e.hydrateMapValueArmies(v)
+		e._dt.markMapSet(FieldWorld_armies, fmt.Sprint(k), e.copyMapValueArmies(v))
+		changed = true
+	}
+	return changed
+}
+
+func (e *WorldEntity) UpdateArmies(key PlayerID, fn func(value map[ArmyID]*ArmyEntity)) bool {
+	if e == nil || fn == nil || e.armies == nil {
+		return false
+	}
+	v, ok := e.armies[key]
+	if !ok {
+		return false
+	}
+	before := e.snapshotMapValueArmies(v)
+	fn(v)
+	after := e.snapshotMapValueArmies(v)
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markMapSet(FieldWorld_armies, fmt.Sprint(key), e.copyMapValueArmies(after))
+	return true
+}
+
+func (e *WorldEntity) DelArmies(key PlayerID) bool {
+	if e == nil || e.armies == nil {
+		return false
+	}
+	if _, ok := e.armies[key]; !ok {
+		return false
+	}
+	delete(e.armies, key)
+	e._dt.markMapDelete(FieldWorld_armies, fmt.Sprint(key))
+	return true
+}
+
+func (e *WorldEntity) DelArmiesMany(keys []PlayerID) bool {
+	if e == nil || e.armies == nil || len(keys) == 0 {
+		return false
+	}
+	changed := false
+	for _, key := range keys {
+		if _, ok := e.armies[key]; !ok {
+			continue
+		}
+		delete(e.armies, key)
+		e._dt.markMapDelete(FieldWorld_armies, fmt.Sprint(key))
+		changed = true
+	}
+	return changed
+}
+
+func (e *WorldEntity) ClearArmies() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.armies) == 0 {
+		return false
+	}
+	e.armies = nil
+	e._dt.markFullReplace(FieldWorld_armies)
+	return true
+}
+
+func (e *WorldEntity) GetMarches(key PlayerID) (map[ArmyID]MarchState, bool) {
+	var z map[ArmyID]MarchState
+	if e == nil || e.marches == nil {
+		return z, false
+	}
+	v, ok := e.marches[key]
+	if !ok {
+		return z, false
+	}
+	return e.snapshotMapValueMarches(v), true
+}
+
+func (e *WorldEntity) LenMarches() int {
+	if e == nil || e.marches == nil {
+		return 0
+	}
+	return len(e.marches)
+}
+
+func (e *WorldEntity) ForEachMarches(fn func(key PlayerID, value map[ArmyID]MarchState)) {
+	if e == nil || e.marches == nil || fn == nil {
+		return
+	}
+	for k, v := range e.marches {
+		fn(k, e.snapshotMapValueMarches(v))
+	}
+}
+
+func (e *WorldEntity) RangeMarches(fn func(key PlayerID, value map[ArmyID]MarchState) bool) {
+	if e == nil || e.marches == nil || fn == nil {
+		return
+	}
+	for k, v := range e.marches {
+		if !fn(k, e.snapshotMapValueMarches(v)) {
+			return
+		}
+	}
+}
+
+func (e *WorldEntity) ReplaceMarches(v map[PlayerID]map[ArmyID]MarchState) bool {
+	if e == nil {
+		return false
+	}
+	if e.mapsEqualMarches(e.snapshotMapMarches(e.marches), v) {
+		return false
+	}
+	e.marches = e.hydrateMapMarches(v)
+	e._dt.markFullReplace(FieldWorld_marches)
+	return true
+}
+
+func (e *WorldEntity) PutMarches(key PlayerID, value map[ArmyID]MarchState) bool {
+	if e == nil {
+		return false
+	}
+	if e.marches == nil {
+		e.marches = make(map[PlayerID]map[ArmyID]*MarchEntity)
+	}
+	if old, ok := e.marches[key]; ok && reflect.DeepEqual(e.snapshotMapValueMarches(old), value) {
+		return false
+	}
+	e.marches[key] = e.hydrateMapValueMarches(value)
+	e._dt.markMapSet(FieldWorld_marches, fmt.Sprint(key), e.copyMapValueMarches(value))
+	return true
+}
+
+func (e *WorldEntity) PutMarchesMany(entries map[PlayerID]map[ArmyID]MarchState) bool {
+	if e == nil || len(entries) == 0 {
+		return false
+	}
+	if e.marches == nil {
+		e.marches = make(map[PlayerID]map[ArmyID]*MarchEntity, len(entries))
+	}
+	changed := false
+	for k, v := range entries {
+		if old, ok := e.marches[k]; ok && reflect.DeepEqual(e.snapshotMapValueMarches(old), v) {
+			continue
+		}
+		e.marches[k] = e.hydrateMapValueMarches(v)
+		e._dt.markMapSet(FieldWorld_marches, fmt.Sprint(k), e.copyMapValueMarches(v))
+		changed = true
+	}
+	return changed
+}
+
+func (e *WorldEntity) UpdateMarches(key PlayerID, fn func(value map[ArmyID]*MarchEntity)) bool {
+	if e == nil || fn == nil || e.marches == nil {
+		return false
+	}
+	v, ok := e.marches[key]
+	if !ok {
+		return false
+	}
+	before := e.snapshotMapValueMarches(v)
+	fn(v)
+	after := e.snapshotMapValueMarches(v)
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markMapSet(FieldWorld_marches, fmt.Sprint(key), e.copyMapValueMarches(after))
+	return true
+}
+
+func (e *WorldEntity) DelMarches(key PlayerID) bool {
+	if e == nil || e.marches == nil {
+		return false
+	}
+	if _, ok := e.marches[key]; !ok {
+		return false
+	}
+	delete(e.marches, key)
+	e._dt.markMapDelete(FieldWorld_marches, fmt.Sprint(key))
+	return true
+}
+
+func (e *WorldEntity) DelMarchesMany(keys []PlayerID) bool {
+	if e == nil || e.marches == nil || len(keys) == 0 {
+		return false
+	}
+	changed := false
+	for _, key := range keys {
+		if _, ok := e.marches[key]; !ok {
+			continue
+		}
+		delete(e.marches, key)
+		e._dt.markMapDelete(FieldWorld_marches, fmt.Sprint(key))
+		changed = true
+	}
+	return changed
+}
+
+func (e *WorldEntity) ClearMarches() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.marches) == 0 {
+		return false
+	}
+	e.marches = nil
+	e._dt.markFullReplace(FieldWorld_marches)
+	return true
+}
+
+func (e *WorldEntity) GetCellToMarch(key int) ([]MarchState, bool) {
+	var z []MarchState
+	if e == nil || e.cellToMarch == nil {
+		return z, false
+	}
+	v, ok := e.cellToMarch[key]
+	if !ok {
+		return z, false
+	}
+	return e.snapshotMapValueCellToMarch(v), true
+}
+
+func (e *WorldEntity) LenCellToMarch() int {
+	if e == nil || e.cellToMarch == nil {
+		return 0
+	}
+	return len(e.cellToMarch)
+}
+
+func (e *WorldEntity) ForEachCellToMarch(fn func(key int, value []MarchState)) {
+	if e == nil || e.cellToMarch == nil || fn == nil {
+		return
+	}
+	for k, v := range e.cellToMarch {
+		fn(k, e.snapshotMapValueCellToMarch(v))
+	}
+}
+
+func (e *WorldEntity) RangeCellToMarch(fn func(key int, value []MarchState) bool) {
+	if e == nil || e.cellToMarch == nil || fn == nil {
+		return
+	}
+	for k, v := range e.cellToMarch {
+		if !fn(k, e.snapshotMapValueCellToMarch(v)) {
+			return
+		}
+	}
+}
+
+func (e *WorldEntity) ReplaceCellToMarch(v map[int][]MarchState) bool {
+	if e == nil {
+		return false
+	}
+	if e.mapsEqualCellToMarch(e.snapshotMapCellToMarch(e.cellToMarch), v) {
+		return false
+	}
+	e.cellToMarch = e.hydrateMapCellToMarch(v)
+	e._dt.markFullReplace(FieldWorld_cellToMarch)
+	return true
+}
+
+func (e *WorldEntity) PutCellToMarch(key int, value []MarchState) bool {
+	if e == nil {
+		return false
+	}
+	if e.cellToMarch == nil {
+		e.cellToMarch = make(map[int][]*MarchEntity)
+	}
+	if old, ok := e.cellToMarch[key]; ok && reflect.DeepEqual(e.snapshotMapValueCellToMarch(old), value) {
+		return false
+	}
+	e.cellToMarch[key] = e.hydrateMapValueCellToMarch(value)
+	e._dt.markMapSet(FieldWorld_cellToMarch, fmt.Sprint(key), e.copyMapValueCellToMarch(value))
+	return true
+}
+
+func (e *WorldEntity) PutCellToMarchMany(entries map[int][]MarchState) bool {
+	if e == nil || len(entries) == 0 {
+		return false
+	}
+	if e.cellToMarch == nil {
+		e.cellToMarch = make(map[int][]*MarchEntity, len(entries))
+	}
+	changed := false
+	for k, v := range entries {
+		if old, ok := e.cellToMarch[k]; ok && reflect.DeepEqual(e.snapshotMapValueCellToMarch(old), v) {
+			continue
+		}
+		e.cellToMarch[k] = e.hydrateMapValueCellToMarch(v)
+		e._dt.markMapSet(FieldWorld_cellToMarch, fmt.Sprint(k), e.copyMapValueCellToMarch(v))
+		changed = true
+	}
+	return changed
+}
+
+func (e *WorldEntity) UpdateCellToMarch(key int, fn func(value []*MarchEntity)) bool {
+	if e == nil || fn == nil || e.cellToMarch == nil {
+		return false
+	}
+	v, ok := e.cellToMarch[key]
+	if !ok {
+		return false
+	}
+	before := e.snapshotMapValueCellToMarch(v)
+	fn(v)
+	after := e.snapshotMapValueCellToMarch(v)
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markMapSet(FieldWorld_cellToMarch, fmt.Sprint(key), e.copyMapValueCellToMarch(after))
+	return true
+}
+
+func (e *WorldEntity) DelCellToMarch(key int) bool {
+	if e == nil || e.cellToMarch == nil {
+		return false
+	}
+	if _, ok := e.cellToMarch[key]; !ok {
+		return false
+	}
+	delete(e.cellToMarch, key)
+	e._dt.markMapDelete(FieldWorld_cellToMarch, fmt.Sprint(key))
+	return true
+}
+
+func (e *WorldEntity) DelCellToMarchMany(keys []int) bool {
+	if e == nil || e.cellToMarch == nil || len(keys) == 0 {
+		return false
+	}
+	changed := false
+	for _, key := range keys {
+		if _, ok := e.cellToMarch[key]; !ok {
+			continue
+		}
+		delete(e.cellToMarch, key)
+		e._dt.markMapDelete(FieldWorld_cellToMarch, fmt.Sprint(key))
+		changed = true
+	}
+	return changed
+}
+
+func (e *WorldEntity) ClearCellToMarch() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.cellToMarch) == 0 {
+		return false
+	}
+	e.cellToMarch = nil
+	e._dt.markFullReplace(FieldWorld_cellToMarch)
 	return true
 }

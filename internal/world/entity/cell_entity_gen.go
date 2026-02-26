@@ -3,18 +3,27 @@ package entity
 
 import (
 	"sort"
+	"time"
 )
 
 const (
-	FieldCell_cellType Field = "cellType"
-	FieldCell_name     Field = "name"
-	FieldCell_level    Field = "level"
-	FieldCell_grain    Field = "grain"
-	FieldCell_wood     Field = "wood"
-	FieldCell_iron     Field = "iron"
-	FieldCell_stone    Field = "stone"
-	FieldCell_durable  Field = "durable"
-	FieldCell_defender Field = "defender"
+	FieldCell_id         Field = "id"
+	FieldCell_pos        Field = "pos"
+	FieldCell_cellType   Field = "cellType"
+	FieldCell_name       Field = "name"
+	FieldCell_level      Field = "level"
+	FieldCell_opLevel    Field = "opLevel"
+	FieldCell_wood       Field = "wood"
+	FieldCell_iron       Field = "iron"
+	FieldCell_stone      Field = "stone"
+	FieldCell_grain      Field = "grain"
+	FieldCell_defender   Field = "defender"
+	FieldCell_curDurable Field = "curDurable"
+	FieldCell_maxDurable Field = "maxDurable"
+	FieldCell_occupyTime Field = "occupyTime"
+	FieldCell_endTime    Field = "endTime"
+	FieldCell_giveUpTime Field = "giveUpTime"
+	FieldCell_occupancy  Field = "occupancy"
 )
 
 var emptyCellEntity = &CellEntity{}
@@ -150,15 +159,23 @@ func (t *CellEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 }
 
 type CellState struct {
-	CellType int8
-	Name     string
-	Level    int8
-	Grain    int
-	Wood     int
-	Iron     int
-	Stone    int
-	Durable  int
-	Defender int
+	Id         int
+	Pos        PosState
+	CellType   int8
+	Name       string
+	Level      int8
+	OpLevel    int8
+	Wood       int
+	Iron       int
+	Stone      int
+	Grain      int
+	Defender   int
+	CurDurable int
+	MaxDurable int
+	OccupyTime time.Time
+	EndTime    time.Time
+	GiveUpTime time.Time
+	Occupancy  OccupancyState
 }
 
 type CellEntitySnap struct {
@@ -169,29 +186,45 @@ type CellEntitySnap struct {
 }
 
 type CellEntity struct {
-	cellType int8
-	name     string
-	level    int8
-	grain    int
-	wood     int
-	iron     int
-	stone    int
-	durable  int
-	defender int
-	_dt      CellEntityTrace
+	id         int
+	pos        *PosEntity
+	cellType   int8
+	name       string
+	level      int8
+	opLevel    int8
+	wood       int
+	iron       int
+	stone      int
+	grain      int
+	defender   int
+	curDurable int
+	maxDurable int
+	occupyTime time.Time
+	endTime    time.Time
+	giveUpTime time.Time
+	occupancy  *OccupancyEntity
+	_dt        CellEntityTrace
 }
 
 func HydrateCellEntity(s CellState) *CellEntity {
 	return &CellEntity{
-		cellType: s.CellType,
-		name:     s.Name,
-		level:    s.Level,
-		grain:    s.Grain,
-		wood:     s.Wood,
-		iron:     s.Iron,
-		stone:    s.Stone,
-		durable:  s.Durable,
-		defender: s.Defender,
+		id:         s.Id,
+		pos:        HydratePosEntity(s.Pos),
+		cellType:   s.CellType,
+		name:       s.Name,
+		level:      s.Level,
+		opLevel:    s.OpLevel,
+		wood:       s.Wood,
+		iron:       s.Iron,
+		stone:      s.Stone,
+		grain:      s.Grain,
+		defender:   s.Defender,
+		curDurable: s.CurDurable,
+		maxDurable: s.MaxDurable,
+		occupyTime: s.OccupyTime,
+		endTime:    s.EndTime,
+		giveUpTime: s.GiveUpTime,
+		occupancy:  HydrateOccupancyEntity(s.Occupancy),
 	}
 }
 
@@ -202,6 +235,12 @@ func (e *CellEntity) Dirty() bool {
 	if e._dt.dirty {
 		return true
 	}
+	if e.pos != nil && e.pos.Dirty() {
+		return true
+	}
+	if e.occupancy != nil && e.occupancy.Dirty() {
+		return true
+	}
 	return false
 }
 
@@ -210,6 +249,12 @@ func (e *CellEntity) ClearDirty() {
 		return
 	}
 	e._dt = CellEntityTrace{}
+	if e.pos != nil {
+		e.pos.ClearDirty()
+	}
+	if e.occupancy != nil {
+		e.occupancy.ClearDirty()
+	}
 }
 
 func (e *CellEntity) DirtyFields() []Field {
@@ -219,6 +264,12 @@ func (e *CellEntity) DirtyFields() []Field {
 	trace := make(map[Field]bool, len(e._dt.trace)+4)
 	for k := range e._dt.trace {
 		trace[k] = true
+	}
+	if e.pos != nil && e.pos.Dirty() {
+		trace[FieldCell_pos] = true
+	}
+	if e.occupancy != nil && e.occupancy.Dirty() {
+		trace[FieldCell_occupancy] = true
 	}
 	if len(trace) == 0 {
 		return nil
@@ -311,15 +362,33 @@ func (e *CellEntity) Save() CellState {
 	if e == nil {
 		return s
 	}
+	s.Id = e.id
+	if e.pos != nil {
+		s.Pos = e.pos.Save()
+	} else {
+		var z PosState
+		s.Pos = z
+	}
 	s.CellType = e.cellType
 	s.Name = e.name
 	s.Level = e.level
-	s.Grain = e.grain
+	s.OpLevel = e.opLevel
 	s.Wood = e.wood
 	s.Iron = e.iron
 	s.Stone = e.stone
-	s.Durable = e.durable
+	s.Grain = e.grain
 	s.Defender = e.defender
+	s.CurDurable = e.curDurable
+	s.MaxDurable = e.maxDurable
+	s.OccupyTime = e.occupyTime
+	s.EndTime = e.endTime
+	s.GiveUpTime = e.giveUpTime
+	if e.occupancy != nil {
+		s.Occupancy = e.occupancy.Save()
+	} else {
+		var z OccupancyState
+		s.Occupancy = z
+	}
 	return s
 }
 
@@ -351,6 +420,70 @@ func (s *CellEntitySnap) Clone() *CellEntitySnap {
 		}
 	}
 	return out
+}
+
+func (e *CellEntity) Id() int {
+	if e == nil {
+		var z int
+		return z
+	}
+	return e.id
+}
+
+func (e *CellEntity) SetId(v int) bool {
+	if e == nil {
+		return false
+	}
+	if e.id == v {
+		return false
+	}
+	e.id = v
+	e._dt.mark(FieldCell_id)
+	return true
+}
+
+func (e *CellEntity) Pos() *PosEntity {
+	if e == nil {
+		return nil
+	}
+	return e.pos
+}
+
+func (e *CellEntity) SetPos(v PosState) bool {
+	if e == nil {
+		return false
+	}
+	next := HydratePosEntity(v)
+	if e.pos == next {
+		return false
+	}
+	e.pos = next
+	e._dt.mark(FieldCell_pos)
+	return true
+}
+
+func (e *CellEntity) SetPosEntity(v *PosEntity) bool {
+	if e == nil {
+		return false
+	}
+	if e.pos == v {
+		return false
+	}
+	e.pos = v
+	e._dt.mark(FieldCell_pos)
+	return true
+}
+
+func (e *CellEntity) UpdatePos(fn func(value *PosEntity)) bool {
+	if e == nil || fn == nil {
+		return false
+	}
+	if e.pos == nil {
+		e.pos = &PosEntity{}
+	}
+	fn(e.pos)
+	e._dt.mark(FieldCell_pos)
+	return true
 }
 
 func (e *CellEntity) CellType() int8 {
@@ -413,23 +546,23 @@ func (e *CellEntity) SetLevel(v int8) bool {
 	return true
 }
 
-func (e *CellEntity) Grain() int {
+func (e *CellEntity) OpLevel() int8 {
 	if e == nil {
-		var z int
+		var z int8
 		return z
 	}
-	return e.grain
+	return e.opLevel
 }
 
-func (e *CellEntity) SetGrain(v int) bool {
+func (e *CellEntity) SetOpLevel(v int8) bool {
 	if e == nil {
 		return false
 	}
-	if e.grain == v {
+	if e.opLevel == v {
 		return false
 	}
-	e.grain = v
-	e._dt.mark(FieldCell_grain)
+	e.opLevel = v
+	e._dt.mark(FieldCell_opLevel)
 	return true
 }
 
@@ -493,23 +626,23 @@ func (e *CellEntity) SetStone(v int) bool {
 	return true
 }
 
-func (e *CellEntity) Durable() int {
+func (e *CellEntity) Grain() int {
 	if e == nil {
 		var z int
 		return z
 	}
-	return e.durable
+	return e.grain
 }
 
-func (e *CellEntity) SetDurable(v int) bool {
+func (e *CellEntity) SetGrain(v int) bool {
 	if e == nil {
 		return false
 	}
-	if e.durable == v {
+	if e.grain == v {
 		return false
 	}
-	e.durable = v
-	e._dt.mark(FieldCell_durable)
+	e.grain = v
+	e._dt.mark(FieldCell_grain)
 	return true
 }
 
@@ -530,5 +663,149 @@ func (e *CellEntity) SetDefender(v int) bool {
 	}
 	e.defender = v
 	e._dt.mark(FieldCell_defender)
+	return true
+}
+
+func (e *CellEntity) CurDurable() int {
+	if e == nil {
+		var z int
+		return z
+	}
+	return e.curDurable
+}
+
+func (e *CellEntity) SetCurDurable(v int) bool {
+	if e == nil {
+		return false
+	}
+	if e.curDurable == v {
+		return false
+	}
+	e.curDurable = v
+	e._dt.mark(FieldCell_curDurable)
+	return true
+}
+
+func (e *CellEntity) MaxDurable() int {
+	if e == nil {
+		var z int
+		return z
+	}
+	return e.maxDurable
+}
+
+func (e *CellEntity) SetMaxDurable(v int) bool {
+	if e == nil {
+		return false
+	}
+	if e.maxDurable == v {
+		return false
+	}
+	e.maxDurable = v
+	e._dt.mark(FieldCell_maxDurable)
+	return true
+}
+
+func (e *CellEntity) OccupyTime() time.Time {
+	if e == nil {
+		var z time.Time
+		return z
+	}
+	return e.occupyTime
+}
+
+func (e *CellEntity) SetOccupyTime(v time.Time) bool {
+	if e == nil {
+		return false
+	}
+	if e.occupyTime.Equal(v) {
+		return false
+	}
+	e.occupyTime = v
+	e._dt.mark(FieldCell_occupyTime)
+	return true
+}
+
+func (e *CellEntity) EndTime() time.Time {
+	if e == nil {
+		var z time.Time
+		return z
+	}
+	return e.endTime
+}
+
+func (e *CellEntity) SetEndTime(v time.Time) bool {
+	if e == nil {
+		return false
+	}
+	if e.endTime.Equal(v) {
+		return false
+	}
+	e.endTime = v
+	e._dt.mark(FieldCell_endTime)
+	return true
+}
+
+func (e *CellEntity) GiveUpTime() time.Time {
+	if e == nil {
+		var z time.Time
+		return z
+	}
+	return e.giveUpTime
+}
+
+func (e *CellEntity) SetGiveUpTime(v time.Time) bool {
+	if e == nil {
+		return false
+	}
+	if e.giveUpTime.Equal(v) {
+		return false
+	}
+	e.giveUpTime = v
+	e._dt.mark(FieldCell_giveUpTime)
+	return true
+}
+
+func (e *CellEntity) Occupancy() *OccupancyEntity {
+	if e == nil {
+		return nil
+	}
+	return e.occupancy
+}
+
+func (e *CellEntity) SetOccupancy(v OccupancyState) bool {
+	if e == nil {
+		return false
+	}
+	next := HydrateOccupancyEntity(v)
+	if e.occupancy == next {
+		return false
+	}
+	e.occupancy = next
+	e._dt.mark(FieldCell_occupancy)
+	return true
+}
+
+func (e *CellEntity) SetOccupancyEntity(v *OccupancyEntity) bool {
+	if e == nil {
+		return false
+	}
+	if e.occupancy == v {
+		return false
+	}
+	e.occupancy = v
+	e._dt.mark(FieldCell_occupancy)
+	return true
+}
+
+func (e *CellEntity) UpdateOccupancy(fn func(value *OccupancyEntity)) bool {
+	if e == nil || fn == nil {
+		return false
+	}
+	if e.occupancy == nil {
+		e.occupancy = &OccupancyEntity{}
+	}
+	fn(e.occupancy)
+	e._dt.mark(FieldCell_occupancy)
 	return true
 }

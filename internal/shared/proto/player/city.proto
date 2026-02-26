@@ -5,6 +5,8 @@ package three_kingdoms.player;
 option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
 
 message City {
+  int32 player_id     = 1  [json_name = "player_id"]; // 所属玩家ID（前端 rid）
+  int64 city_id       = 2  [json_name = "city_id"];   // 城池ID
   string name        = 3  [json_name = "name"];
   int32 union_id     = 4  [json_name = "union_id"];   // 联盟id
   string union_name  = 5  [json_name = "union_name"]; // 联盟名字

@@ -3,46 +3,71 @@ package model
 
 import (
 	entity "ThreeKingdoms/internal/world/entity"
+	"time"
 )
 
 type CellDoc struct {
-	CellType int8   `bson:"cell_type"`
-	Name     string `bson:"name"`
-	Level    int8   `bson:"level"`
-	Grain    int    `bson:"grain"`
-	Wood     int    `bson:"wood"`
-	Iron     int    `bson:"iron"`
-	Stone    int    `bson:"stone"`
-	Durable  int    `bson:"durable"`
-	Defender int    `bson:"defender"`
+	Id         int          `bson:"id"`
+	Pos        PosDoc       `bson:"pos"`
+	CellType   int8         `bson:"cell_type"`
+	Name       string       `bson:"name"`
+	Level      int8         `bson:"level"`
+	OpLevel    int8         `bson:"op_level"`
+	Wood       int          `bson:"wood"`
+	Iron       int          `bson:"iron"`
+	Stone      int          `bson:"stone"`
+	Grain      int          `bson:"grain"`
+	Defender   int          `bson:"defender"`
+	CurDurable int          `bson:"cur_durable"`
+	MaxDurable int          `bson:"max_durable"`
+	OccupyTime time.Time    `bson:"occupy_time"`
+	EndTime    time.Time    `bson:"end_time"`
+	GiveUpTime time.Time    `bson:"give_up_time"`
+	Occupancy  OccupancyDoc `bson:"occupancy"`
 }
 
 func CellStateToDoc(s entity.CellState) CellDoc {
 	state := entity.HydrateCellEntity(s).Save()
 	return CellDoc{
-		CellType: state.CellType,
-		Name:     state.Name,
-		Level:    state.Level,
-		Grain:    state.Grain,
-		Wood:     state.Wood,
-		Iron:     state.Iron,
-		Stone:    state.Stone,
-		Durable:  state.Durable,
-		Defender: state.Defender,
+		Id:         state.Id,
+		Pos:        PosStateToDoc(state.Pos),
+		CellType:   state.CellType,
+		Name:       state.Name,
+		Level:      state.Level,
+		OpLevel:    state.OpLevel,
+		Wood:       state.Wood,
+		Iron:       state.Iron,
+		Stone:      state.Stone,
+		Grain:      state.Grain,
+		Defender:   state.Defender,
+		CurDurable: state.CurDurable,
+		MaxDurable: state.MaxDurable,
+		OccupyTime: state.OccupyTime,
+		EndTime:    state.EndTime,
+		GiveUpTime: state.GiveUpTime,
+		Occupancy:  OccupancyStateToDoc(state.Occupancy),
 	}
 }
 
 func CellDocToState(d CellDoc) entity.CellState {
 	state := entity.CellState{
-		CellType: d.CellType,
-		Name:     d.Name,
-		Level:    d.Level,
-		Grain:    d.Grain,
-		Wood:     d.Wood,
-		Iron:     d.Iron,
-		Stone:    d.Stone,
-		Durable:  d.Durable,
-		Defender: d.Defender,
+		Id:         d.Id,
+		Pos:        PosDocToState(d.Pos),
+		CellType:   d.CellType,
+		Name:       d.Name,
+		Level:      d.Level,
+		OpLevel:    d.OpLevel,
+		Wood:       d.Wood,
+		Iron:       d.Iron,
+		Stone:      d.Stone,
+		Grain:      d.Grain,
+		Defender:   d.Defender,
+		CurDurable: d.CurDurable,
+		MaxDurable: d.MaxDurable,
+		OccupyTime: d.OccupyTime,
+		EndTime:    d.EndTime,
+		GiveUpTime: d.GiveUpTime,
+		Occupancy:  OccupancyDocToState(d.Occupancy),
 	}
 	return entity.HydrateCellEntity(state).Save()
 }

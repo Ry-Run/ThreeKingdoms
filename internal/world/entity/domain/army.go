@@ -1,0 +1,30 @@
+package domain
+
+import "time"
+
+// 军队
+// entity
+type Army struct {
+	id                 int
+	cityId             CityID    // 城市id
+	order              int8      // 第几队 1-5 队
+	generals           string    // 将领
+	soldiers           string    // 士兵
+	conscriptEndTime   string    // 征兵结束时间，json数组
+	conscriptQuantity  string    // 征兵数量，json数组
+	cmd                int8      // 命令  0:空闲 1:攻击 2：驻军 3:返回
+	fromX              int       // 来自x坐标
+	fromY              int       // 来自y坐标
+	toX                int       // 去往x坐标
+	toY                int       // 去往y坐标
+	startTime          time.Time // 出发时间
+	endTime            time.Time // 到达时间
+	state              int8      // 状态: 0:running,1:stop
+	generalArray       []int
+	soldierArray       []int
+	conscriptTimeArray []int64
+	conscriptCntArray  []int
+	gens               []*General
+	cellX              int
+	cellY              int
+}

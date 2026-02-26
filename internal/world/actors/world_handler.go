@@ -3,7 +3,6 @@ package actors
 import (
 	"ThreeKingdoms/internal/shared/actor/messages"
 	"ThreeKingdoms/internal/world/entity"
-	"ThreeKingdoms/internal/world/service"
 	"sort"
 
 	"github.com/asynkron/protoactor-go/actor"
@@ -19,27 +18,8 @@ func (h *WorldHandler) HandleHWCreateCity(ctx actor.Context, w *WorldActor, requ
 		return
 	}
 
-	cityID := service.WS.CreateCity(w.Entity(), request)
+	cityID := WS.CreateCity(w.Entity(), request)
 	ctx.Respond(messages.WHCreateCity{CityId: int(cityID)})
-}
-
-func (h *WorldHandler) HandleHWWorldMap(ctx actor.Context, w *WorldActor, request messages.HWWorldMap) {
-	var worldMap messages.WHWorldMap
-	w.Entity().ForEachWorldMap(func(i int, v entity.CellState) {
-		cell := messages.WorldCell{
-			Type:     v.CellType,
-			Name:     v.Name,
-			Level:    v.Level,
-			Defender: v.Defender,
-			Durable:  v.Durable,
-			Grain:    v.Grain,
-			Iron:     v.Iron,
-			Stone:    v.Stone,
-			Wood:     v.Wood,
-		}
-		worldMap.WorldMap = append(worldMap.WorldMap, cell)
-	})
-	ctx.Respond(worldMap)
 }
 
 func (h *WorldHandler) HandleHWMyCities(ctx actor.Context, w *WorldActor, request messages.HWMyCities) {
@@ -67,21 +47,11 @@ func (h *WorldHandler) HandleHWMyCities(ctx actor.Context, w *WorldActor, reques
 
 	out.Cities = make([]messages.WorldCity, 0, len(rows))
 	for _, row := range rows {
-		c := row.city
-		out.Cities = append(out.Cities, messages.WorldCity{
-			CityId:     int64(row.id),
-			Name:       c.Name,
-			X:          c.X,
-			Y:          c.Y,
-			IsMain:     c.IsMain,
-			Level:      c.Level,
-			CurDurable: c.CurDurable,
-			MaxDurable: c.MaxDurable,
-			OccupyTime: c.OccupyTime.UnixNano() / 1e6,
-			UnionId:    c.UnionId,
-			UnionName:  c.UnionName,
-			ParentId:   c.ParentId,
-		})
+		out.Cities = append(out.Cities, ToMessagesCity(row.city, entity.PlayerID(request.PlayerId)))
 	}
 	ctx.Respond(out)
+}
+
+func (h *WorldHandler) HandleHWScanBlock(ctx actor.Context, p *WorldActor, request messages.HWScanBlock) {
+	ctx.Respond(WS.ScanBlock(p, request))
 }

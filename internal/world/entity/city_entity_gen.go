@@ -12,8 +12,7 @@ const (
 	FieldCity_unionId    Field = "unionId"
 	FieldCity_unionName  Field = "unionName"
 	FieldCity_parentId   Field = "parentId"
-	FieldCity_x          Field = "x"
-	FieldCity_y          Field = "y"
+	FieldCity_pos        Field = "pos"
 	FieldCity_isMain     Field = "isMain"
 	FieldCity_level      Field = "level"
 	FieldCity_curDurable Field = "curDurable"
@@ -159,8 +158,7 @@ type CityState struct {
 	UnionId    int
 	UnionName  string
 	ParentId   int
-	X          int
-	Y          int
+	Pos        PosState
 	IsMain     bool
 	Level      int8
 	CurDurable int
@@ -181,8 +179,7 @@ type CityEntity struct {
 	unionId    int
 	unionName  string
 	parentId   int
-	x          int
-	y          int
+	pos        *PosEntity
 	isMain     bool
 	level      int8
 	curDurable int
@@ -198,8 +195,7 @@ func HydrateCityEntity(s CityState) *CityEntity {
 		unionId:    s.UnionId,
 		unionName:  s.UnionName,
 		parentId:   s.ParentId,
-		x:          s.X,
-		y:          s.Y,
+		pos:        HydratePosEntity(s.Pos),
 		isMain:     s.IsMain,
 		level:      s.Level,
 		curDurable: s.CurDurable,
@@ -215,6 +211,9 @@ func (e *CityEntity) Dirty() bool {
 	if e._dt.dirty {
 		return true
 	}
+	if e.pos != nil && e.pos.Dirty() {
+		return true
+	}
 	return false
 }
 
@@ -223,6 +222,9 @@ func (e *CityEntity) ClearDirty() {
 		return
 	}
 	e._dt = CityEntityTrace{}
+	if e.pos != nil {
+		e.pos.ClearDirty()
+	}
 }
 
 func (e *CityEntity) DirtyFields() []Field {
@@ -232,6 +234,9 @@ func (e *CityEntity) DirtyFields() []Field {
 	trace := make(map[Field]bool, len(e._dt.trace)+4)
 	for k := range e._dt.trace {
 		trace[k] = true
+	}
+	if e.pos != nil && e.pos.Dirty() {
+		trace[FieldCity_pos] = true
 	}
 	if len(trace) == 0 {
 		return nil
@@ -329,8 +334,12 @@ func (e *CityEntity) Save() CityState {
 	s.UnionId = e.unionId
 	s.UnionName = e.unionName
 	s.ParentId = e.parentId
-	s.X = e.x
-	s.Y = e.y
+	if e.pos != nil {
+		s.Pos = e.pos.Save()
+	} else {
+		var z PosState
+		s.Pos = z
+	}
 	s.IsMain = e.isMain
 	s.Level = e.level
 	s.CurDurable = e.curDurable
@@ -469,43 +478,47 @@ func (e *CityEntity) SetParentId(v int) bool {
 	return true
 }
 
-func (e *CityEntity) X() int {
+func (e *CityEntity) Pos() *PosEntity {
 	if e == nil {
-		var z int
-		return z
+		return nil
 	}
-	return e.x
+	return e.pos
 }
 
-func (e *CityEntity) SetX(v int) bool {
+func (e *CityEntity) SetPos(v PosState) bool {
 	if e == nil {
 		return false
 	}
-	if e.x == v {
+	next := HydratePosEntity(v)
+	if e.pos == next {
 		return false
 	}
-	e.x = v
-	e._dt.mark(FieldCity_x)
+	e.pos = next
+	e._dt.mark(FieldCity_pos)
 	return true
 }
 
-func (e *CityEntity) Y() int {
+func (e *CityEntity) SetPosEntity(v *PosEntity) bool {
 	if e == nil {
-		var z int
-		return z
+		return false
 	}
-	return e.y
+	if e.pos == v {
+		return false
+	}
+	e.pos = v
+	e._dt.mark(FieldCity_pos)
+	return true
 }
 
-func (e *CityEntity) SetY(v int) bool {
-	if e == nil {
+func (e *CityEntity) UpdatePos(fn func(value *PosEntity)) bool {
+	if e == nil || fn == nil {
 		return false
 	}
-	if e.y == v {
-		return false
+	if e.pos == nil {
+		e.pos = &PosEntity{}
 	}
-	e.y = v
-	e._dt.mark(FieldCity_y)
+	fn(e.pos)
+	e._dt.mark(FieldCity_pos)
 	return true
 }
 

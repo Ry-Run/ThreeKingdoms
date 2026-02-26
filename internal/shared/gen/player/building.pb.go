@@ -23,6 +23,7 @@ const (
 
 type Building struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      int32                  `protobuf:"varint,1,opt,name=player_id,proto3" json:"player_id,omitempty"`   // 所属玩家ID（前端 rid）
 	Rnick         string                 `protobuf:"bytes,2,opt,name=rnick,json=RNick,proto3" json:"rnick,omitempty"` // 角色昵称
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	UnionId       int32                  `protobuf:"varint,4,opt,name=union_id,proto3" json:"union_id,omitempty"`    // 联盟id
@@ -71,6 +72,13 @@ func (x *Building) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Building.ProtoReflect.Descriptor instead.
 func (*Building) Descriptor() ([]byte, []int) {
 	return file_player_building_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Building) GetPlayerId() int32 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
 }
 
 func (x *Building) GetRnick() string {
@@ -185,12 +193,121 @@ func (x *Building) GetGiveUpTime() int64 {
 	return 0
 }
 
+type BuildingCfg struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          int32                  `protobuf:"varint,1,opt,name=Type,proto3" json:"Type,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=Name,proto3" json:"Name,omitempty"`
+	Level         int32                  `protobuf:"varint,3,opt,name=Level,proto3" json:"Level,omitempty"`
+	Grain         int64                  `protobuf:"varint,4,opt,name=Grain,proto3" json:"Grain,omitempty"`
+	Wood          int64                  `protobuf:"varint,5,opt,name=Wood,proto3" json:"Wood,omitempty"`
+	Iron          int64                  `protobuf:"varint,6,opt,name=Iron,proto3" json:"Iron,omitempty"`
+	Stone         int64                  `protobuf:"varint,7,opt,name=Stone,proto3" json:"Stone,omitempty"`
+	Durable       int64                  `protobuf:"varint,8,opt,name=Durable,proto3" json:"Durable,omitempty"`
+	Defender      int64                  `protobuf:"varint,9,opt,name=Defender,proto3" json:"Defender,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BuildingCfg) Reset() {
+	*x = BuildingCfg{}
+	mi := &file_player_building_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuildingCfg) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildingCfg) ProtoMessage() {}
+
+func (x *BuildingCfg) ProtoReflect() protoreflect.Message {
+	mi := &file_player_building_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildingCfg.ProtoReflect.Descriptor instead.
+func (*BuildingCfg) Descriptor() ([]byte, []int) {
+	return file_player_building_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *BuildingCfg) GetType() int32 {
+	if x != nil {
+		return x.Type
+	}
+	return 0
+}
+
+func (x *BuildingCfg) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *BuildingCfg) GetLevel() int32 {
+	if x != nil {
+		return x.Level
+	}
+	return 0
+}
+
+func (x *BuildingCfg) GetGrain() int64 {
+	if x != nil {
+		return x.Grain
+	}
+	return 0
+}
+
+func (x *BuildingCfg) GetWood() int64 {
+	if x != nil {
+		return x.Wood
+	}
+	return 0
+}
+
+func (x *BuildingCfg) GetIron() int64 {
+	if x != nil {
+		return x.Iron
+	}
+	return 0
+}
+
+func (x *BuildingCfg) GetStone() int64 {
+	if x != nil {
+		return x.Stone
+	}
+	return 0
+}
+
+func (x *BuildingCfg) GetDurable() int64 {
+	if x != nil {
+		return x.Durable
+	}
+	return 0
+}
+
+func (x *BuildingCfg) GetDefender() int64 {
+	if x != nil {
+		return x.Defender
+	}
+	return 0
+}
+
 var File_player_building_proto protoreflect.FileDescriptor
 
 const file_player_building_proto_rawDesc = "" +
 	"\n" +
-	"\x15player/building.proto\x12\x15three_kingdoms.player\"\xb1\x03\n" +
-	"\bBuilding\x12\x14\n" +
+	"\x15player/building.proto\x12\x15three_kingdoms.player\"\xcf\x03\n" +
+	"\bBuilding\x12\x1c\n" +
+	"\tplayer_id\x18\x01 \x01(\x05R\tplayer_id\x12\x14\n" +
 	"\x05rnick\x18\x02 \x01(\tR\x05RNick\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1a\n" +
 	"\bunion_id\x18\x04 \x01(\x05R\bunion_id\x12\x1e\n" +
@@ -209,7 +326,17 @@ const file_player_building_proto_rawDesc = "" +
 	"\bdefender\x18\x0e \x01(\x05R\bdefender\x12 \n" +
 	"\voccupy_time\x18\x0f \x01(\x03R\voccupy_time\x12\x1a\n" +
 	"\bend_time\x18\x10 \x01(\x03R\bend_time\x12!\n" +
-	"\fgive_up_time\x18\x11 \x01(\x03R\vgiveUp_timeB3Z1ThreeKingdoms/internal/shared/gen/player;playerpbb\x06proto3"
+	"\fgive_up_time\x18\x11 \x01(\x03R\vgiveUp_time\"\xd5\x01\n" +
+	"\vBuildingCfg\x12\x12\n" +
+	"\x04Type\x18\x01 \x01(\x05R\x04Type\x12\x12\n" +
+	"\x04Name\x18\x02 \x01(\tR\x04Name\x12\x14\n" +
+	"\x05Level\x18\x03 \x01(\x05R\x05Level\x12\x14\n" +
+	"\x05Grain\x18\x04 \x01(\x03R\x05Grain\x12\x12\n" +
+	"\x04Wood\x18\x05 \x01(\x03R\x04Wood\x12\x12\n" +
+	"\x04Iron\x18\x06 \x01(\x03R\x04Iron\x12\x14\n" +
+	"\x05Stone\x18\a \x01(\x03R\x05Stone\x12\x18\n" +
+	"\aDurable\x18\b \x01(\x03R\aDurable\x12\x1a\n" +
+	"\bDefender\x18\t \x01(\x03R\bDefenderB3Z1ThreeKingdoms/internal/shared/gen/player;playerpbb\x06proto3"
 
 var (
 	file_player_building_proto_rawDescOnce sync.Once
@@ -223,9 +350,10 @@ func file_player_building_proto_rawDescGZIP() []byte {
 	return file_player_building_proto_rawDescData
 }
 
-var file_player_building_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_player_building_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_player_building_proto_goTypes = []any{
-	(*Building)(nil), // 0: three_kingdoms.player.Building
+	(*Building)(nil),    // 0: three_kingdoms.player.Building
+	(*BuildingCfg)(nil), // 1: three_kingdoms.player.BuildingCfg
 }
 var file_player_building_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -246,7 +374,7 @@ func file_player_building_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_player_building_proto_rawDesc), len(file_player_building_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

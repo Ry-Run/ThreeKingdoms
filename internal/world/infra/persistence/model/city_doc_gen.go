@@ -12,8 +12,7 @@ type CityDoc struct {
 	UnionId    int       `bson:"union_id"`
 	UnionName  string    `bson:"union_name"`
 	ParentId   int       `bson:"parent_id"`
-	X          int       `bson:"x"`
-	Y          int       `bson:"y"`
+	Pos        PosDoc    `bson:"pos"`
 	IsMain     bool      `bson:"is_main"`
 	Level      int8      `bson:"level"`
 	CurDurable int       `bson:"cur_durable"`
@@ -29,8 +28,7 @@ func CityStateToDoc(s entity.CityState) CityDoc {
 		UnionId:    state.UnionId,
 		UnionName:  state.UnionName,
 		ParentId:   state.ParentId,
-		X:          state.X,
-		Y:          state.Y,
+		Pos:        PosStateToDoc(state.Pos),
 		IsMain:     state.IsMain,
 		Level:      state.Level,
 		CurDurable: state.CurDurable,
@@ -46,8 +44,7 @@ func CityDocToState(d CityDoc) entity.CityState {
 		UnionId:    d.UnionId,
 		UnionName:  d.UnionName,
 		ParentId:   d.ParentId,
-		X:          d.X,
-		Y:          d.Y,
+		Pos:        PosDocToState(d.Pos),
 		IsMain:     d.IsMain,
 		Level:      d.Level,
 		CurDurable: d.CurDurable,

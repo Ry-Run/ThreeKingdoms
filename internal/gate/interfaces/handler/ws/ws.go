@@ -33,7 +33,7 @@ func (h *WsHandler) RegisterRoutes(r *ws.Router) {
 
 	nationMapGroup := r.Group("nationMap")
 	nationMapGroup.Use(middlewares.Log())
-	nationMapGroup.Handle("config", h.worldMap)
+	nationMapGroup.Handle("config", h.buildingConf)
 }
 
 func (h *WsHandler) Login(ctx context.Context, wsReq *ws.WsMsgReq, wsResp *ws.WsMsgResp) {
@@ -141,7 +141,7 @@ func (h *WsHandler) createRole(ctx context.Context, wsReq *ws.WsMsgReq, wsResp *
 	h.ok(wsResp, dto.NewCreateRoleResp(resp))
 }
 
-func (h *WsHandler) worldMap(ctx context.Context, wsReq *ws.WsMsgReq, wsResp *ws.WsMsgResp) {
+func (h *WsHandler) buildingConf(ctx context.Context, wsReq *ws.WsMsgReq, wsResp *ws.WsMsgResp) {
 	if wsReq == nil || wsReq.Body == nil || wsReq.Conn == nil || wsResp == nil || wsResp.Body == nil {
 		h.fail(wsResp, transport.InvalidParam, "参数有误")
 		return
@@ -152,7 +152,7 @@ func (h *WsHandler) worldMap(ctx context.Context, wsReq *ws.WsMsgReq, wsResp *ws
 		return
 	}
 
-	resp, err := h.gate.GateService.WorldMap(ctx, uid, wsReq.Body.Seq)
+	resp, err := h.gate.GateService.BuildingConf(ctx, uid, wsReq.Body.Seq)
 	if err != nil {
 		h.error(ctx, wsResp, err)
 		return

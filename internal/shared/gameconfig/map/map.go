@@ -7,14 +7,14 @@ import (
 )
 
 type MapCell struct {
-	MId   int  `json:"mid"`
+	Cid   int  `json:"cid"` // cell 的 index
 	X     int  `json:"x"`
 	Y     int  `json:"y"`
 	Type  int8 `json:"type"`
 	Level int8 `json:"level"`
 }
 
-type mapResource struct {
+type mapConf struct {
 	Confs       map[int]MapCell
 	SysBuilding map[int]MapCell
 }
@@ -26,12 +26,18 @@ type mapData struct {
 }
 
 const (
+	MapBuildEmpty       = 0  //空地
 	MapBuildSysFortress = 50 //系统要塞
 	MapBuildSysCity     = 51 //系统城市
+	MapWOOD             = 52
+	MapIRON             = 53
+	MapSTONE            = 54
+	MapGRAIN            = 55
 	MapBuildFortress    = 56 //玩家要塞
+	MapPlayerCity       = 70 // 玩家城市
 )
 
-var MapResource = &mapResource{
+var MapConf = &mapConf{
 	Confs:       make(map[int]MapCell),
 	SysBuilding: make(map[int]MapCell),
 }
@@ -43,7 +49,7 @@ func ToPosition(x, y int) int {
 	return x + MapHeight*y
 }
 
-func LoadMap() {
+func Load() {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
 		panic("load map config failed: runtime.Caller(0) error")
@@ -59,13 +65,23 @@ func LoadMap() {
 		nm := MapCell{
 			X:     index % MapWidth,
 			Y:     index / MapWidth,
-			MId:   index,
+			Cid:   index,
 			Type:  t,
 			Level: l,
 		}
-		MapResource.Confs[index] = nm
+		MapConf.Confs[index] = nm
 		if t == MapBuildSysFortress || t == MapBuildSysCity {
-			MapResource.SysBuilding[index] = nm
+			MapConf.SysBuilding[index] = nm
 		}
 	}
+}
+
+func (m *MapCell) IsSysCity() bool {
+	return m.Type == MapBuildSysCity
+}
+func (m *MapCell) IsSysFortress() bool {
+	return m.Type == MapBuildSysFortress
+}
+func (m *MapCell) IsRoleFortress() bool {
+	return m.Type == MapBuildFortress
 }

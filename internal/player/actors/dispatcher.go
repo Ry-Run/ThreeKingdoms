@@ -32,13 +32,14 @@ func protoMessageName(msg proto.Message) string {
 func (d *Dispatcher) registerAll() {
 	register(d, PH.HandleEnterServerRequest)
 	register(d, PH.HandleCreateRole)
-	register(d, PH.HandleWorldMapRequest)
+	register(d, PH.HandleBuildingConfRequest)
 	register(d, PH.HandleMyPropertyRequest)
 	register(d, PH.HandlePosTagListRequest)
 	register(d, PH.HandleMyGeneralsRequest)
 	register(d, PH.HandleArmyListRequest)
 	register(d, PH.HandleWarReportRequest)
 	register(d, PH.HandleSkillListRequest)
+	register(d, PH.HandleScanBlockRequest)
 }
 
 // register 注册统一分发函数，要求 Req/Rep 都是 protobuf 指针消息。
@@ -94,8 +95,8 @@ func unwrapPlayerRequestBody(req *playerpb.PlayerRequest) proto.Message {
 		return body.EnterServerRequest
 	case *playerpb.PlayerRequest_CreateRoleRequest:
 		return body.CreateRoleRequest
-	case *playerpb.PlayerRequest_WorldMapRequest:
-		return body.WorldMapRequest
+	case *playerpb.PlayerRequest_BuildingConfRequest:
+		return body.BuildingConfRequest
 	case *playerpb.PlayerRequest_MyPropertyRequest:
 		return body.MyPropertyRequest
 	case *playerpb.PlayerRequest_PosTagListRequest:
@@ -108,6 +109,8 @@ func unwrapPlayerRequestBody(req *playerpb.PlayerRequest) proto.Message {
 		return body.WarReportRequest
 	case *playerpb.PlayerRequest_SkillListRequest:
 		return body.SkillListRequest
+	case *playerpb.PlayerRequest_ScanBlockRequest:
+		return body.ScanBlockRequest
 	default:
 		return nil
 	}

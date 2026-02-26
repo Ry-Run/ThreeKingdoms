@@ -2,7 +2,8 @@ package actors
 
 import (
 	"ThreeKingdoms/internal/shared/actor/messages"
-	_map "ThreeKingdoms/internal/shared/gameconfig/map"
+	"ThreeKingdoms/internal/shared/gameconfig/building"
+	"ThreeKingdoms/internal/shared/gameconfig/map"
 	"ThreeKingdoms/internal/world/dc"
 	"ThreeKingdoms/internal/world/entity"
 	"ThreeKingdoms/internal/world/service/port"
@@ -166,22 +167,30 @@ func (w *WorldActor) stopFlushLoop() {
 	w.flushStop = nil
 }
 
-func (w *WorldActor) buildInitialMap() []entity.CellState {
-	mapCfg := _map.MapBuildingConf.Cfg
-	var cells []entity.CellState
-	for _, v := range mapCfg {
-		cell := entity.CellState{
-			CellType: v.Type,
-			Name:     v.Name,
-			Level:    v.Level,
-			Defender: v.Defender,
-			Durable:  v.Durable,
-			Grain:    v.Grain,
-			Iron:     v.Iron,
-			Stone:    v.Stone,
-			Wood:     v.Wood,
+func (w *WorldActor) buildInitialMap() map[int]entity.CellState {
+	mapConf := _map.MapConf
+	cells := make(map[int]entity.CellState)
+	for _, v := range mapConf.Confs {
+		// 获取此地块的配置
+		cfg := building.BuildingConf.GetCfg(v.Type, v.Level)
+		if cfg == nil {
+			panic("build conf not found")
 		}
-		cells = append(cells, cell)
+		cell := entity.CellState{
+			Id:         v.Cid,
+			Pos:        entity.PosState{X: v.X, Y: v.Y},
+			CellType:   v.Type,
+			Level:      v.Level,
+			Name:       cfg.Name,
+			Wood:       cfg.Wood,
+			Iron:       cfg.Iron,
+			Stone:      cfg.Stone,
+			Grain:      cfg.Grain,
+			MaxDurable: cfg.Durable,
+			CurDurable: cfg.Durable,
+			Defender:   cfg.Defender,
+		}
+		cells[cell.Id] = cell
 	}
 	return cells
 }

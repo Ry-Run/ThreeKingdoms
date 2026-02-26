@@ -26,8 +26,8 @@ func NewDispatcher() *Dispatcher {
 
 func (d *Dispatcher) registerAll() {
 	register(d, WH.HandleHWCreateCity)
-	register(d, WH.HandleHWWorldMap)
 	register(d, WH.HandleHWMyCities)
+	register(d, WH.HandleHWScanBlock)
 }
 
 func register[Req any](

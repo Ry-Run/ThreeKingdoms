@@ -2,6 +2,7 @@ package actors
 
 import (
 	"ThreeKingdoms/internal/player/entity"
+	"ThreeKingdoms/internal/shared/actor/messages"
 	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	"ThreeKingdoms/internal/shared/gameconfig/facility"
 	"ThreeKingdoms/internal/shared/gameconfig/general"
@@ -339,6 +340,110 @@ func ToPBArmy(a entity.ArmyState) *playerpb.Army {
 		Start:    a.StartTime.Unix(),
 		End:      a.EndTime.Unix(),
 	}
+}
+
+func ToPBWHScanBlock(v messages.WHScanBlock) *playerpb.ScanBlockResponse {
+	buildings := make([]*playerpb.Building, 0, len(v.Buildings))
+	for _, b := range v.Buildings {
+		buildings = append(buildings, ToPBScanBuilding(b))
+	}
+	cities := make([]*playerpb.City, 0, len(v.Cities))
+	for _, c := range v.Cities {
+		cities = append(cities, ToPBScanCity(c))
+	}
+	armies := make([]*playerpb.Army, 0, len(v.Armies))
+	for _, a := range v.Armies {
+		armies = append(armies, ToPBScanArmy(a))
+	}
+	return &playerpb.ScanBlockResponse{
+		Buildings: buildings,
+		Cities:    cities,
+		Armies:    armies,
+	}
+}
+
+func ToPBScanBuilding(b messages.Building) *playerpb.Building {
+	return &playerpb.Building{
+		PlayerId:   int32(b.PlayerId),
+		Rnick:      b.RNick,
+		Name:       b.Name,
+		UnionId:    int32(b.UnionId),
+		UnionName:  b.UnionName,
+		ParentId:   int32(b.ParentId),
+		X:          int32(b.Pos.X),
+		Y:          int32(b.Pos.Y),
+		Type:       int32(b.Type),
+		Level:      int32(b.Level),
+		OpLevel:    int32(b.OPLevel),
+		CurDurable: int32(b.CurDurable),
+		MaxDurable: int32(b.MaxDurable),
+		Defender:   int32(b.Defender),
+		OccupyTime: timeToMillis(b.OccupyTime),
+		EndTime:    timeToMillis(b.EndTime),
+		GiveUpTime: timeToMillis(b.GiveUpTime),
+	}
+}
+
+func ToPBScanCity(c messages.WorldCity) *playerpb.City {
+	return &playerpb.City{
+		PlayerId:   int32(c.PlayerId),
+		CityId:     c.CityId,
+		Name:       c.Name,
+		UnionId:    int32(c.UnionId),
+		UnionName:  c.UnionName,
+		ParentId:   int32(c.ParentId),
+		X:          int32(c.Pos.X),
+		Y:          int32(c.Pos.Y),
+		IsMain:     c.IsMain,
+		Level:      int32(c.Level),
+		CurDurable: int32(c.CurDurable),
+		MaxDurable: int32(c.MaxDurable),
+		OccupyTime: c.OccupyTime,
+	}
+}
+
+func ToPBScanArmy(a messages.Army) *playerpb.Army {
+	generals := make([]int32, 0, len(a.Generals))
+	for _, v := range a.Generals {
+		generals = append(generals, int32(v))
+	}
+	soldiers := make([]int32, 0, len(a.Soldiers))
+	for _, v := range a.Soldiers {
+		soldiers = append(soldiers, int32(v))
+	}
+	conTimes := make([]int64, 0, len(a.ConTimes))
+	for _, v := range a.ConTimes {
+		conTimes = append(conTimes, v)
+	}
+	conCnts := make([]int32, 0, len(a.ConCounts))
+	for _, v := range a.ConCounts {
+		conCnts = append(conCnts, int32(v))
+	}
+	return &playerpb.Army{
+		Id:       int32(a.Id),
+		CityId:   int32(a.CityId),
+		UnionId:  int32(a.UnionId),
+		Order:    int32(a.Order),
+		Generals: generals,
+		Soldiers: soldiers,
+		ConTimes: conTimes,
+		ConCnts:  conCnts,
+		Cmd:      int32(a.Cmd),
+		State:    int32(a.State),
+		FromX:    int32(a.FromPos.X),
+		FromY:    int32(a.FromPos.Y),
+		ToX:      int32(a.ToPos.X),
+		ToY:      int32(a.ToPos.Y),
+		Start:    a.Start,
+		End:      a.End,
+	}
+}
+
+func timeToMillis(t time.Time) int64 {
+	if t.IsZero() {
+		return 0
+	}
+	return t.UnixNano() / 1e6
 }
 
 func ToPBWarReport(v entity.WarReportState) *playerpb.WarReport {

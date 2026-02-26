@@ -10,15 +10,15 @@ type CreateRoleResp struct {
 }
 
 type WorldMapResp struct {
-	Map []Cell `json:"map"`
+	Confs []BuildingConfItem `json:"Confs"`
 }
 
-type Cell struct {
+type BuildingConfItem struct {
 	Type     int32  `json:"type"`
 	Name     string `json:"name"`
 	Level    int32  `json:"level"`
 	Grain    int64  `json:"grain"`
-	Wood     int64  `json:"wood"`
+	Wood     int64  `json:"Wood"`
 	Iron     int64  `json:"iron"`
 	Stone    int64  `json:"stone"`
 	Durable  int64  `json:"durable"`
@@ -34,6 +34,7 @@ type MyPropertyResp struct {
 }
 
 type Building struct {
+	Rid        int32  `json:"rid"`
 	Rnick      string `json:"rnick"`
 	Name       string `json:"name"`
 	UnionId    int32  `json:"union_id"`
@@ -83,6 +84,8 @@ type GSkill struct {
 }
 
 type City struct {
+	Rid        int32  `json:"rid"`
+	CityId     int64  `json:"cityId"`
 	Name       string `json:"name"`
 	UnionId    int32  `json:"union_id"`
 	UnionName  string `json:"union_name"`
@@ -124,18 +127,18 @@ func NewCreateRoleResp(resp *playerpb.CreateRoleResponse) CreateRoleResp {
 	return out
 }
 
-func NewWorldMapResp(resp *playerpb.WorldMapResponse) WorldMapResp {
+func NewWorldMapResp(resp *playerpb.BuildingConfResponse) WorldMapResp {
 	out := WorldMapResp{}
 	if resp == nil {
 		return out
 	}
-	cells := resp.GetMap()
-	out.Map = make([]Cell, 0, len(cells))
-	for _, c := range cells {
+	cfgs := resp.GetCfgs()
+	out.Confs = make([]BuildingConfItem, 0, len(cfgs))
+	for _, c := range cfgs {
 		if c == nil {
 			continue
 		}
-		out.Map = append(out.Map, Cell{
+		out.Confs = append(out.Confs, BuildingConfItem{
 			Type:     c.GetType(),
 			Name:     c.GetName(),
 			Level:    c.GetLevel(),
@@ -164,6 +167,7 @@ func NewMyPropertyResp(resp *playerpb.MyPropertyResponse) MyPropertyResp {
 				continue
 			}
 			out.Buildings = append(out.Buildings, Building{
+				Rid:        b.GetPlayerId(),
 				Rnick:      b.GetRnick(),
 				Name:       b.GetName(),
 				UnionId:    b.GetUnionId(),
@@ -236,6 +240,8 @@ func NewMyPropertyResp(resp *playerpb.MyPropertyResponse) MyPropertyResp {
 				continue
 			}
 			out.Cities = append(out.Cities, City{
+				Rid:        c.GetPlayerId(),
+				CityId:     c.GetCityId(),
 				Name:       c.GetName(),
 				UnionId:    c.GetUnionId(),
 				UnionName:  c.GetUnionName(),

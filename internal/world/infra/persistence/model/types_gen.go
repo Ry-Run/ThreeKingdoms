@@ -10,3 +10,5 @@ type WorldID = entity.WorldID
 type PlayerID = entity.PlayerID
 
 type CityID = entity.CityID
+
+type ArmyID = entity.ArmyID

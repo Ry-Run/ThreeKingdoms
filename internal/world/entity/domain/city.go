@@ -9,8 +9,7 @@ type City struct {
 	unionId    int       //联盟id
 	unionName  string    //联盟名字
 	parentId   int       //上级id
-	x          int       // x坐标
-	y          int       // y坐标
+	pos        *Pos      // 坐标
 	isMain     bool      // 是否是主城
 	level      int8      // 最大耐久
 	curDurable int       // 当前耐久

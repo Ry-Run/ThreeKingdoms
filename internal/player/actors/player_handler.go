@@ -3,6 +3,8 @@ package actors
 import (
 	"ThreeKingdoms/internal/player/entity"
 	"ThreeKingdoms/internal/shared/actor/messages"
+	"ThreeKingdoms/internal/shared/gameconfig/building"
+	_map "ThreeKingdoms/internal/shared/gameconfig/map"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"context"
 	"time"
@@ -52,7 +54,7 @@ func (h *PlayerHandler) HandleEnterServerRequest(ctx actor.Context, p *PlayerAct
 		if WHPosition, ok := res.(messages.WHCreateCity); ok {
 			ctx.Logger().Info("position", "x", WHPosition.X, "y", WHPosition.Y)
 		} else {
-			ctx.Logger().Info("position", entity.ErrCreateCity)
+			ctx.Logger().Info("position", "err", entity.ErrCreateCity)
 		}
 
 		ctx.Respond(resp)
@@ -96,46 +98,30 @@ func (h *PlayerHandler) HandleCreateRole(ctx actor.Context, p *PlayerActor, requ
 	ctx.Respond(response)
 }
 
-func (h *PlayerHandler) HandleWorldMapRequest(ctx actor.Context, p *PlayerActor, request *playerpb.WorldMapRequest) {
-	f := ctx.RequestFuture(p.worldPID, messages.HWWorldMap{
-		WorldBaseMessage: messages.WorldBaseMessage{
-			WorldId:  int(*p.WorldId),
-			PlayerId: int(*p.PlayerId),
+func (h *PlayerHandler) HandleBuildingConfRequest(ctx actor.Context, p *PlayerActor, request *playerpb.BuildingConfRequest) {
+	buildingConf := building.BuildingConf
+	buildingCfgs := make([]*playerpb.BuildingCfg, 0, len(buildingConf.Cfgs))
+	for _, v := range buildingConf.Cfgs {
+		pbCell := playerpb.BuildingCfg{
+			Type:     int32(v.Type),
+			Name:     v.Name,
+			Level:    int32(v.Level),
+			Defender: int64(v.Defender),
+			Durable:  int64(v.Durable),
+			Grain:    int64(v.Grain),
+			Iron:     int64(v.Iron),
+			Stone:    int64(v.Stone),
+			Wood:     int64(v.Wood),
+		}
+		buildingCfgs = append(buildingCfgs, &pbCell)
+	}
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_BuildingConfResponse{
+		BuildingConfResponse: &playerpb.BuildingConfResponse{
+			Cfgs: buildingCfgs,
 		},
-	}, time.Millisecond*500)
-	ctx.ReenterAfter(f, func(res interface{}, err error) {
-		if err != nil {
-			ctx.Respond(fail(err.Error()))
-			return
-		}
-		var worldMap []*playerpb.Cell
-		wHWorldMap, worldOK := res.(messages.WHWorldMap)
-		if !worldOK {
-			ctx.Respond(fail("world map response invalid"))
-			return
-		}
-		cells := wHWorldMap.WorldMap
-		worldMap = make([]*playerpb.Cell, 0, len(cells))
-		for _, v := range cells {
-			pbCell := playerpb.Cell{
-				Type:     int32(v.Type),
-				Name:     v.Name,
-				Level:    int32(v.Level),
-				Defender: int64(v.Defender),
-				Durable:  int64(v.Durable),
-				Grain:    int64(v.Grain),
-				Iron:     int64(v.Iron),
-				Stone:    int64(v.Stone),
-				Wood:     int64(v.Wood),
-			}
-			worldMap = append(worldMap, &pbCell)
-		}
-		response := ok()
-		response.Body = &playerpb.PlayerResponse_WorldMapResponse{
-			WorldMapResponse: &playerpb.WorldMapResponse{Map: worldMap},
-		}
-		ctx.Respond(response)
-	})
+	}
+	ctx.Respond(response)
 }
 
 func (h *PlayerHandler) HandleMyPropertyRequest(ctx actor.Context, p *PlayerActor, request *playerpb.MyPropertyRequest) {
@@ -172,12 +158,14 @@ func (h *PlayerHandler) HandleMyPropertyRequest(ctx actor.Context, p *PlayerActo
 		body.Cities = make([]*playerpb.City, 0, len(worldCities.Cities))
 		for _, c := range worldCities.Cities {
 			body.Cities = append(body.Cities, &playerpb.City{
+				PlayerId:   int32(*p.PlayerId),
+				CityId:     c.CityId,
 				Name:       c.Name,
 				UnionId:    int32(c.UnionId),
 				UnionName:  c.UnionName,
 				ParentId:   int32(c.ParentId),
-				X:          int32(c.X),
-				Y:          int32(c.Y),
+				X:          int32(c.Pos.X),
+				Y:          int32(c.Pos.Y),
 				IsMain:     c.IsMain,
 				Level:      int32(c.Level),
 				CurDurable: int32(c.CurDurable),
@@ -243,5 +231,36 @@ func (h *PlayerHandler) HandleSkillListRequest(ctx actor.Context, p *PlayerActor
 	})
 	ctx.Respond(&playerpb.SkillListResponse{
 		Skills: skills,
+	})
+}
+
+func (h *PlayerHandler) HandleScanBlockRequest(ctx actor.Context, p *PlayerActor, request *playerpb.ScanBlockRequest) {
+	x, y := int(request.X), int(request.Y)
+	if x < 0 || x >= _map.MapWidth || y < 0 || y >= _map.MapHeight {
+		ctx.Respond(fail("request param err"))
+		return
+	}
+
+	f := ctx.RequestFuture(p.worldPID,
+		messages.HWScanBlock{
+			X:      x,
+			Y:      y,
+			Length: int(request.Length),
+		}, 500*time.Millisecond)
+	ctx.ReenterAfter(f, func(res interface{}, err error) {
+		if err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
+		wHScanBlock, respOK := res.(messages.WHScanBlock)
+		if !respOK {
+			ctx.Respond(fail("invalid response type"))
+			return
+		}
+		response := ok()
+		response.Body = &playerpb.PlayerResponse_ScanBlockResponse{
+			ScanBlockResponse: ToPBWHScanBlock(wHScanBlock),
+		}
+		ctx.Respond(response)
 	})
 }

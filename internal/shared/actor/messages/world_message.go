@@ -28,18 +28,20 @@ type WHCreateCity struct {
 	CityId int
 }
 
-type HWWorldMap struct {
-	WorldBaseMessage
-}
-
-type WHWorldMap struct {
-	WorldMap []WorldCell
-}
-
 type HWMyCities struct {
 	WorldBaseMessage
 }
 
 type WHMyCities struct {
 	Cities []WorldCity
+}
+
+type HWScanBlock struct {
+	X, Y, Length int
+}
+
+type WHScanBlock struct {
+	Cities    []WorldCity
+	Armies    []Army
+	Buildings []Building
 }

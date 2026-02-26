@@ -6,3 +6,5 @@ type WorldID int
 type PlayerID int
 
 type CityID int
+
+type ArmyID int

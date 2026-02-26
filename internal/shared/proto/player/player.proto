@@ -25,13 +25,14 @@ message PlayerRequest {
   oneof body {
     EnterServerRequest enterServerRequest = 10;
     CreateRoleRequest createRoleRequest = 11;
-    WorldMapRequest worldMapRequest = 12;
+    BuildingConfRequest buildingConfRequest = 12;
     MyPropertyRequest myPropertyRequest = 13;
     PosTagListRequest posTagListRequest = 14;
     MyGeneralsRequest myGeneralsRequest = 15;
     ArmyListRequest armyListRequest = 16;
     WarReportRequest WarReportRequest = 17;
     SkillListRequest skillListRequest = 18;
+    ScanBlockRequest scanBlockRequest = 19;
   }
 
   string trace_id = 100;
@@ -43,13 +44,14 @@ message PlayerResponse {
   oneof body {
     EnterServerResponse enterServerResponse = 10;
     CreateRoleResponse createRoleResponse = 11;
-    WorldMapResponse worldMapResponse = 12;
+    BuildingConfResponse buildingConfResponse = 12;
     MyPropertyResponse myPropertyResponse = 13;
     PosTagListResponse posTagListResponse = 14;
     MyGeneralsResponse myGeneralsResponse = 15;
     ArmyListResponse armyListResponse = 16;
     WarReportResponse WarReportResponse = 17;
     SkillListResponse skillListResponse = 18;
+    ScanBlockResponse scanBlockResponse = 19;
   }
 }
 
@@ -80,12 +82,12 @@ message CreateRoleResponse {
   Role role = 1;
 }
 
-message WorldMapRequest {
+message BuildingConfRequest {
   int64 player_id = 1;
 }
 
-message WorldMapResponse {
-  repeated Cell map = 1;
+message BuildingConfResponse {
+  repeated BuildingCfg cfgs = 1;
 }
 
 message MyPropertyRequest {
@@ -136,4 +138,16 @@ message SkillListRequest {
 
 message SkillListResponse {
   repeated Skill skills = 1;
+}
+
+message ScanBlockRequest {
+  int32 x = 1;
+  int32 y = 2;
+  int32 Length = 3;
+}
+
+message ScanBlockResponse {
+  repeated Building buildings = 1;
+  repeated City cities = 2;
+  repeated Army Armies = 3;
 }

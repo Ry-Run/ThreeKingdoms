@@ -175,13 +175,13 @@ func (g *GateService) CreateRole(ctx context.Context, uid int, req *playerpb.Cre
 	return body, nil
 }
 
-func (g *GateService) WorldMap(ctx context.Context, uid int, seq int64) (*playerpb.WorldMapResponse, error) {
+func (g *GateService) BuildingConf(ctx context.Context, uid int, seq int64) (*playerpb.BuildingConfResponse, error) {
 	rpcResp, err := g.callPlayer(ctx, &playerpb.PlayerRequest{
 		PlayerId: int64(uid),
 		WorldId:  defaultPlayerWorldID,
 		Seq:      seq,
-		Body: &playerpb.PlayerRequest_WorldMapRequest{
-			WorldMapRequest: &playerpb.WorldMapRequest{
+		Body: &playerpb.PlayerRequest_BuildingConfRequest{
+			BuildingConfRequest: &playerpb.BuildingConfRequest{
 				PlayerId: int64(uid),
 			},
 		},
@@ -189,7 +189,7 @@ func (g *GateService) WorldMap(ctx context.Context, uid int, seq int64) (*player
 	if err != nil {
 		return nil, err
 	}
-	body := rpcResp.GetWorldMapResponse()
+	body := rpcResp.GetBuildingConfResponse()
 	if body == nil {
 		return nil, ErrInternalServer.WithReason(ReasonUpstreamBadResponse)
 	}

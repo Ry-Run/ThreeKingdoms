@@ -6,9 +6,12 @@ import (
 )
 
 type WorldDoc struct {
-	WorldId      WorldID                         `bson:"world_id"`
-	CityByPlayer map[PlayerID]map[CityID]CityDoc `bson:"city_by_player"`
-	WorldMap     []CellDoc                       `bson:"world_map"`
+	WorldId      WorldID                          `bson:"world_id"`
+	CityByPlayer map[PlayerID]map[CityID]CityDoc  `bson:"city_by_player"`
+	WorldMap     map[int]CellDoc                  `bson:"world_map"`
+	Armies       map[PlayerID]map[ArmyID]ArmyDoc  `bson:"armies"`
+	Marches      map[PlayerID]map[ArmyID]MarchDoc `bson:"marches"`
+	CellToMarch  map[int][]MarchDoc               `bson:"cell_to_march"`
 }
 
 func toDoc_cityByPlayer(in map[PlayerID]map[CityID]entity.CityState) map[PlayerID]map[CityID]CityDoc {
@@ -55,24 +58,156 @@ func toState_cityByPlayer(in map[PlayerID]map[CityID]CityDoc) map[PlayerID]map[C
 	return out
 }
 
-func toDocSlice_worldMap(in []entity.CellState) []CellDoc {
+func toDocMap_worldMap(in map[int]entity.CellState) map[int]CellDoc {
 	if in == nil {
 		return nil
 	}
-	out := make([]CellDoc, len(in))
-	for i, v := range in {
-		out[i] = CellStateToDoc(v)
+	out := make(map[int]CellDoc, len(in))
+	for k, v := range in {
+		out[k] = CellStateToDoc(v)
 	}
 	return out
 }
 
-func toStateSlice_worldMap(in []CellDoc) []entity.CellState {
+func toStateMap_worldMap(in map[int]CellDoc) map[int]entity.CellState {
 	if in == nil {
 		return nil
 	}
-	out := make([]entity.CellState, len(in))
-	for i, v := range in {
-		out[i] = CellDocToState(v)
+	out := make(map[int]entity.CellState, len(in))
+	for k, v := range in {
+		out[k] = CellDocToState(v)
+	}
+	return out
+}
+
+func toDoc_armies(in map[PlayerID]map[ArmyID]entity.ArmyState) map[PlayerID]map[ArmyID]ArmyDoc {
+	var out map[PlayerID]map[ArmyID]ArmyDoc
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[PlayerID]map[ArmyID]ArmyDoc, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				out0[k1] = nil
+			} else {
+				out3 := make(map[ArmyID]ArmyDoc, len(v2))
+				for k4, v5 := range v2 {
+					out3[k4] = ArmyStateToDoc(v5)
+				}
+				out0[k1] = out3
+			}
+		}
+		out = out0
+	}
+	return out
+}
+
+func toState_armies(in map[PlayerID]map[ArmyID]ArmyDoc) map[PlayerID]map[ArmyID]entity.ArmyState {
+	var out map[PlayerID]map[ArmyID]entity.ArmyState
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[PlayerID]map[ArmyID]entity.ArmyState, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				out0[k1] = nil
+			} else {
+				out3 := make(map[ArmyID]entity.ArmyState, len(v2))
+				for k4, v5 := range v2 {
+					out3[k4] = ArmyDocToState(v5)
+				}
+				out0[k1] = out3
+			}
+		}
+		out = out0
+	}
+	return out
+}
+
+func toDoc_marches(in map[PlayerID]map[ArmyID]entity.MarchState) map[PlayerID]map[ArmyID]MarchDoc {
+	var out map[PlayerID]map[ArmyID]MarchDoc
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[PlayerID]map[ArmyID]MarchDoc, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				out0[k1] = nil
+			} else {
+				out3 := make(map[ArmyID]MarchDoc, len(v2))
+				for k4, v5 := range v2 {
+					out3[k4] = MarchStateToDoc(v5)
+				}
+				out0[k1] = out3
+			}
+		}
+		out = out0
+	}
+	return out
+}
+
+func toState_marches(in map[PlayerID]map[ArmyID]MarchDoc) map[PlayerID]map[ArmyID]entity.MarchState {
+	var out map[PlayerID]map[ArmyID]entity.MarchState
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[PlayerID]map[ArmyID]entity.MarchState, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				out0[k1] = nil
+			} else {
+				out3 := make(map[ArmyID]entity.MarchState, len(v2))
+				for k4, v5 := range v2 {
+					out3[k4] = MarchDocToState(v5)
+				}
+				out0[k1] = out3
+			}
+		}
+		out = out0
+	}
+	return out
+}
+
+func toDoc_cellToMarch(in map[int][]entity.MarchState) map[int][]MarchDoc {
+	var out map[int][]MarchDoc
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[int][]MarchDoc, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				out0[k1] = nil
+			} else {
+				out3 := make([]MarchDoc, len(v2))
+				for i4, v5 := range v2 {
+					out3[i4] = MarchStateToDoc(v5)
+				}
+				out0[k1] = out3
+			}
+		}
+		out = out0
+	}
+	return out
+}
+
+func toState_cellToMarch(in map[int][]MarchDoc) map[int][]entity.MarchState {
+	var out map[int][]entity.MarchState
+	if in == nil {
+		out = nil
+	} else {
+		out0 := make(map[int][]entity.MarchState, len(in))
+		for k1, v2 := range in {
+			if v2 == nil {
+				out0[k1] = nil
+			} else {
+				out3 := make([]entity.MarchState, len(v2))
+				for i4, v5 := range v2 {
+					out3[i4] = MarchDocToState(v5)
+				}
+				out0[k1] = out3
+			}
+		}
+		out = out0
 	}
 	return out
 }
@@ -82,7 +217,10 @@ func WorldStateToDoc(s entity.WorldState) WorldDoc {
 	return WorldDoc{
 		WorldId:      state.WorldId,
 		CityByPlayer: toDoc_cityByPlayer(state.CityByPlayer),
-		WorldMap:     toDocSlice_worldMap(state.WorldMap),
+		WorldMap:     toDocMap_worldMap(state.WorldMap),
+		Armies:       toDoc_armies(state.Armies),
+		Marches:      toDoc_marches(state.Marches),
+		CellToMarch:  toDoc_cellToMarch(state.CellToMarch),
 	}
 }
 
@@ -90,7 +228,10 @@ func WorldDocToState(d WorldDoc) entity.WorldState {
 	state := entity.WorldState{
 		WorldId:      d.WorldId,
 		CityByPlayer: toState_cityByPlayer(d.CityByPlayer),
-		WorldMap:     toStateSlice_worldMap(d.WorldMap),
+		WorldMap:     toStateMap_worldMap(d.WorldMap),
+		Armies:       toState_armies(d.Armies),
+		Marches:      toState_marches(d.Marches),
+		CellToMarch:  toState_cellToMarch(d.CellToMarch),
 	}
 	return entity.HydrateWorldEntity(state).Save()
 }

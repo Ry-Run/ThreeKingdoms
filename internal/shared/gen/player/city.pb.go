@@ -23,6 +23,8 @@ const (
 
 type City struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      int32                  `protobuf:"varint,1,opt,name=player_id,proto3" json:"player_id,omitempty"` // 所属玩家ID（前端 rid）
+	CityId        int64                  `protobuf:"varint,2,opt,name=city_id,proto3" json:"city_id,omitempty"`     // 城池ID
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	UnionId       int32                  `protobuf:"varint,4,opt,name=union_id,proto3" json:"union_id,omitempty"`    // 联盟id
 	UnionName     string                 `protobuf:"bytes,5,opt,name=union_name,proto3" json:"union_name,omitempty"` // 联盟名字
@@ -66,6 +68,20 @@ func (x *City) ProtoReflect() protoreflect.Message {
 // Deprecated: Use City.ProtoReflect.Descriptor instead.
 func (*City) Descriptor() ([]byte, []int) {
 	return file_player_city_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *City) GetPlayerId() int32 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *City) GetCityId() int64 {
+	if x != nil {
+		return x.CityId
+	}
+	return 0
 }
 
 func (x *City) GetName() string {
@@ -149,8 +165,10 @@ var File_player_city_proto protoreflect.FileDescriptor
 
 const file_player_city_proto_rawDesc = "" +
 	"\n" +
-	"\x11player/city.proto\x12\x15three_kingdoms.player\"\xa6\x02\n" +
-	"\x04City\x12\x12\n" +
+	"\x11player/city.proto\x12\x15three_kingdoms.player\"\xde\x02\n" +
+	"\x04City\x12\x1c\n" +
+	"\tplayer_id\x18\x01 \x01(\x05R\tplayer_id\x12\x18\n" +
+	"\acity_id\x18\x02 \x01(\x03R\acity_id\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1a\n" +
 	"\bunion_id\x18\x04 \x01(\x05R\bunion_id\x12\x1e\n" +
 	"\n" +
