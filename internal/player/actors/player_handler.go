@@ -6,7 +6,6 @@ import (
 	"ThreeKingdoms/internal/shared/gameconfig/building"
 	_map "ThreeKingdoms/internal/shared/gameconfig/map"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
-	"context"
 	"time"
 
 	"github.com/asynkron/protoactor-go/actor"
@@ -30,6 +29,14 @@ func (h *PlayerHandler) HandleEnterServerRequest(ctx actor.Context, p *PlayerAct
 	resp, err := PS.EnterServer(p)
 	if err != nil {
 		ctx.Respond(fail(err.Error()))
+		return
+	}
+	if resp == nil {
+		ctx.Respond(fail("enterServer response is nil"))
+		return
+	}
+	if result := resp.GetResult(); result != nil && !result.GetOk() {
+		ctx.Respond(resp)
 		return
 	}
 
@@ -66,36 +73,12 @@ func (h *PlayerHandler) HandleCreateRole(ctx actor.Context, p *PlayerActor, requ
 		ctx.Respond(fail("request parameter error"))
 		return
 	}
-
-	role := entity.RoleState{
-		Headid:    int16(request.HeadId),
-		Sex:       int8(request.Sex),
-		NickName:  request.NickName,
-		CreatedAt: time.Now(),
-	}
-
-	p.Entity().SetProfile(role)
-
-	err := p.dc.FlushSync(context.TODO())
-
+	resp, err := PS.CreateRole(p, request)
 	if err != nil {
-		ctx.Respond(fail("request parameter error"))
+		ctx.Respond(fail(err.Error()))
 		return
 	}
-
-	response := ok()
-	response.Body = &playerpb.PlayerResponse_CreateRoleResponse{
-		CreateRoleResponse: &playerpb.CreateRoleResponse{
-			Role: &playerpb.Role{
-				NickName: role.NickName,
-				Sex:      int32(role.Sex),
-				Balance:  int32(role.Balance),
-				HeadId:   int32(role.Headid),
-				Profile:  role.Profile,
-			},
-		},
-	}
-	ctx.Respond(response)
+	ctx.Respond(resp)
 }
 
 func (h *PlayerHandler) HandleBuildingConfRequest(ctx actor.Context, p *PlayerActor, request *playerpb.BuildingConfRequest) {

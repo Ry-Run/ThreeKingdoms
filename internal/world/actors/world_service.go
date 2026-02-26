@@ -33,7 +33,7 @@ func (s *WorldService) CreateCity(e *entity.WorldEntity, request messages.HWCrea
 		x := rand.Intn(_map.MapWidth)
 		y := rand.Intn(_map.MapHeight)
 
-		if !CanBuildCity(x, y) {
+		if !CanBuildCity(e, x, y) {
 			continue
 		}
 
@@ -229,8 +229,7 @@ func ToMessagesArmy(army entity.ArmyState) messages.Army {
 }
 
 // todo 根据 world 的 map 数据来确定是否可以建立城市
-func CanBuildCity(x int, y int) bool {
-	sysBuilding := _map.MapConf.SysBuilding
+func CanBuildCity(w *entity.WorldEntity, x int, y int) bool {
 	confs := _map.MapConf.Confs
 	index := _map.ToPosition(x, y)
 
@@ -239,12 +238,31 @@ func CanBuildCity(x int, y int) bool {
 	if !ok {
 		return false
 	}
-	// 系统城池 5 格内不能有玩家城池
-	for _, conf := range sysBuilding {
-		if x <= conf.X+5 && x >= conf.X-5 &&
-			y <= conf.Y+5 && y >= conf.Y-5 {
-			return false
+
+	//城池 1范围内 不能超过边界
+	if x+1 >= _map.MapWidth || y+1 >= _map.MapHeight || y-1 < 0 || x-1 < 0 {
+		return false
+	}
+
+	// 系统城池 5 格内不能有其他城池（玩家的和系统的）
+	for i := x - 5; i <= x+5; i++ {
+		for j := y - 5; j <= y+5; j++ {
+			pos := _map.ToPosition(i, j)
+			cell, ok := w.GetWorldMap(pos)
+			if !ok {
+				continue
+			}
+
+			// 玩家城市、玩家占据、系统城市
+			if cell.Occupancy.Owner != 0 || IsSysBuilding(cell.Occupancy.Kind) || cell.Occupancy.Kind == _map.MapPlayerCity {
+				return false
+			}
+
 		}
 	}
 	return true
+}
+
+func IsSysBuilding(kind int8) bool {
+	return kind == _map.MapBuildSysFortress || kind == _map.MapBuildSysCity
 }

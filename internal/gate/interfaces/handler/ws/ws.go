@@ -28,7 +28,7 @@ func (h *WsHandler) RegisterRoutes(r *ws.Router) {
 	roleGroup := r.Group("role")
 	roleGroup.Use(middlewares.Log())
 	roleGroup.Handle("enterServer", h.enterServer)
-	roleGroup.Handle("createRole", h.createRole)
+	roleGroup.Handle("create", h.createRole)
 	roleGroup.Handle("myProperty", h.myProperty)
 
 	nationMapGroup := r.Group("nationMap")

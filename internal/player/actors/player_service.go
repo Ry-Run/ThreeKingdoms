@@ -23,6 +23,9 @@ func (s *PlayerService) EnterServer(p *PlayerActor) (*playerpb.PlayerResponse, e
 	if player == nil {
 		return nil, errors.New("player not loaded")
 	}
+	if !s.hasCreatedRole(player) {
+		return failRoleNotExist(), nil
+	}
 
 	if err := s.initPlayer(p); err != nil {
 		// 暂时忽略 flushSync 的 err
@@ -32,18 +35,62 @@ func (s *PlayerService) EnterServer(p *PlayerActor) (*playerpb.PlayerResponse, e
 	if err != nil {
 		return nil, err
 	}
+	role := ToPBRole(player.Profile())
+	role.Rid = int32(player.PlayerID())
+	role.Uid = int32(player.PlayerID())
 
 	return &playerpb.PlayerResponse{
 		Result: &commonpb.BizResult{Ok: true},
 		Body: &playerpb.PlayerResponse_EnterServerResponse{
 			EnterServerResponse: &playerpb.EnterServerResponse{
-				Role:     ToPBRole(player.Profile()),
+				Role:     role,
 				Resource: ToPBResource(player.Resource()),
 				Token:    token,
 				Time:     time.Now().UnixNano() / 1e6,
 			},
 		},
 	}, nil
+}
+
+func (s *PlayerService) CreateRole(p *PlayerActor, request *playerpb.CreateRoleRequest) (*playerpb.PlayerResponse, error) {
+	if p == nil || request == nil {
+		return fail("request parameter error"), nil
+	}
+	player := p.Entity()
+	if player == nil {
+		return nil, errors.New("player not loaded")
+	}
+	if s.hasCreatedRole(player) {
+		return fail("role already created"), nil
+	}
+
+	now := time.Now()
+	needFlush := false
+	needFlush = player.SetProfile(entity.RoleState{
+		Headid:    int16(request.HeadId),
+		Sex:       int8(request.Sex),
+		NickName:  request.NickName,
+		Balance:   0,
+		LoginTime: now,
+		CreatedAt: now,
+	})
+	if needFlush {
+		if err := p.DC().FlushSync(context.TODO()); err != nil {
+			return nil, err
+		}
+	}
+
+	role := ToPBRole(player.Profile())
+	role.Rid = int32(player.PlayerID())
+	role.Uid = int32(player.PlayerID())
+
+	resp := ok()
+	resp.Body = &playerpb.PlayerResponse_CreateRoleResponse{
+		CreateRoleResponse: &playerpb.CreateRoleResponse{
+			Role: role,
+		},
+	}
+	return resp, nil
 }
 
 func (s *PlayerService) MyProperty(player *entity.PlayerEntity) *playerpb.PlayerResponse {
@@ -87,10 +134,6 @@ func (s *PlayerService) initPlayer(p *PlayerActor) error {
 	player := p.Entity()
 
 	var needFlush bool
-	if player.Profile() == nil {
-		needFlush = player.SetProfile(s.buildInitialProfile())
-	}
-
 	if player.Resource() == nil {
 		needFlush = player.SetResource(s.buildInitialResource())
 	}
@@ -107,6 +150,13 @@ func (s *PlayerService) initPlayer(p *PlayerActor) error {
 		return p.DC().FlushSync(context.TODO())
 	}
 	return nil
+}
+
+func (s *PlayerService) hasCreatedRole(player *entity.PlayerEntity) bool {
+	if player == nil || player.Profile() == nil {
+		return false
+	}
+	return player.Profile().NickName() != ""
 }
 
 func (s *PlayerService) buildInitialProfile() entity.RoleState {
