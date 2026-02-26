@@ -40,6 +40,7 @@ func (d *Dispatcher) registerAll() {
 	register(d, PH.HandleWarReportRequest)
 	register(d, PH.HandleSkillListRequest)
 	register(d, PH.HandleScanBlockRequest)
+	register(d, PH.HandleOpenCollectionRequest)
 }
 
 // register 注册统一分发函数，要求 Req/Rep 都是 protobuf 指针消息。
@@ -111,6 +112,8 @@ func unwrapPlayerRequestBody(req *playerpb.PlayerRequest) proto.Message {
 		return body.SkillListRequest
 	case *playerpb.PlayerRequest_ScanBlockRequest:
 		return body.ScanBlockRequest
+	case *playerpb.PlayerRequest_OpenCollectionRequest:
+		return body.OpenCollectionRequest
 	default:
 		return nil
 	}

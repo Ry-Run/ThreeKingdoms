@@ -3,6 +3,7 @@ package actors
 import (
 	"ThreeKingdoms/internal/player/entity"
 	"ThreeKingdoms/internal/shared/actor/messages"
+	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	"ThreeKingdoms/internal/shared/gameconfig/building"
 	_map "ThreeKingdoms/internal/shared/gameconfig/map"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
@@ -246,4 +247,74 @@ func (h *PlayerHandler) HandleScanBlockRequest(ctx actor.Context, p *PlayerActor
 		}
 		ctx.Respond(response)
 	})
+}
+
+func (h *PlayerHandler) HandleOpenCollectionRequest(ctx actor.Context, p *PlayerActor, request *playerpb.OpenCollectionRequest) {
+	interval := basic.BasicConf.Role.CollectInterval
+	limit := basic.BasicConf.Role.CollectTimesLimit
+	if p == nil || p.Entity() == nil || p.Entity().Attribute() == nil {
+		ctx.Respond(fail("player attribute not initialized"))
+		return
+	}
+	attribute := p.Entity().Attribute()
+	collectTimes := attribute.CollectTimes()
+
+	lastCollectTime := attribute.LastCollectTime()
+	now := time.Now()
+	intervalMills := int64(interval * 1000)
+
+	nextTime := int64(-1)
+	if !IsSameDayCST(now, lastCollectTime) {
+		attribute.SetLastCollectTime(TodayZeroCST(now))
+		attribute.SetCollectTimes(0)
+		nextTime = 0
+		collectTimes = 0
+	} else if collectTimes >= limit {
+		nextTime = NextCSTMidnight(now).UnixMilli()
+	} else {
+		nextTime = lastCollectTime.UnixMilli() + intervalMills
+		if collectTimes == 0 {
+			nextTime = 0
+		}
+	}
+
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_OpenCollectionResponse{
+		OpenCollectionResponse: &playerpb.OpenCollectionResponse{
+			Limit:    int32(limit),
+			CurTimes: int32(collectTimes),
+			NextTime: nextTime,
+		},
+	}
+	ctx.Respond(response)
+}
+
+func collectionCST() *time.Location {
+	return time.FixedZone("CST", 8*3600)
+}
+
+func IsSameDayCST(t1, t2 time.Time) bool {
+	tz := collectionCST()
+	y1, m1, d1 := t1.In(tz).Date()
+	y2, m2, d2 := t2.In(tz).Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
+}
+
+func TodayZeroCST(t time.Time) time.Time {
+	tz := collectionCST()
+	y, m, d := t.In(tz).Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, tz)
+}
+
+func NextCSTMidnight(t time.Time) time.Time {
+	tz := collectionCST()
+	t = t.In(tz)
+	nextZero := time.Date(
+		t.Year(),
+		t.Month(),
+		t.Day()+1,
+		0, 0, 0, 0,
+		tz,
+	)
+	return nextZero
 }

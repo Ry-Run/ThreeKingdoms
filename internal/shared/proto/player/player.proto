@@ -33,6 +33,7 @@ message PlayerRequest {
     WarReportRequest WarReportRequest = 17;
     SkillListRequest skillListRequest = 18;
     ScanBlockRequest scanBlockRequest = 19;
+    OpenCollectionRequest openCollectionRequest = 20;
   }
 
   string trace_id = 100;
@@ -52,6 +53,7 @@ message PlayerResponse {
     WarReportResponse WarReportResponse = 17;
     SkillListResponse skillListResponse = 18;
     ScanBlockResponse scanBlockResponse = 19;
+    OpenCollectionResponse openCollectionResponse = 20;
   }
 }
 
@@ -150,4 +152,14 @@ message ScanBlockResponse {
   repeated Building buildings = 1;
   repeated City cities = 2;
   repeated Army Armies = 3;
+}
+
+message OpenCollectionRequest {
+
+}
+
+message OpenCollectionResponse {
+  int32 limit = 1;
+  int32 curTimes = 2;
+  int64 nextTime = 3;
 }
