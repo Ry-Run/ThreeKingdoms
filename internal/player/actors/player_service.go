@@ -246,6 +246,23 @@ func (s *PlayerService) GetGenerals(player *entity.PlayerEntity) (*playerpb.Play
 	}, nil
 }
 
+func ComputeFacilityYield(player *entity.PlayerEntity) facility.FacilityYield {
+	var yield facility.FacilityYield
+	player.ForEachFacility(func(i int, v entity.FacilityState) {
+		facility, ok := facility.FacilityConf.GetFacility(v.FType)
+		if !ok {
+			return
+		}
+		y := facility.GetFacilityYield(v.PrivateLevel)
+		yield.Wood += y.Wood
+		yield.Grain += y.Grain
+		yield.Iron += y.Iron
+		yield.Stone += y.Stone
+		yield.Gold += y.Gold
+	})
+	return yield
+}
+
 func OK() *playerpb.PlayerResponse {
 	return &playerpb.PlayerResponse{
 		Result: &commonpb.BizResult{
@@ -537,4 +554,34 @@ func ConvertIntToInt32(src []int) []int32 {
 		dst[i] = int32(src[i])
 	}
 	return dst
+}
+
+func collectionCST() *time.Location {
+	return time.FixedZone("CST", 8*3600)
+}
+
+func IsSameDayCST(t1, t2 time.Time) bool {
+	tz := collectionCST()
+	y1, m1, d1 := t1.In(tz).Date()
+	y2, m2, d2 := t2.In(tz).Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
+}
+
+func TodayZeroCST(t time.Time) time.Time {
+	tz := collectionCST()
+	y, m, d := t.In(tz).Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, tz)
+}
+
+func NextCSTMidnight(t time.Time) time.Time {
+	tz := collectionCST()
+	t = t.In(tz)
+	nextZero := time.Date(
+		t.Year(),
+		t.Month(),
+		t.Day()+1,
+		0, 0, 0, 0,
+		tz,
+	)
+	return nextZero
 }

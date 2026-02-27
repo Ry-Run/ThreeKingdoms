@@ -148,7 +148,7 @@ func (t *FacilityEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 type FacilityState struct {
 	Id           int
 	Name         string
-	PrivateLevel int8
+	PrivateLevel int
 	FType        int8
 	UpTime       int64
 }
@@ -163,7 +163,7 @@ type FacilityEntitySnap struct {
 type FacilityEntity struct {
 	id           int
 	name         string
-	privateLevel int8
+	privateLevel int
 	fType        int8
 	upTime       int64
 	_dt          FacilityEntityTrace
@@ -373,15 +373,15 @@ func (e *FacilityEntity) SetName(v string) bool {
 	return true
 }
 
-func (e *FacilityEntity) PrivateLevel() int8 {
+func (e *FacilityEntity) PrivateLevel() int {
 	if e == nil {
-		var z int8
+		var z int
 		return z
 	}
 	return e.privateLevel
 }
 
-func (e *FacilityEntity) SetPrivateLevel(v int8) bool {
+func (e *FacilityEntity) SetPrivateLevel(v int) bool {
 	if e == nil {
 		return false
 	}

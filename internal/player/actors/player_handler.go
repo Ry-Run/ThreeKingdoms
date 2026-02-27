@@ -289,32 +289,54 @@ func (h *PlayerHandler) HandleOpenCollectionRequest(ctx actor.Context, p *Player
 	ctx.Respond(response)
 }
 
-func collectionCST() *time.Location {
-	return time.FixedZone("CST", 8*3600)
-}
+func (h *PlayerHandler) HandleCollectionRequest(ctx actor.Context, p *PlayerActor, request *playerpb.CollectionRequest) {
+	player := p.Entity()
+	interval := basic.BasicConf.Role.CollectInterval
+	limit := basic.BasicConf.Role.CollectTimesLimit
+	if p == nil || player == nil || player.Attribute() == nil {
+		ctx.Respond(fail("player attribute not initialized"))
+		return
+	}
+	attribute := player.Attribute()
+	collectTimes := attribute.CollectTimes()
 
-func IsSameDayCST(t1, t2 time.Time) bool {
-	tz := collectionCST()
-	y1, m1, d1 := t1.In(tz).Date()
-	y2, m2, d2 := t2.In(tz).Date()
-	return y1 == y2 && m1 == m2 && d1 == d2
-}
+	if collectTimes >= limit {
+		ctx.Respond(fail("collect times limit exceeded"))
+		return
+	}
 
-func TodayZeroCST(t time.Time) time.Time {
-	tz := collectionCST()
-	y, m, d := t.In(tz).Date()
-	return time.Date(y, m, d, 0, 0, 0, 0, tz)
-}
+	lastCollectTime := attribute.LastCollectTime()
+	now := time.Now()
+	nextCollectTime := lastCollectTime.Add(time.Duration(interval) * time.Second)
 
-func NextCSTMidnight(t time.Time) time.Time {
-	tz := collectionCST()
-	t = t.In(tz)
-	nextZero := time.Date(
-		t.Year(),
-		t.Month(),
-		t.Day()+1,
-		0, 0, 0, 0,
-		tz,
-	)
-	return nextZero
+	if collectTimes != 0 && nextCollectTime.After(now) {
+		ctx.Respond(fail("in cd can not operate"))
+		return
+	}
+
+	// 最终的产量 = 建筑 + 城池设施收益
+
+	// 城池设施收益
+	yield := ComputeFacilityYield(player)
+
+	// 更新状态
+	attribute.SetLastCollectTime(now)
+	collectTimes = collectTimes + 1
+	attribute.SetCollectTimes(collectTimes)
+	gold := player.Resource().Gold() + yield.Gold
+	player.Resource().SetGold(gold)
+
+	// 下一次领取时间
+	nextTime := now.Add(time.Duration(interval) * time.Second).UnixMilli()
+
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_CollectionResponse{
+		CollectionResponse: &playerpb.CollectionResponse{
+			Gold:     int32(gold),
+			Limit:    int32(limit),
+			CurTimes: int32(collectTimes),
+			NextTime: nextTime,
+		},
+	}
+	ctx.Respond(response)
 }

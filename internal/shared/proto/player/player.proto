@@ -9,7 +9,6 @@ import "player/building.proto";
 import "player/arm.proto";
 import "player/general.proto";
 import "player/city.proto";
-import "player/map.proto";
 import "player/pos_tag.proto";
 import "player/war_report.proto";
 import "player/skill.proto";
@@ -34,6 +33,7 @@ message PlayerRequest {
     SkillListRequest skillListRequest = 18;
     ScanBlockRequest scanBlockRequest = 19;
     OpenCollectionRequest openCollectionRequest = 20;
+    CollectionRequest collectionRequest = 21;
   }
 
   string trace_id = 100;
@@ -54,6 +54,7 @@ message PlayerResponse {
     SkillListResponse skillListResponse = 18;
     ScanBlockResponse scanBlockResponse = 19;
     OpenCollectionResponse openCollectionResponse = 20;
+    CollectionResponse collectionResponse = 21;
   }
 }
 
@@ -162,4 +163,14 @@ message OpenCollectionResponse {
   int32 limit = 1;
   int32 curTimes = 2;
   int64 nextTime = 3;
+}
+
+message CollectionRequest {
+}
+
+message CollectionResponse {
+  int32 gold = 1;
+  int32 limit = 2;
+  int32 curTimes = 3;
+  int64 nextTime = 4;
 }

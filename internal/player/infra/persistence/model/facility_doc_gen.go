@@ -8,7 +8,7 @@ import (
 type FacilityDoc struct {
 	Id           int    `bson:"id"`
 	Name         string `bson:"name"`
-	PrivateLevel int8   `bson:"private_level"`
+	PrivateLevel int    `bson:"private_level"`
 	FType        int8   `bson:"f_type"`
 	UpTime       int64  `bson:"up_time"`
 }
