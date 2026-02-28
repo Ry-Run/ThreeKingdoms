@@ -26,6 +26,7 @@ func NewDispatcher() *Dispatcher {
 
 func (d *Dispatcher) registerAll() {
 	register(d, AH.HandleHAAllianceInfo)
+	register(d, AH.HandleHAAllianceApplyList)
 }
 
 func register[Req messages.AllianceMessage](

@@ -6,12 +6,13 @@ import (
 )
 
 type AllianceDoc struct {
-	Id      AllianceID             `bson:"id"`
-	WorldId WorldID                `bson:"world_id"`
-	Name    string                 `bson:"name"`
-	Notice  string                 `bson:"notice"`
-	Majors  map[PlayerID]MajorDoc  `bson:"majors"`
-	Members map[PlayerID]MemberDoc `bson:"members"`
+	Id        AllianceID             `bson:"id"`
+	WorldId   WorldID                `bson:"world_id"`
+	Name      string                 `bson:"name"`
+	Notice    string                 `bson:"notice"`
+	Majors    map[PlayerID]MajorDoc  `bson:"majors"`
+	Members   map[PlayerID]MemberDoc `bson:"members"`
+	ApplyList []ApplyItemDoc         `bson:"apply_list"`
 }
 
 func toDocMap_majors(in map[PlayerID]entity.MajorState) map[PlayerID]MajorDoc {
@@ -58,26 +59,50 @@ func toStateMap_members(in map[PlayerID]MemberDoc) map[PlayerID]entity.MemberSta
 	return out
 }
 
+func toDocSlice_applyList(in []entity.ApplyItemState) []ApplyItemDoc {
+	if in == nil {
+		return nil
+	}
+	out := make([]ApplyItemDoc, len(in))
+	for i, v := range in {
+		out[i] = ApplyItemStateToDoc(v)
+	}
+	return out
+}
+
+func toStateSlice_applyList(in []ApplyItemDoc) []entity.ApplyItemState {
+	if in == nil {
+		return nil
+	}
+	out := make([]entity.ApplyItemState, len(in))
+	for i, v := range in {
+		out[i] = ApplyItemDocToState(v)
+	}
+	return out
+}
+
 func AllianceStateToDoc(s entity.AllianceState) AllianceDoc {
 	state := entity.HydrateAllianceEntity(s).Save()
 	return AllianceDoc{
-		Id:      state.Id,
-		WorldId: state.WorldId,
-		Name:    state.Name,
-		Notice:  state.Notice,
-		Majors:  toDocMap_majors(state.Majors),
-		Members: toDocMap_members(state.Members),
+		Id:        state.Id,
+		WorldId:   state.WorldId,
+		Name:      state.Name,
+		Notice:    state.Notice,
+		Majors:    toDocMap_majors(state.Majors),
+		Members:   toDocMap_members(state.Members),
+		ApplyList: toDocSlice_applyList(state.ApplyList),
 	}
 }
 
 func AllianceDocToState(d AllianceDoc) entity.AllianceState {
 	state := entity.AllianceState{
-		Id:      d.Id,
-		WorldId: d.WorldId,
-		Name:    d.Name,
-		Notice:  d.Notice,
-		Majors:  toStateMap_majors(d.Majors),
-		Members: toStateMap_members(d.Members),
+		Id:        d.Id,
+		WorldId:   d.WorldId,
+		Name:      d.Name,
+		Notice:    d.Notice,
+		Majors:    toStateMap_majors(d.Majors),
+		Members:   toStateMap_members(d.Members),
+		ApplyList: toStateSlice_applyList(d.ApplyList),
 	}
 	return entity.HydrateAllianceEntity(state).Save()
 }

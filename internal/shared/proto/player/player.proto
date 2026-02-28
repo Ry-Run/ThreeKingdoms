@@ -38,6 +38,7 @@ message PlayerRequest {
     CollectionRequest collectionRequest = 21;
     AllianceListRequest allianceListRequest = 22;
     AllianceInfoRequest allianceInfoRequest = 23;
+    AllianceApplyListRequest allianceApplyListRequest = 24;
   }
 
   string trace_id = 100;
@@ -61,6 +62,7 @@ message PlayerResponse {
     CollectionResponse collectionResponse = 21;
     AllianceListResponse allianceListResponse = 22;
     AllianceInfoResponse allianceInfoResponse = 23;
+    AllianceApplyListResponse allianceApplyListResponse = 24;
   }
 }
 
@@ -195,4 +197,11 @@ message AllianceInfoRequest {
 
 message AllianceInfoResponse {
   Alliance alliance = 1;
+}
+
+message AllianceApplyListRequest {
+}
+
+message AllianceApplyListResponse {
+  repeated ApplyItem item = 1;
 }

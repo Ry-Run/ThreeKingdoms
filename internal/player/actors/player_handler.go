@@ -411,6 +411,41 @@ func (h *PlayerHandler) HandleAllianceInfoRequest(ctx actor.Context, p *PlayerAc
 	})
 }
 
+func (h *PlayerHandler) HandleAllianceApplyListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.AllianceApplyListRequest) {
+	if p == nil || p.WorldId == nil || p.alliancePID == nil || request == nil {
+		ctx.Respond(fail("request parameter error"))
+		return
+	}
+	if p.AllianceID == nil || *p.AllianceID <= 0 {
+		ctx.Respond(okWithAllianceApplyList(nil))
+		return
+	}
+
+	req := &messages.HAAllianceApplyList{
+		AllianceBaseMessage: messages.AllianceBaseMessage{
+			WorldId:    int(*p.WorldId),
+			AllianceId: int(*p.AllianceID),
+		},
+	}
+	f := ctx.RequestFuture(p.alliancePID, req, 500*time.Millisecond)
+	ctx.ReenterAfter(f, func(res interface{}, err error) {
+		if err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
+		switch msg := res.(type) {
+		case *messages.AHAllianceApplyList:
+			if msg == nil {
+				ctx.Respond(okWithAllianceApplyList(nil))
+				return
+			}
+			ctx.Respond(okWithAllianceApplyList(msg.ApplyItem))
+		default:
+			ctx.Respond(fail("invalid alliance response type"))
+		}
+	})
+}
+
 func okWithAllianceList(list []messages.Alliance) *playerpb.PlayerResponse {
 	pbList := make([]*playerpb.Alliance, 0, len(list))
 	for _, item := range list {
@@ -420,6 +455,20 @@ func okWithAllianceList(list []messages.Alliance) *playerpb.PlayerResponse {
 	resp.Body = &playerpb.PlayerResponse_AllianceListResponse{
 		AllianceListResponse: &playerpb.AllianceListResponse{
 			List: pbList,
+		},
+	}
+	return resp
+}
+
+func okWithAllianceApplyList(items []messages.ApplyItem) *playerpb.PlayerResponse {
+	pbItems := make([]*playerpb.ApplyItem, 0, len(items))
+	for _, item := range items {
+		pbItems = append(pbItems, toPBApplyItem(item))
+	}
+	resp := ok()
+	resp.Body = &playerpb.PlayerResponse_AllianceApplyListResponse{
+		AllianceApplyListResponse: &playerpb.AllianceApplyListResponse{
+			Item: pbItems,
 		},
 	}
 	return resp
@@ -443,6 +492,13 @@ func toPBAlliance(in messages.Alliance) *playerpb.Alliance {
 		Cnt:    in.Cnt,
 		Notice: in.Notice,
 		Major:  majors,
+	}
+}
+
+func toPBApplyItem(in messages.ApplyItem) *playerpb.ApplyItem {
+	return &playerpb.ApplyItem{
+		PlayerId: int32(in.PlayerId),
+		NickName: in.NickName,
 	}
 }
 

@@ -49,10 +49,10 @@ type AHAllianceInfo struct {
 	Alliance Alliance
 }
 
-// AllianceSummaryUpsert 表示联盟摘要的增量上报事件。
-// Version 用于幂等与乱序保护（仅接受更大版本）。
-type AllianceSummaryUpsert struct {
-	WorldId int
-	Version uint64
-	Summary Alliance
+type HAAllianceApplyList struct {
+	AllianceBaseMessage
+}
+
+type AHAllianceApplyList struct {
+	ApplyItem []ApplyItem
 }

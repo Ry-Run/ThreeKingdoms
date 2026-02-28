@@ -44,6 +44,7 @@ type PlayerRequest struct {
 	//	*PlayerRequest_CollectionRequest
 	//	*PlayerRequest_AllianceListRequest
 	//	*PlayerRequest_AllianceInfoRequest
+	//	*PlayerRequest_AllianceApplyListRequest
 	Body          isPlayerRequest_Body `protobuf_oneof:"body"`
 	TraceId       string               `protobuf:"bytes,100,opt,name=trace_id,json=traceId,proto3" json:"trace_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -241,6 +242,15 @@ func (x *PlayerRequest) GetAllianceInfoRequest() *AllianceInfoRequest {
 	return nil
 }
 
+func (x *PlayerRequest) GetAllianceApplyListRequest() *AllianceApplyListRequest {
+	if x != nil {
+		if x, ok := x.Body.(*PlayerRequest_AllianceApplyListRequest); ok {
+			return x.AllianceApplyListRequest
+		}
+	}
+	return nil
+}
+
 func (x *PlayerRequest) GetTraceId() string {
 	if x != nil {
 		return x.TraceId
@@ -308,6 +318,10 @@ type PlayerRequest_AllianceInfoRequest struct {
 	AllianceInfoRequest *AllianceInfoRequest `protobuf:"bytes,23,opt,name=allianceInfoRequest,proto3,oneof"`
 }
 
+type PlayerRequest_AllianceApplyListRequest struct {
+	AllianceApplyListRequest *AllianceApplyListRequest `protobuf:"bytes,24,opt,name=allianceApplyListRequest,proto3,oneof"`
+}
+
 func (*PlayerRequest_EnterServerRequest) isPlayerRequest_Body() {}
 
 func (*PlayerRequest_CreateRoleRequest) isPlayerRequest_Body() {}
@@ -336,6 +350,8 @@ func (*PlayerRequest_AllianceListRequest) isPlayerRequest_Body() {}
 
 func (*PlayerRequest_AllianceInfoRequest) isPlayerRequest_Body() {}
 
+func (*PlayerRequest_AllianceApplyListRequest) isPlayerRequest_Body() {}
+
 type PlayerResponse struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Result *common.BizResult      `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
@@ -355,6 +371,7 @@ type PlayerResponse struct {
 	//	*PlayerResponse_CollectionResponse
 	//	*PlayerResponse_AllianceListResponse
 	//	*PlayerResponse_AllianceInfoResponse
+	//	*PlayerResponse_AllianceApplyListResponse
 	Body          isPlayerResponse_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -530,6 +547,15 @@ func (x *PlayerResponse) GetAllianceInfoResponse() *AllianceInfoResponse {
 	return nil
 }
 
+func (x *PlayerResponse) GetAllianceApplyListResponse() *AllianceApplyListResponse {
+	if x != nil {
+		if x, ok := x.Body.(*PlayerResponse_AllianceApplyListResponse); ok {
+			return x.AllianceApplyListResponse
+		}
+	}
+	return nil
+}
+
 type isPlayerResponse_Body interface {
 	isPlayerResponse_Body()
 }
@@ -590,6 +616,10 @@ type PlayerResponse_AllianceInfoResponse struct {
 	AllianceInfoResponse *AllianceInfoResponse `protobuf:"bytes,23,opt,name=allianceInfoResponse,proto3,oneof"`
 }
 
+type PlayerResponse_AllianceApplyListResponse struct {
+	AllianceApplyListResponse *AllianceApplyListResponse `protobuf:"bytes,24,opt,name=allianceApplyListResponse,proto3,oneof"`
+}
+
 func (*PlayerResponse_EnterServerResponse) isPlayerResponse_Body() {}
 
 func (*PlayerResponse_CreateRoleResponse) isPlayerResponse_Body() {}
@@ -617,6 +647,8 @@ func (*PlayerResponse_CollectionResponse) isPlayerResponse_Body() {}
 func (*PlayerResponse_AllianceListResponse) isPlayerResponse_Body() {}
 
 func (*PlayerResponse_AllianceInfoResponse) isPlayerResponse_Body() {}
+
+func (*PlayerResponse_AllianceApplyListResponse) isPlayerResponse_Body() {}
 
 type EnterServerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1978,11 +2010,91 @@ func (x *AllianceInfoResponse) GetAlliance() *Alliance {
 	return nil
 }
 
+type AllianceApplyListRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AllianceApplyListRequest) Reset() {
+	*x = AllianceApplyListRequest{}
+	mi := &file_player_player_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AllianceApplyListRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AllianceApplyListRequest) ProtoMessage() {}
+
+func (x *AllianceApplyListRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_player_player_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AllianceApplyListRequest.ProtoReflect.Descriptor instead.
+func (*AllianceApplyListRequest) Descriptor() ([]byte, []int) {
+	return file_player_player_proto_rawDescGZIP(), []int{30}
+}
+
+type AllianceApplyListResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Item          []*ApplyItem           `protobuf:"bytes,1,rep,name=item,proto3" json:"item,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AllianceApplyListResponse) Reset() {
+	*x = AllianceApplyListResponse{}
+	mi := &file_player_player_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AllianceApplyListResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AllianceApplyListResponse) ProtoMessage() {}
+
+func (x *AllianceApplyListResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_player_player_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AllianceApplyListResponse.ProtoReflect.Descriptor instead.
+func (*AllianceApplyListResponse) Descriptor() ([]byte, []int) {
+	return file_player_player_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *AllianceApplyListResponse) GetItem() []*ApplyItem {
+	if x != nil {
+		return x.Item
+	}
+	return nil
+}
+
 var File_player_player_proto protoreflect.FileDescriptor
 
 const file_player_player_proto_rawDesc = "" +
 	"\n" +
-	"\x13player/player.proto\x12\x15three_kingdoms.player\x1a\x13common/common.proto\x1a\x11player/role.proto\x1a\x15player/resource.proto\x1a\x15player/building.proto\x1a\x10player/arm.proto\x1a\x14player/general.proto\x1a\x11player/city.proto\x1a\x14player/pos_tag.proto\x1a\x17player/war_report.proto\x1a\x12player/skill.proto\x1a\x15player/alliance.proto\"\x9b\v\n" +
+	"\x13player/player.proto\x12\x15three_kingdoms.player\x1a\x13common/common.proto\x1a\x11player/role.proto\x1a\x15player/resource.proto\x1a\x15player/building.proto\x1a\x10player/arm.proto\x1a\x14player/general.proto\x1a\x11player/city.proto\x1a\x14player/pos_tag.proto\x1a\x17player/war_report.proto\x1a\x12player/skill.proto\x1a\x15player/alliance.proto\"\x8a\f\n" +
 	"\rPlayerRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x03R\bplayerId\x12\x19\n" +
 	"\bworld_id\x18\x02 \x01(\x03R\aworldId\x12\x1f\n" +
@@ -2003,10 +2115,10 @@ const file_player_player_proto_rawDesc = "" +
 	"\x15openCollectionRequest\x18\x14 \x01(\v2,.three_kingdoms.player.OpenCollectionRequestH\x00R\x15openCollectionRequest\x12X\n" +
 	"\x11collectionRequest\x18\x15 \x01(\v2(.three_kingdoms.player.CollectionRequestH\x00R\x11collectionRequest\x12^\n" +
 	"\x13allianceListRequest\x18\x16 \x01(\v2*.three_kingdoms.player.AllianceListRequestH\x00R\x13allianceListRequest\x12^\n" +
-	"\x13allianceInfoRequest\x18\x17 \x01(\v2*.three_kingdoms.player.AllianceInfoRequestH\x00R\x13allianceInfoRequest\x12\x19\n" +
+	"\x13allianceInfoRequest\x18\x17 \x01(\v2*.three_kingdoms.player.AllianceInfoRequestH\x00R\x13allianceInfoRequest\x12m\n" +
+	"\x18allianceApplyListRequest\x18\x18 \x01(\v2/.three_kingdoms.player.AllianceApplyListRequestH\x00R\x18allianceApplyListRequest\x12\x19\n" +
 	"\btrace_id\x18d \x01(\tR\atraceIdB\x06\n" +
-	"\x04body\"\xfa\n" +
-	"\n" +
+	"\x04body\"\xec\v\n" +
 	"\x0ePlayerResponse\x128\n" +
 	"\x06result\x18\x01 \x01(\v2 .three_kingdoms.common.BizResultR\x06result\x12^\n" +
 	"\x13enterServerResponse\x18\n" +
@@ -2023,7 +2135,8 @@ const file_player_player_proto_rawDesc = "" +
 	"\x16openCollectionResponse\x18\x14 \x01(\v2-.three_kingdoms.player.OpenCollectionResponseH\x00R\x16openCollectionResponse\x12[\n" +
 	"\x12collectionResponse\x18\x15 \x01(\v2).three_kingdoms.player.CollectionResponseH\x00R\x12collectionResponse\x12a\n" +
 	"\x14allianceListResponse\x18\x16 \x01(\v2+.three_kingdoms.player.AllianceListResponseH\x00R\x14allianceListResponse\x12a\n" +
-	"\x14allianceInfoResponse\x18\x17 \x01(\v2+.three_kingdoms.player.AllianceInfoResponseH\x00R\x14allianceInfoResponseB\x06\n" +
+	"\x14allianceInfoResponse\x18\x17 \x01(\v2+.three_kingdoms.player.AllianceInfoResponseH\x00R\x14allianceInfoResponse\x12p\n" +
+	"\x19allianceApplyListResponse\x18\x18 \x01(\v20.three_kingdoms.player.AllianceApplyListResponseH\x00R\x19allianceApplyListResponseB\x06\n" +
 	"\x04body\"1\n" +
 	"\x12EnterServerRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x05R\bplayerId\"\xa1\x01\n" +
@@ -2102,7 +2215,10 @@ const file_player_player_proto_rawDesc = "" +
 	"allianceId\x18\x01 \x01(\x05R\n" +
 	"allianceId\"S\n" +
 	"\x14AllianceInfoResponse\x12;\n" +
-	"\balliance\x18\x01 \x01(\v2\x1f.three_kingdoms.player.AllianceR\balliance2f\n" +
+	"\balliance\x18\x01 \x01(\v2\x1f.three_kingdoms.player.AllianceR\balliance\"\x1a\n" +
+	"\x18AllianceApplyListRequest\"Q\n" +
+	"\x19AllianceApplyListResponse\x124\n" +
+	"\x04item\x18\x01 \x03(\v2 .three_kingdoms.player.ApplyItemR\x04item2f\n" +
 	"\rPlayerService\x12U\n" +
 	"\x06Handle\x12$.three_kingdoms.player.PlayerRequest\x1a%.three_kingdoms.player.PlayerResponseB3Z1ThreeKingdoms/internal/shared/gen/player;playerpbb\x06proto3"
 
@@ -2118,50 +2234,53 @@ func file_player_player_proto_rawDescGZIP() []byte {
 	return file_player_player_proto_rawDescData
 }
 
-var file_player_player_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_player_player_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
 var file_player_player_proto_goTypes = []any{
-	(*PlayerRequest)(nil),          // 0: three_kingdoms.player.PlayerRequest
-	(*PlayerResponse)(nil),         // 1: three_kingdoms.player.PlayerResponse
-	(*EnterServerRequest)(nil),     // 2: three_kingdoms.player.EnterServerRequest
-	(*EnterServerResponse)(nil),    // 3: three_kingdoms.player.EnterServerResponse
-	(*CreateRoleRequest)(nil),      // 4: three_kingdoms.player.CreateRoleRequest
-	(*CreateRoleResponse)(nil),     // 5: three_kingdoms.player.CreateRoleResponse
-	(*BuildingConfRequest)(nil),    // 6: three_kingdoms.player.BuildingConfRequest
-	(*BuildingConfResponse)(nil),   // 7: three_kingdoms.player.BuildingConfResponse
-	(*MyPropertyRequest)(nil),      // 8: three_kingdoms.player.MyPropertyRequest
-	(*MyPropertyResponse)(nil),     // 9: three_kingdoms.player.MyPropertyResponse
-	(*PosTagListRequest)(nil),      // 10: three_kingdoms.player.PosTagListRequest
-	(*PosTagListResponse)(nil),     // 11: three_kingdoms.player.PosTagListResponse
-	(*MyGeneralsRequest)(nil),      // 12: three_kingdoms.player.MyGeneralsRequest
-	(*MyGeneralsResponse)(nil),     // 13: three_kingdoms.player.MyGeneralsResponse
-	(*ArmyListRequest)(nil),        // 14: three_kingdoms.player.ArmyListRequest
-	(*ArmyListResponse)(nil),       // 15: three_kingdoms.player.ArmyListResponse
-	(*WarReportRequest)(nil),       // 16: three_kingdoms.player.WarReportRequest
-	(*WarReportResponse)(nil),      // 17: three_kingdoms.player.WarReportResponse
-	(*SkillListRequest)(nil),       // 18: three_kingdoms.player.SkillListRequest
-	(*SkillListResponse)(nil),      // 19: three_kingdoms.player.SkillListResponse
-	(*ScanBlockRequest)(nil),       // 20: three_kingdoms.player.ScanBlockRequest
-	(*ScanBlockResponse)(nil),      // 21: three_kingdoms.player.ScanBlockResponse
-	(*OpenCollectionRequest)(nil),  // 22: three_kingdoms.player.OpenCollectionRequest
-	(*OpenCollectionResponse)(nil), // 23: three_kingdoms.player.OpenCollectionResponse
-	(*CollectionRequest)(nil),      // 24: three_kingdoms.player.CollectionRequest
-	(*CollectionResponse)(nil),     // 25: three_kingdoms.player.CollectionResponse
-	(*AllianceListRequest)(nil),    // 26: three_kingdoms.player.AllianceListRequest
-	(*AllianceListResponse)(nil),   // 27: three_kingdoms.player.AllianceListResponse
-	(*AllianceInfoRequest)(nil),    // 28: three_kingdoms.player.AllianceInfoRequest
-	(*AllianceInfoResponse)(nil),   // 29: three_kingdoms.player.AllianceInfoResponse
-	(*common.BizResult)(nil),       // 30: three_kingdoms.common.BizResult
-	(*Role)(nil),                   // 31: Role
-	(*Resource)(nil),               // 32: Resource
-	(*BuildingCfg)(nil),            // 33: three_kingdoms.player.BuildingCfg
-	(*Building)(nil),               // 34: three_kingdoms.player.Building
-	(*General)(nil),                // 35: three_kingdoms.player.General
-	(*City)(nil),                   // 36: three_kingdoms.player.City
-	(*Army)(nil),                   // 37: three_kingdoms.player.Army
-	(*PosTag)(nil),                 // 38: three_kingdoms.player.PosTag
-	(*WarReport)(nil),              // 39: three_kingdoms.player.WarReport
-	(*Skill)(nil),                  // 40: three_kingdoms.player.Skill
-	(*Alliance)(nil),               // 41: three_kingdoms.player.Alliance
+	(*PlayerRequest)(nil),             // 0: three_kingdoms.player.PlayerRequest
+	(*PlayerResponse)(nil),            // 1: three_kingdoms.player.PlayerResponse
+	(*EnterServerRequest)(nil),        // 2: three_kingdoms.player.EnterServerRequest
+	(*EnterServerResponse)(nil),       // 3: three_kingdoms.player.EnterServerResponse
+	(*CreateRoleRequest)(nil),         // 4: three_kingdoms.player.CreateRoleRequest
+	(*CreateRoleResponse)(nil),        // 5: three_kingdoms.player.CreateRoleResponse
+	(*BuildingConfRequest)(nil),       // 6: three_kingdoms.player.BuildingConfRequest
+	(*BuildingConfResponse)(nil),      // 7: three_kingdoms.player.BuildingConfResponse
+	(*MyPropertyRequest)(nil),         // 8: three_kingdoms.player.MyPropertyRequest
+	(*MyPropertyResponse)(nil),        // 9: three_kingdoms.player.MyPropertyResponse
+	(*PosTagListRequest)(nil),         // 10: three_kingdoms.player.PosTagListRequest
+	(*PosTagListResponse)(nil),        // 11: three_kingdoms.player.PosTagListResponse
+	(*MyGeneralsRequest)(nil),         // 12: three_kingdoms.player.MyGeneralsRequest
+	(*MyGeneralsResponse)(nil),        // 13: three_kingdoms.player.MyGeneralsResponse
+	(*ArmyListRequest)(nil),           // 14: three_kingdoms.player.ArmyListRequest
+	(*ArmyListResponse)(nil),          // 15: three_kingdoms.player.ArmyListResponse
+	(*WarReportRequest)(nil),          // 16: three_kingdoms.player.WarReportRequest
+	(*WarReportResponse)(nil),         // 17: three_kingdoms.player.WarReportResponse
+	(*SkillListRequest)(nil),          // 18: three_kingdoms.player.SkillListRequest
+	(*SkillListResponse)(nil),         // 19: three_kingdoms.player.SkillListResponse
+	(*ScanBlockRequest)(nil),          // 20: three_kingdoms.player.ScanBlockRequest
+	(*ScanBlockResponse)(nil),         // 21: three_kingdoms.player.ScanBlockResponse
+	(*OpenCollectionRequest)(nil),     // 22: three_kingdoms.player.OpenCollectionRequest
+	(*OpenCollectionResponse)(nil),    // 23: three_kingdoms.player.OpenCollectionResponse
+	(*CollectionRequest)(nil),         // 24: three_kingdoms.player.CollectionRequest
+	(*CollectionResponse)(nil),        // 25: three_kingdoms.player.CollectionResponse
+	(*AllianceListRequest)(nil),       // 26: three_kingdoms.player.AllianceListRequest
+	(*AllianceListResponse)(nil),      // 27: three_kingdoms.player.AllianceListResponse
+	(*AllianceInfoRequest)(nil),       // 28: three_kingdoms.player.AllianceInfoRequest
+	(*AllianceInfoResponse)(nil),      // 29: three_kingdoms.player.AllianceInfoResponse
+	(*AllianceApplyListRequest)(nil),  // 30: three_kingdoms.player.AllianceApplyListRequest
+	(*AllianceApplyListResponse)(nil), // 31: three_kingdoms.player.AllianceApplyListResponse
+	(*common.BizResult)(nil),          // 32: three_kingdoms.common.BizResult
+	(*Role)(nil),                      // 33: Role
+	(*Resource)(nil),                  // 34: Resource
+	(*BuildingCfg)(nil),               // 35: three_kingdoms.player.BuildingCfg
+	(*Building)(nil),                  // 36: three_kingdoms.player.Building
+	(*General)(nil),                   // 37: three_kingdoms.player.General
+	(*City)(nil),                      // 38: three_kingdoms.player.City
+	(*Army)(nil),                      // 39: three_kingdoms.player.Army
+	(*PosTag)(nil),                    // 40: three_kingdoms.player.PosTag
+	(*WarReport)(nil),                 // 41: three_kingdoms.player.WarReport
+	(*Skill)(nil),                     // 42: three_kingdoms.player.Skill
+	(*Alliance)(nil),                  // 43: three_kingdoms.player.Alliance
+	(*ApplyItem)(nil),                 // 44: three_kingdoms.player.ApplyItem
 }
 var file_player_player_proto_depIdxs = []int32{
 	2,  // 0: three_kingdoms.player.PlayerRequest.enterServerRequest:type_name -> three_kingdoms.player.EnterServerRequest
@@ -2178,47 +2297,50 @@ var file_player_player_proto_depIdxs = []int32{
 	24, // 11: three_kingdoms.player.PlayerRequest.collectionRequest:type_name -> three_kingdoms.player.CollectionRequest
 	26, // 12: three_kingdoms.player.PlayerRequest.allianceListRequest:type_name -> three_kingdoms.player.AllianceListRequest
 	28, // 13: three_kingdoms.player.PlayerRequest.allianceInfoRequest:type_name -> three_kingdoms.player.AllianceInfoRequest
-	30, // 14: three_kingdoms.player.PlayerResponse.result:type_name -> three_kingdoms.common.BizResult
-	3,  // 15: three_kingdoms.player.PlayerResponse.enterServerResponse:type_name -> three_kingdoms.player.EnterServerResponse
-	5,  // 16: three_kingdoms.player.PlayerResponse.createRoleResponse:type_name -> three_kingdoms.player.CreateRoleResponse
-	7,  // 17: three_kingdoms.player.PlayerResponse.buildingConfResponse:type_name -> three_kingdoms.player.BuildingConfResponse
-	9,  // 18: three_kingdoms.player.PlayerResponse.myPropertyResponse:type_name -> three_kingdoms.player.MyPropertyResponse
-	11, // 19: three_kingdoms.player.PlayerResponse.posTagListResponse:type_name -> three_kingdoms.player.PosTagListResponse
-	13, // 20: three_kingdoms.player.PlayerResponse.myGeneralsResponse:type_name -> three_kingdoms.player.MyGeneralsResponse
-	15, // 21: three_kingdoms.player.PlayerResponse.armyListResponse:type_name -> three_kingdoms.player.ArmyListResponse
-	17, // 22: three_kingdoms.player.PlayerResponse.WarReportResponse:type_name -> three_kingdoms.player.WarReportResponse
-	19, // 23: three_kingdoms.player.PlayerResponse.skillListResponse:type_name -> three_kingdoms.player.SkillListResponse
-	21, // 24: three_kingdoms.player.PlayerResponse.scanBlockResponse:type_name -> three_kingdoms.player.ScanBlockResponse
-	23, // 25: three_kingdoms.player.PlayerResponse.openCollectionResponse:type_name -> three_kingdoms.player.OpenCollectionResponse
-	25, // 26: three_kingdoms.player.PlayerResponse.collectionResponse:type_name -> three_kingdoms.player.CollectionResponse
-	27, // 27: three_kingdoms.player.PlayerResponse.allianceListResponse:type_name -> three_kingdoms.player.AllianceListResponse
-	29, // 28: three_kingdoms.player.PlayerResponse.allianceInfoResponse:type_name -> three_kingdoms.player.AllianceInfoResponse
-	31, // 29: three_kingdoms.player.EnterServerResponse.role:type_name -> Role
-	32, // 30: three_kingdoms.player.EnterServerResponse.resource:type_name -> Resource
-	31, // 31: three_kingdoms.player.CreateRoleResponse.role:type_name -> Role
-	33, // 32: three_kingdoms.player.BuildingConfResponse.cfgs:type_name -> three_kingdoms.player.BuildingCfg
-	32, // 33: three_kingdoms.player.MyPropertyResponse.resource:type_name -> Resource
-	34, // 34: three_kingdoms.player.MyPropertyResponse.buildings:type_name -> three_kingdoms.player.Building
-	35, // 35: three_kingdoms.player.MyPropertyResponse.generals:type_name -> three_kingdoms.player.General
-	36, // 36: three_kingdoms.player.MyPropertyResponse.cities:type_name -> three_kingdoms.player.City
-	37, // 37: three_kingdoms.player.MyPropertyResponse.armies:type_name -> three_kingdoms.player.Army
-	38, // 38: three_kingdoms.player.PosTagListResponse.posTags:type_name -> three_kingdoms.player.PosTag
-	35, // 39: three_kingdoms.player.MyGeneralsResponse.generals:type_name -> three_kingdoms.player.General
-	37, // 40: three_kingdoms.player.ArmyListResponse.armies:type_name -> three_kingdoms.player.Army
-	39, // 41: three_kingdoms.player.WarReportResponse.warReports:type_name -> three_kingdoms.player.WarReport
-	40, // 42: three_kingdoms.player.SkillListResponse.skills:type_name -> three_kingdoms.player.Skill
-	34, // 43: three_kingdoms.player.ScanBlockResponse.buildings:type_name -> three_kingdoms.player.Building
-	36, // 44: three_kingdoms.player.ScanBlockResponse.cities:type_name -> three_kingdoms.player.City
-	37, // 45: three_kingdoms.player.ScanBlockResponse.Armies:type_name -> three_kingdoms.player.Army
-	41, // 46: three_kingdoms.player.AllianceListResponse.list:type_name -> three_kingdoms.player.Alliance
-	41, // 47: three_kingdoms.player.AllianceInfoResponse.alliance:type_name -> three_kingdoms.player.Alliance
-	0,  // 48: three_kingdoms.player.PlayerService.Handle:input_type -> three_kingdoms.player.PlayerRequest
-	1,  // 49: three_kingdoms.player.PlayerService.Handle:output_type -> three_kingdoms.player.PlayerResponse
-	49, // [49:50] is the sub-list for method output_type
-	48, // [48:49] is the sub-list for method input_type
-	48, // [48:48] is the sub-list for extension type_name
-	48, // [48:48] is the sub-list for extension extendee
-	0,  // [0:48] is the sub-list for field type_name
+	30, // 14: three_kingdoms.player.PlayerRequest.allianceApplyListRequest:type_name -> three_kingdoms.player.AllianceApplyListRequest
+	32, // 15: three_kingdoms.player.PlayerResponse.result:type_name -> three_kingdoms.common.BizResult
+	3,  // 16: three_kingdoms.player.PlayerResponse.enterServerResponse:type_name -> three_kingdoms.player.EnterServerResponse
+	5,  // 17: three_kingdoms.player.PlayerResponse.createRoleResponse:type_name -> three_kingdoms.player.CreateRoleResponse
+	7,  // 18: three_kingdoms.player.PlayerResponse.buildingConfResponse:type_name -> three_kingdoms.player.BuildingConfResponse
+	9,  // 19: three_kingdoms.player.PlayerResponse.myPropertyResponse:type_name -> three_kingdoms.player.MyPropertyResponse
+	11, // 20: three_kingdoms.player.PlayerResponse.posTagListResponse:type_name -> three_kingdoms.player.PosTagListResponse
+	13, // 21: three_kingdoms.player.PlayerResponse.myGeneralsResponse:type_name -> three_kingdoms.player.MyGeneralsResponse
+	15, // 22: three_kingdoms.player.PlayerResponse.armyListResponse:type_name -> three_kingdoms.player.ArmyListResponse
+	17, // 23: three_kingdoms.player.PlayerResponse.WarReportResponse:type_name -> three_kingdoms.player.WarReportResponse
+	19, // 24: three_kingdoms.player.PlayerResponse.skillListResponse:type_name -> three_kingdoms.player.SkillListResponse
+	21, // 25: three_kingdoms.player.PlayerResponse.scanBlockResponse:type_name -> three_kingdoms.player.ScanBlockResponse
+	23, // 26: three_kingdoms.player.PlayerResponse.openCollectionResponse:type_name -> three_kingdoms.player.OpenCollectionResponse
+	25, // 27: three_kingdoms.player.PlayerResponse.collectionResponse:type_name -> three_kingdoms.player.CollectionResponse
+	27, // 28: three_kingdoms.player.PlayerResponse.allianceListResponse:type_name -> three_kingdoms.player.AllianceListResponse
+	29, // 29: three_kingdoms.player.PlayerResponse.allianceInfoResponse:type_name -> three_kingdoms.player.AllianceInfoResponse
+	31, // 30: three_kingdoms.player.PlayerResponse.allianceApplyListResponse:type_name -> three_kingdoms.player.AllianceApplyListResponse
+	33, // 31: three_kingdoms.player.EnterServerResponse.role:type_name -> Role
+	34, // 32: three_kingdoms.player.EnterServerResponse.resource:type_name -> Resource
+	33, // 33: three_kingdoms.player.CreateRoleResponse.role:type_name -> Role
+	35, // 34: three_kingdoms.player.BuildingConfResponse.cfgs:type_name -> three_kingdoms.player.BuildingCfg
+	34, // 35: three_kingdoms.player.MyPropertyResponse.resource:type_name -> Resource
+	36, // 36: three_kingdoms.player.MyPropertyResponse.buildings:type_name -> three_kingdoms.player.Building
+	37, // 37: three_kingdoms.player.MyPropertyResponse.generals:type_name -> three_kingdoms.player.General
+	38, // 38: three_kingdoms.player.MyPropertyResponse.cities:type_name -> three_kingdoms.player.City
+	39, // 39: three_kingdoms.player.MyPropertyResponse.armies:type_name -> three_kingdoms.player.Army
+	40, // 40: three_kingdoms.player.PosTagListResponse.posTags:type_name -> three_kingdoms.player.PosTag
+	37, // 41: three_kingdoms.player.MyGeneralsResponse.generals:type_name -> three_kingdoms.player.General
+	39, // 42: three_kingdoms.player.ArmyListResponse.armies:type_name -> three_kingdoms.player.Army
+	41, // 43: three_kingdoms.player.WarReportResponse.warReports:type_name -> three_kingdoms.player.WarReport
+	42, // 44: three_kingdoms.player.SkillListResponse.skills:type_name -> three_kingdoms.player.Skill
+	36, // 45: three_kingdoms.player.ScanBlockResponse.buildings:type_name -> three_kingdoms.player.Building
+	38, // 46: three_kingdoms.player.ScanBlockResponse.cities:type_name -> three_kingdoms.player.City
+	39, // 47: three_kingdoms.player.ScanBlockResponse.Armies:type_name -> three_kingdoms.player.Army
+	43, // 48: three_kingdoms.player.AllianceListResponse.list:type_name -> three_kingdoms.player.Alliance
+	43, // 49: three_kingdoms.player.AllianceInfoResponse.alliance:type_name -> three_kingdoms.player.Alliance
+	44, // 50: three_kingdoms.player.AllianceApplyListResponse.item:type_name -> three_kingdoms.player.ApplyItem
+	0,  // 51: three_kingdoms.player.PlayerService.Handle:input_type -> three_kingdoms.player.PlayerRequest
+	1,  // 52: three_kingdoms.player.PlayerService.Handle:output_type -> three_kingdoms.player.PlayerResponse
+	52, // [52:53] is the sub-list for method output_type
+	51, // [51:52] is the sub-list for method input_type
+	51, // [51:51] is the sub-list for extension type_name
+	51, // [51:51] is the sub-list for extension extendee
+	0,  // [0:51] is the sub-list for field type_name
 }
 
 func init() { file_player_player_proto_init() }
@@ -2251,6 +2373,7 @@ func file_player_player_proto_init() {
 		(*PlayerRequest_CollectionRequest)(nil),
 		(*PlayerRequest_AllianceListRequest)(nil),
 		(*PlayerRequest_AllianceInfoRequest)(nil),
+		(*PlayerRequest_AllianceApplyListRequest)(nil),
 	}
 	file_player_player_proto_msgTypes[1].OneofWrappers = []any{
 		(*PlayerResponse_EnterServerResponse)(nil),
@@ -2267,6 +2390,7 @@ func file_player_player_proto_init() {
 		(*PlayerResponse_CollectionResponse)(nil),
 		(*PlayerResponse_AllianceListResponse)(nil),
 		(*PlayerResponse_AllianceInfoResponse)(nil),
+		(*PlayerResponse_AllianceApplyListResponse)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2274,7 +2398,7 @@ func file_player_player_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_player_player_proto_rawDesc), len(file_player_player_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   30,
+			NumMessages:   32,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

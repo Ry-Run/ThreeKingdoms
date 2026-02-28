@@ -39,3 +39,8 @@ message Member {
   int32 x = 4;
   int32 y = 5;
 }
+
+message ApplyItem {
+  int32 playerId = 1;
+  string nick_name = 2;
+}

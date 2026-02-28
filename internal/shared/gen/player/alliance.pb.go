@@ -333,6 +333,58 @@ func (x *Member) GetY() int32 {
 	return 0
 }
 
+type ApplyItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      int32                  `protobuf:"varint,1,opt,name=playerId,proto3" json:"playerId,omitempty"`
+	NickName      string                 `protobuf:"bytes,2,opt,name=nick_name,json=nickName,proto3" json:"nick_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApplyItem) Reset() {
+	*x = ApplyItem{}
+	mi := &file_player_alliance_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApplyItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApplyItem) ProtoMessage() {}
+
+func (x *ApplyItem) ProtoReflect() protoreflect.Message {
+	mi := &file_player_alliance_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApplyItem.ProtoReflect.Descriptor instead.
+func (*ApplyItem) Descriptor() ([]byte, []int) {
+	return file_player_alliance_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ApplyItem) GetPlayerId() int32 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *ApplyItem) GetNickName() string {
+	if x != nil {
+		return x.NickName
+	}
+	return ""
+}
+
 var File_player_alliance_proto protoreflect.FileDescriptor
 
 const file_player_alliance_proto_rawDesc = "" +
@@ -353,7 +405,10 @@ const file_player_alliance_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12:\n" +
 	"\x05title\x18\x03 \x01(\x0e2$.three_kingdoms.player.AllianceTitleR\x05title\x12\f\n" +
 	"\x01x\x18\x04 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x05 \x01(\x05R\x01y*W\n" +
+	"\x01y\x18\x05 \x01(\x05R\x01y\"D\n" +
+	"\tApplyItem\x12\x1a\n" +
+	"\bplayerId\x18\x01 \x01(\x05R\bplayerId\x12\x1b\n" +
+	"\tnick_name\x18\x02 \x01(\tR\bnickName*W\n" +
 	"\rAllianceTitle\x12\x15\n" +
 	"\x11ALLIANCE_CHAIRMAN\x10\x00\x12\x1a\n" +
 	"\x16ALLIANCE_VICE_CHAIRMAN\x10\x01\x12\x13\n" +
@@ -376,13 +431,14 @@ func file_player_alliance_proto_rawDescGZIP() []byte {
 }
 
 var file_player_alliance_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_player_alliance_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_player_alliance_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_player_alliance_proto_goTypes = []any{
 	(AllianceTitle)(0),       // 0: three_kingdoms.player.AllianceTitle
 	(AllianceApplyStatus)(0), // 1: three_kingdoms.player.AllianceApplyStatus
 	(*Alliance)(nil),         // 2: three_kingdoms.player.Alliance
 	(*Major)(nil),            // 3: three_kingdoms.player.Major
 	(*Member)(nil),           // 4: three_kingdoms.player.Member
+	(*ApplyItem)(nil),        // 5: three_kingdoms.player.ApplyItem
 }
 var file_player_alliance_proto_depIdxs = []int32{
 	3, // 0: three_kingdoms.player.Alliance.major:type_name -> three_kingdoms.player.Major
@@ -406,7 +462,7 @@ func file_player_alliance_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_player_alliance_proto_rawDesc), len(file_player_alliance_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

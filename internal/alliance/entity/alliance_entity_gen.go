@@ -3,16 +3,18 @@ package entity
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 )
 
 const (
-	FieldAlliance_id      Field = "id"
-	FieldAlliance_worldId Field = "worldId"
-	FieldAlliance_name    Field = "name"
-	FieldAlliance_notice  Field = "notice"
-	FieldAlliance_majors  Field = "majors"
-	FieldAlliance_members Field = "members"
+	FieldAlliance_id        Field = "id"
+	FieldAlliance_worldId   Field = "worldId"
+	FieldAlliance_name      Field = "name"
+	FieldAlliance_notice    Field = "notice"
+	FieldAlliance_majors    Field = "majors"
+	FieldAlliance_members   Field = "members"
+	FieldAlliance_applyList Field = "applyList"
 )
 
 var emptyAllianceEntity = &AllianceEntity{}
@@ -204,12 +206,13 @@ func (t *AllianceEntityTrace) childDirtyKeys_members() []PlayerID {
 }
 
 type AllianceState struct {
-	Id      AllianceID
-	WorldId WorldID
-	Name    string
-	Notice  string
-	Majors  map[PlayerID]MajorState
-	Members map[PlayerID]MemberState
+	Id        AllianceID
+	WorldId   WorldID
+	Name      string
+	Notice    string
+	Majors    map[PlayerID]MajorState
+	Members   map[PlayerID]MemberState
+	ApplyList []ApplyItemState
 }
 
 type AllianceEntitySnap struct {
@@ -222,13 +225,14 @@ type AllianceEntitySnap struct {
 }
 
 type AllianceEntity struct {
-	id      AllianceID
-	worldId WorldID
-	name    string
-	notice  string
-	majors  map[PlayerID]*MajorEntity
-	members map[PlayerID]*MemberEntity
-	_dt     AllianceEntityTrace
+	id        AllianceID
+	worldId   WorldID
+	name      string
+	notice    string
+	majors    map[PlayerID]*MajorEntity
+	members   map[PlayerID]*MemberEntity
+	applyList []*ApplyItemEntity
+	_dt       AllianceEntityTrace
 }
 
 func (e *AllianceEntity) copyMapMajors(in map[PlayerID]MajorState) map[PlayerID]MajorState {
@@ -321,14 +325,60 @@ func (e *AllianceEntity) snapshotMapMembers(in map[PlayerID]*MemberEntity) map[P
 	return out
 }
 
+func (e *AllianceEntity) hydrateSliceApplyList(in []ApplyItemState) []*ApplyItemEntity {
+	if in == nil {
+		return nil
+	}
+	out := make([]*ApplyItemEntity, len(in))
+	for i, v := range in {
+		out[i] = HydrateApplyItemEntity(v)
+	}
+	return out
+}
+
+func (e *AllianceEntity) snapshotSliceApplyList(in []*ApplyItemEntity) []ApplyItemState {
+	if in == nil {
+		return nil
+	}
+	out := make([]ApplyItemState, len(in))
+	for i, v := range in {
+		if v == nil {
+			var z ApplyItemState
+			out[i] = z
+			continue
+		}
+		out[i] = v.Save()
+	}
+	return out
+}
+
+func (e *AllianceEntity) slicesEqualApplyList(a, b []ApplyItemState) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 func HydrateAllianceEntity(s AllianceState) *AllianceEntity {
 	return &AllianceEntity{
-		id:      s.Id,
-		worldId: s.WorldId,
-		name:    s.Name,
-		notice:  s.Notice,
-		majors:  emptyAllianceEntity.hydrateMapMajors(s.Majors),
-		members: emptyAllianceEntity.hydrateMapMembers(s.Members),
+		id:        s.Id,
+		worldId:   s.WorldId,
+		name:      s.Name,
+		notice:    s.Notice,
+		majors:    emptyAllianceEntity.hydrateMapMajors(s.Majors),
+		members:   emptyAllianceEntity.hydrateMapMembers(s.Members),
+		applyList: emptyAllianceEntity.hydrateSliceApplyList(s.ApplyList),
 	}
 }
 
@@ -454,6 +504,7 @@ func (e *AllianceEntity) Save() AllianceState {
 	s.Notice = e.notice
 	s.Majors = e.snapshotMapMajors(e.majors)
 	s.Members = e.snapshotMapMembers(e.members)
+	s.ApplyList = e.snapshotSliceApplyList(e.applyList)
 	return s
 }
 
@@ -490,6 +541,7 @@ func (s *AllianceEntitySnap) Clone() *AllianceEntitySnap {
 	out.MembersDirtyKeys = append([]PlayerID(nil), s.MembersDirtyKeys...)
 	out.State.Majors = emptyAllianceEntity.copyMapMajors(s.State.Majors)
 	out.State.Members = emptyAllianceEntity.copyMapMembers(s.State.Members)
+	out.State.ApplyList = append([]ApplyItemState(nil), s.State.ApplyList...)
 	return out
 }
 
@@ -870,5 +922,159 @@ func (e *AllianceEntity) ClearMembers() bool {
 	e.members = nil
 	e._dt.markFullReplace(FieldAlliance_members)
 	e._dt.childDirty_members = nil
+	return true
+}
+
+func (e *AllianceEntity) LenApplyList() int {
+	if e == nil {
+		return 0
+	}
+	return len(e.applyList)
+}
+
+func (e *AllianceEntity) AtApplyList(index int) (ApplyItemState, bool) {
+	var z ApplyItemState
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.applyList) {
+		return z, false
+	}
+	v := e.applyList[index]
+	if v == nil {
+		return z, true
+	}
+	return v.Save(), true
+}
+
+func (e *AllianceEntity) ForEachApplyList(fn func(index int, value ApplyItemState)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.applyList {
+		var state ApplyItemState
+		if v != nil {
+			state = v.Save()
+		}
+		fn(i, state)
+	}
+}
+
+func (e *AllianceEntity) RangeApplyList(fn func(index int, value ApplyItemState) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.applyList {
+		var state ApplyItemState
+		if v != nil {
+			state = v.Save()
+		}
+		if !fn(i, state) {
+			return
+		}
+	}
+}
+
+func (e *AllianceEntity) ReplaceApplyList(v []ApplyItemState) bool {
+	if e == nil {
+		return false
+	}
+	if e.slicesEqualApplyList(e.snapshotSliceApplyList(e.applyList), v) {
+		return false
+	}
+	e.applyList = e.hydrateSliceApplyList(v)
+	e._dt.markFullReplace(FieldAlliance_applyList)
+	return true
+}
+
+func (e *AllianceEntity) AppendApplyList(values ...ApplyItemState) bool {
+	if e == nil || len(values) == 0 {
+		return false
+	}
+	for _, v := range values {
+		rv := HydrateApplyItemEntity(v)
+		e.applyList = append(e.applyList, rv)
+		e._dt.markSliceAppend(FieldAlliance_applyList, v)
+	}
+	return true
+}
+
+func (e *AllianceEntity) SetApplyListAt(index int, value ApplyItemState) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.applyList) {
+		return false
+	}
+	var oldState ApplyItemState
+	if e.applyList[index] != nil {
+		oldState = e.applyList[index].Save()
+	}
+	if reflect.DeepEqual(oldState, value) {
+		return false
+	}
+	e.applyList[index] = HydrateApplyItemEntity(value)
+	e._dt.markSliceSet(FieldAlliance_applyList, index, value)
+	return true
+}
+
+func (e *AllianceEntity) UpdateApplyListAt(index int, fn func(value *ApplyItemEntity)) bool {
+	if e == nil || fn == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.applyList) {
+		return false
+	}
+	v := e.applyList[index]
+	if v == nil {
+		return false
+	}
+	before := v.Save()
+	fn(v)
+	after := v.Save()
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markSliceSet(FieldAlliance_applyList, index, after)
+	return true
+}
+
+func (e *AllianceEntity) RemoveApplyListAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.applyList) {
+		return false
+	}
+	e.applyList = append(e.applyList[:index], e.applyList[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldAlliance_applyList, index)
+	return true
+}
+
+func (e *AllianceEntity) SwapRemoveApplyListAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.applyList) {
+		return false
+	}
+	last := len(e.applyList) - 1
+	if index != last {
+		e.applyList[index] = e.applyList[last]
+	}
+	e.applyList = e.applyList[:last]
+	e._dt.markSliceSwapRemoveAt(FieldAlliance_applyList, index)
+	return true
+}
+
+func (e *AllianceEntity) ClearApplyList() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.applyList) == 0 {
+		return false
+	}
+	e.applyList = nil
+	e._dt.markFullReplace(FieldAlliance_applyList)
 	return true
 }
