@@ -13,6 +13,7 @@ import "player/pos_tag.proto";
 import "player/war_report.proto";
 import "player/skill.proto";
 import "player/alliance.proto";
+import "player/facility.proto";
 
 option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
 
@@ -39,6 +40,8 @@ message PlayerRequest {
     AllianceListRequest allianceListRequest = 22;
     AllianceInfoRequest allianceInfoRequest = 23;
     AllianceApplyListRequest allianceApplyListRequest = 24;
+    DrawGeneralRequest drawGeneralRequest = 25;
+    FacilitiesRequest facilitiesRequest = 26;
   }
 
   string trace_id = 100;
@@ -63,6 +66,8 @@ message PlayerResponse {
     AllianceListResponse allianceListResponse = 22;
     AllianceInfoResponse allianceInfoResponse = 23;
     AllianceApplyListResponse allianceApplyListResponse = 24;
+    DrawGeneralResponse drawGeneralResponse = 25;
+    FacilitiesResponse facilitiesResponse = 26;
   }
 }
 
@@ -205,3 +210,20 @@ message AllianceApplyListRequest {
 message AllianceApplyListResponse {
   repeated ApplyItem item = 1;
 }
+
+message DrawGeneralRequest {
+  int32 DrawTimes = 1;
+}
+
+message DrawGeneralResponse {
+  repeated General generals = 1;
+}
+
+message FacilitiesRequest {
+}
+
+message FacilitiesResponse {
+  int32 CityId = 1;
+  repeated Facility Facilities = 2;
+}
+

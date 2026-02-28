@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+message Facility {
+  string name = 1;
+  int32 level = 2;
+  int32 type = 3;
+  int64 upTime = 4;
+}

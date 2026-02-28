@@ -11,6 +11,7 @@ const (
 	FieldPlayer_playerID   Field = "playerID"
 	FieldPlayer_worldID    Field = "worldID"
 	FieldPlayer_allianceID Field = "allianceID"
+	FieldPlayer_cityID     Field = "cityID"
 	FieldPlayer_profile    Field = "profile"
 	FieldPlayer_resource   Field = "resource"
 	FieldPlayer_attribute  Field = "attribute"
@@ -216,6 +217,7 @@ type PlayerState struct {
 	PlayerID   PlayerID
 	WorldID    WorldID
 	AllianceID AllianceID
+	CityID     CityID
 	Profile    RoleState
 	Resource   ResourceState
 	Attribute  RoleAttributeState
@@ -242,6 +244,7 @@ type PlayerEntity struct {
 	playerID   PlayerID
 	worldID    WorldID
 	allianceID AllianceID
+	cityID     CityID
 	profile    *RoleEntity
 	resource   *ResourceEntity
 	attribute  *RoleAttributeEntity
@@ -572,6 +575,7 @@ func HydratePlayerEntity(s PlayerState) *PlayerEntity {
 		playerID:   s.PlayerID,
 		worldID:    s.WorldID,
 		allianceID: s.AllianceID,
+		cityID:     s.CityID,
 		profile:    HydrateRoleEntity(s.Profile),
 		resource:   HydrateResourceEntity(s.Resource),
 		attribute:  HydrateRoleAttributeEntity(s.Attribute),
@@ -732,6 +736,7 @@ func (e *PlayerEntity) Save() PlayerState {
 	s.PlayerID = e.playerID
 	s.WorldID = e.worldID
 	s.AllianceID = e.allianceID
+	s.CityID = e.cityID
 	if e.profile != nil {
 		s.Profile = e.profile.Save()
 	} else {
@@ -858,6 +863,26 @@ func (e *PlayerEntity) SetAllianceID(v AllianceID) bool {
 	}
 	e.allianceID = v
 	e._dt.mark(FieldPlayer_allianceID)
+	return true
+}
+
+func (e *PlayerEntity) CityID() CityID {
+	if e == nil {
+		var z CityID
+		return z
+	}
+	return e.cityID
+}
+
+func (e *PlayerEntity) SetCityID(v CityID) bool {
+	if e == nil {
+		return false
+	}
+	if e.cityID == v {
+		return false
+	}
+	e.cityID = v
+	e._dt.mark(FieldPlayer_cityID)
 	return true
 }
 

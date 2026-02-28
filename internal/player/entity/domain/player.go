@@ -10,6 +10,7 @@ type Player struct {
 	playerID   PlayerID
 	worldID    WorldID
 	allianceID AllianceID
+	cityID     CityID
 	profile    *Role
 	resource   *Resource
 	attribute  *RoleAttribute

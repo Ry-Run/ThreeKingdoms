@@ -5,8 +5,12 @@ import (
 	"ThreeKingdoms/internal/shared/actor/messages"
 	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	"ThreeKingdoms/internal/shared/gameconfig/building"
+	"ThreeKingdoms/internal/shared/gameconfig/general"
 	_map "ThreeKingdoms/internal/shared/gameconfig/map"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
+	"ThreeKingdoms/internal/shared/utils"
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/asynkron/protoactor-go/actor"
@@ -59,8 +63,8 @@ func (h *PlayerHandler) HandleEnterServerRequest(ctx actor.Context, p *PlayerAct
 			return
 		}
 
-		if WHPosition, ok := res.(*messages.WHCreateCity); ok {
-			ctx.Logger().Info("position", "x", WHPosition.X, "y", WHPosition.Y)
+		if createCityRes, ok := res.(*messages.WHCreateCity); ok {
+			player.SetCityID(CityID(createCityRes.CityId))
 		} else {
 			ctx.Logger().Info("position", "err", entity.ErrCreateCity)
 		}
@@ -446,6 +450,124 @@ func (h *PlayerHandler) HandleAllianceApplyListRequest(ctx actor.Context, p *Pla
 	})
 }
 
+func (h *PlayerHandler) HandleDrawGeneralRequest(ctx actor.Context, p *PlayerActor, request *playerpb.DrawGeneralRequest) {
+	//1. 计算抽卡花费的金钱
+	//2. 判断金钱是否足够
+	//3. 抽卡的次数 + 已有的武将 卡池是否足够
+	//4. 随机生成武将即可（之前有实现）
+	//5. 金币的扣除
+	if request == nil || p == nil || p.Entity() == nil || p.Entity().Resource() == nil {
+		ctx.Respond(fail("request parameter error"))
+		return
+	}
+
+	player := p.Entity()
+	drawTimes := int(request.DrawTimes)
+	if drawTimes <= 0 {
+		ctx.Respond(fail("invalid draw times"))
+		return
+	}
+
+	resource := player.Resource()
+	conf := basic.BasicConf.General
+	cost := conf.DrawGeneralCost
+	if cost <= 0 {
+		ctx.Respond(fail("invalid draw general cost config"))
+		return
+	}
+	totalCost := drawTimes * cost
+
+	if !resource.IsEnoughGold(totalCost) {
+		ctx.Respond(fail("not enough gold"))
+		return
+	}
+
+	limit := conf.Limit
+	if player.LenGenerals()+drawTimes > limit {
+		ctx.Respond(fail("too many general"))
+		return
+	}
+	generals, err := draw(drawTimes)
+	if err != nil {
+		ctx.Respond(fail(err.Error()))
+		return
+	}
+	dirty := player.AppendGenerals(generals...)
+
+	// 扣钱
+	dirty = resource.SetGold(resource.Gold()-totalCost) || dirty
+
+	if dirty {
+		// todo 玩家 asset、resource 等需要强一致，暂时不提供强一致 API
+		// 等待脏数据落库
+		if err := p.DC().FlushSync(context.TODO()); err != nil {
+			ctx.Respond(fail("flush player failed"))
+			return
+		}
+	}
+
+	response := ok()
+	pbGenerals := make([]*playerpb.General, 0, len(generals))
+	for _, v := range generals {
+		pbGenerals = append(pbGenerals, ToPBGeneral(v))
+	}
+	response.Body = &playerpb.PlayerResponse_DrawGeneralResponse{
+		DrawGeneralResponse: &playerpb.DrawGeneralResponse{
+			Generals: pbGenerals,
+		},
+	}
+	ctx.Respond(response)
+}
+
+func (h *PlayerHandler) HandleFacilitiesRequest(ctx actor.Context, p *PlayerActor, request *playerpb.FacilitiesRequest) {
+	if p == nil || request == nil {
+		ctx.Respond(fail("request parameter error"))
+		return
+	}
+	player := p.Entity()
+	if player == nil {
+		ctx.Respond(fail("player state invalid"))
+		return
+	}
+	facilities := make([]*playerpb.Facility, 0, player.LenFacility())
+	player.ForEachFacility(func(i int, v entity.FacilityState) {
+		facilities = append(facilities, toPBFacility(v))
+	})
+
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_FacilitiesResponse{
+		FacilitiesResponse: &playerpb.FacilitiesResponse{
+			CityId:     int32(player.CityID()),
+			Facilities: facilities,
+		},
+	}
+	ctx.Respond(response)
+}
+
+func draw(times int) ([]entity.GeneralState, error) {
+	if times <= 0 {
+		return nil, fmt.Errorf("invalid draw times")
+	}
+	generals := make([]entity.GeneralState, 0, times)
+	for i := 0; i < times; i++ {
+		cfgId := general.Rand()
+		if cfgId <= 0 {
+			return nil, fmt.Errorf("draw general config not ready")
+		}
+		id, err := utils.NextSnowflakeID()
+		if err != nil {
+			return nil, fmt.Errorf("generate general id failed: %w", err)
+		}
+		generalS := entity.GeneralState{
+			Id:    int(id),
+			CfgId: cfgId,
+			Level: 0,
+		}
+		generals = append(generals, generalS)
+	}
+	return generals, nil
+}
+
 func okWithAllianceList(list []messages.Alliance) *playerpb.PlayerResponse {
 	pbList := make([]*playerpb.Alliance, 0, len(list))
 	for _, item := range list {
@@ -512,5 +634,14 @@ func toPBAllianceTitle(in messages.AllianceTitle) playerpb.AllianceTitle {
 		return playerpb.AllianceTitle_ALLIANCE_COMMON
 	default:
 		return playerpb.AllianceTitle_ALLIANCE_COMMON
+	}
+}
+
+func toPBFacility(in entity.FacilityState) *playerpb.Facility {
+	return &playerpb.Facility{
+		Name:   in.Name,
+		Level:  int32(in.PrivateLevel),
+		Type:   int32(in.FType),
+		UpTime: in.UpTime,
 	}
 }

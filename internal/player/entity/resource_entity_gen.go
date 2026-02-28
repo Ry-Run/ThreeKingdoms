@@ -338,6 +338,10 @@ func (s *ResourceEntitySnap) Clone() *ResourceEntitySnap {
 	return out
 }
 
+func (r *ResourceEntity) IsEnoughGold(cost int) bool {
+	return r.gold >= cost
+}
+
 func (e *ResourceEntity) Wood() int {
 	if e == nil {
 		var z int

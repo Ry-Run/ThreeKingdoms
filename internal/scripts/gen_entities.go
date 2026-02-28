@@ -136,6 +136,10 @@ type methodInfo struct {
 	Name            string
 	NoArgNoReturn   bool
 	ReceiverTypeRaw string
+	ReceiverName    string
+	ParamsDecl      string
+	ResultsDecl     string
+	Body            string
 }
 
 func main() {
@@ -461,10 +465,21 @@ func parseTaggedStructs(dirAbs, tag string, collectModelFieldSet bool, collectMe
 				if !ok {
 					continue
 				}
+				recvVar := defaultReceiverVarName(fd, recvName)
+				paramsDecl := buildMethodParamsDecl(fset, fd.Type.Params)
+				resultsDecl := buildMethodResultsDecl(fset, fd.Type.Results)
+				body := "{}"
+				if fd.Body != nil {
+					body = nodeString(fset, fd.Body)
+				}
 				out[idx].Methods = append(out[idx].Methods, methodInfo{
 					Name:            fd.Name.Name,
 					NoArgNoReturn:   fieldListArity(fd.Type.Params) == 0 && fieldListArity(fd.Type.Results) == 0,
 					ReceiverTypeRaw: recvTypeRaw,
+					ReceiverName:    recvVar,
+					ParamsDecl:      paramsDecl,
+					ResultsDecl:     resultsDecl,
+					Body:            body,
 				})
 			}
 		}
@@ -528,6 +543,72 @@ func fieldListArity(fl *ast.FieldList) int {
 	return n
 }
 
+func defaultReceiverVarName(fd *ast.FuncDecl, recvTypeName string) string {
+	if fd != nil && fd.Recv != nil && len(fd.Recv.List) > 0 && len(fd.Recv.List[0].Names) > 0 {
+		if name := strings.TrimSpace(fd.Recv.List[0].Names[0].Name); name != "" {
+			return name
+		}
+	}
+	if recvTypeName == "" {
+		return "e"
+	}
+	return strings.ToLower(recvTypeName[:1])
+}
+
+func buildMethodParamsDecl(fset *token.FileSet, fl *ast.FieldList) string {
+	if fl == nil || len(fl.List) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(fl.List))
+	argIdx := 0
+	for _, f := range fl.List {
+		typ := exprString(fset, f.Type)
+		if len(f.Names) == 0 {
+			name := fmt.Sprintf("arg%d", argIdx)
+			argIdx++
+			parts = append(parts, name+" "+typ)
+			continue
+		}
+		for _, n := range f.Names {
+			if n == nil || strings.TrimSpace(n.Name) == "" {
+				name := fmt.Sprintf("arg%d", argIdx)
+				argIdx++
+				parts = append(parts, name+" "+typ)
+				continue
+			}
+			parts = append(parts, n.Name+" "+typ)
+		}
+	}
+	return strings.Join(parts, ", ")
+}
+
+func buildMethodResultsDecl(fset *token.FileSet, fl *ast.FieldList) string {
+	if fl == nil || len(fl.List) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(fl.List))
+	for _, f := range fl.List {
+		typ := exprString(fset, f.Type)
+		if len(f.Names) == 0 {
+			parts = append(parts, typ)
+			continue
+		}
+		names := make([]string, 0, len(f.Names))
+		for _, n := range f.Names {
+			if n == nil || strings.TrimSpace(n.Name) == "" {
+				names = append(names, "_")
+				continue
+			}
+			names = append(names, n.Name)
+		}
+		parts = append(parts, strings.Join(names, ", ")+" "+typ)
+	}
+	if len(parts) == 1 && fl.List[0] != nil && len(fl.List[0].Names) == 0 {
+		return " " + parts[0]
+	}
+	return " (" + strings.Join(parts, ", ") + ")"
+}
+
 func receiverTypeName(recv ast.Expr) (name string, raw string, ok bool) {
 	switch t := recv.(type) {
 	case *ast.Ident:
@@ -548,6 +629,22 @@ func collectNoArgNoReturnMethods(methods []methodInfo) []methodInfo {
 	out := make([]methodInfo, 0, len(methods))
 	for _, m := range methods {
 		if !m.NoArgNoReturn {
+			continue
+		}
+		if seen[m.Name] {
+			continue
+		}
+		seen[m.Name] = true
+		out = append(out, m)
+	}
+	return out
+}
+
+func collectUniqueMethods(methods []methodInfo) []methodInfo {
+	seen := map[string]bool{}
+	out := make([]methodInfo, 0, len(methods))
+	for _, m := range methods {
+		if m.Name == "" {
 			continue
 		}
 		if seen[m.Name] {
@@ -601,6 +698,12 @@ func upperFirst(s string) string {
 func exprString(fset *token.FileSet, e ast.Expr) string {
 	var b bytes.Buffer
 	_ = printer.Fprint(&b, fset, e)
+	return b.String()
+}
+
+func nodeString(fset *token.FileSet, n ast.Node) string {
+	var b bytes.Buffer
+	_ = printer.Fprint(&b, fset, n)
 	return b.String()
 }
 
@@ -888,7 +991,8 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 			})
 		}
 	}
-	mirrorMethods := collectNoArgNoReturnMethods(e.Methods)
+	stateMirrorMethods := collectNoArgNoReturnMethods(e.Methods)
+	entityMirrorMethods := collectUniqueMethods(e.Methods)
 	canMirrorMethods := canGenerateSnapshotMethodProxy(e)
 
 	buf.WriteString("import (\n")
@@ -902,7 +1006,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 	if needReflect {
 		buf.WriteString("\t\"reflect\"\n")
 	}
-	if canMirrorMethods && len(mirrorMethods) > 0 {
+	if canMirrorMethods && len(stateMirrorMethods) > 0 {
 		buf.WriteString(fmt.Sprintf("\tdomain %q\n", blueprintPkg.ImpPath))
 	}
 	buf.WriteString(")\n\n")
@@ -1493,7 +1597,7 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 
 	// Save domain method mirrors
 	if canMirrorMethods {
-		for _, m := range mirrorMethods {
+		for _, m := range stateMirrorMethods {
 			buf.WriteString(fmt.Sprintf("func (s *%s) %s() {\n", stateName, m.Name))
 			buf.WriteString("\tif s == nil {\n\t\treturn\n\t}\n")
 			buf.WriteString(fmt.Sprintf("\td := domain.%s{\n", e.Name))
@@ -1513,6 +1617,25 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 			}
 			buf.WriteString("}\n\n")
 		}
+	}
+
+	// Entity method mirrors (copy domain method signature/body)
+	for _, m := range entityMirrorMethods {
+		recvName := m.ReceiverName
+		if recvName == "" {
+			recvName = "e"
+		}
+		recvType := entityName
+		if strings.HasPrefix(m.ReceiverTypeRaw, "*") {
+			recvType = "*" + entityName
+		}
+		paramsDecl := strings.TrimSpace(m.ParamsDecl)
+		resultsDecl := m.ResultsDecl
+		if paramsDecl == "" {
+			buf.WriteString(fmt.Sprintf("func (%s %s) %s()%s %s\n\n", recvName, recvType, m.Name, resultsDecl, m.Body))
+			continue
+		}
+		buf.WriteString(fmt.Sprintf("func (%s %s) %s(%s)%s %s\n\n", recvName, recvType, m.Name, paramsDecl, resultsDecl, m.Body))
 	}
 
 	// Getter + Setter

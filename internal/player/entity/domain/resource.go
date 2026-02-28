@@ -9,3 +9,7 @@ type Resource struct {
 	gold   int // 金币
 	decree int // 令牌
 }
+
+func (r *Resource) IsEnoughGold(cost int) bool {
+	return r.gold >= cost
+}
