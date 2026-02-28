@@ -44,7 +44,7 @@ func (h *PlayerHandler) HandleEnterServerRequest(ctx actor.Context, p *PlayerAct
 	player := p.Entity()
 	f := ctx.RequestFuture(
 		p.worldPID,
-		messages.HWCreateCity{
+		&messages.HWCreateCity{
 			WorldBaseMessage: messages.WorldBaseMessage{
 				PlayerId: int(*p.PlayerId),
 				WorldId:  0,
@@ -59,7 +59,7 @@ func (h *PlayerHandler) HandleEnterServerRequest(ctx actor.Context, p *PlayerAct
 			return
 		}
 
-		if WHPosition, ok := res.(messages.WHCreateCity); ok {
+		if WHPosition, ok := res.(*messages.WHCreateCity); ok {
 			ctx.Logger().Info("position", "x", WHPosition.X, "y", WHPosition.Y)
 		} else {
 			ctx.Logger().Info("position", "err", entity.ErrCreateCity)
@@ -115,7 +115,7 @@ func (h *PlayerHandler) HandleMyPropertyRequest(ctx actor.Context, p *PlayerActo
 		return
 	}
 
-	f := ctx.RequestFuture(p.worldPID, messages.HWMyCities{
+	f := ctx.RequestFuture(p.worldPID, &messages.HWMyCities{
 		WorldBaseMessage: messages.WorldBaseMessage{
 			WorldId:  int(*p.WorldId),
 			PlayerId: int(*p.PlayerId),
@@ -128,7 +128,7 @@ func (h *PlayerHandler) HandleMyPropertyRequest(ctx actor.Context, p *PlayerActo
 			ctx.Respond(resp)
 			return
 		}
-		worldCities, ok := res.(messages.WHMyCities)
+		worldCities, ok := res.(*messages.WHMyCities)
 		if !ok {
 			ctx.Respond(resp)
 			return
@@ -226,7 +226,11 @@ func (h *PlayerHandler) HandleScanBlockRequest(ctx actor.Context, p *PlayerActor
 	}
 
 	f := ctx.RequestFuture(p.worldPID,
-		messages.HWScanBlock{
+		&messages.HWScanBlock{
+			WorldBaseMessage: messages.WorldBaseMessage{
+				WorldId:  int(*p.WorldId),
+				PlayerId: int(*p.PlayerId),
+			},
 			X:      x,
 			Y:      y,
 			Length: int(request.Length),
@@ -236,14 +240,14 @@ func (h *PlayerHandler) HandleScanBlockRequest(ctx actor.Context, p *PlayerActor
 			ctx.Respond(fail(err.Error()))
 			return
 		}
-		wHScanBlock, respOK := res.(messages.WHScanBlock)
+		wHScanBlock, respOK := res.(*messages.WHScanBlock)
 		if !respOK {
 			ctx.Respond(fail("invalid response type"))
 			return
 		}
 		response := ok()
 		response.Body = &playerpb.PlayerResponse_ScanBlockResponse{
-			ScanBlockResponse: ToPBWHScanBlock(wHScanBlock),
+			ScanBlockResponse: ToPBWHScanBlock(*wHScanBlock),
 		}
 		ctx.Respond(response)
 	})
@@ -339,4 +343,81 @@ func (h *PlayerHandler) HandleCollectionRequest(ctx actor.Context, p *PlayerActo
 		},
 	}
 	ctx.Respond(response)
+}
+
+func (h *PlayerHandler) HandleAllianceListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.AllianceListRequest) {
+	if p == nil || p.WorldId == nil || p.alliancePID == nil {
+		ctx.Respond(okWithAllianceList(nil))
+		return
+	}
+	req := &messages.HAAllianceList{
+		AllianceBaseMessage: messages.AllianceBaseMessage{
+			WorldId: int(*p.WorldId),
+		},
+	}
+	f := ctx.RequestFuture(p.alliancePID, req, 500*time.Millisecond)
+	ctx.ReenterAfter(f, func(res interface{}, err error) {
+		if err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
+		switch msg := res.(type) {
+		case *messages.AHAllianceList:
+			if msg == nil {
+				ctx.Respond(okWithAllianceList(nil))
+				return
+			}
+			ctx.Respond(okWithAllianceList(msg.List))
+		default:
+			ctx.Respond(fail("invalid alliance list response type"))
+		}
+	})
+}
+
+func okWithAllianceList(list []messages.Alliance) *playerpb.PlayerResponse {
+	pbList := make([]*playerpb.Alliance, 0, len(list))
+	for _, item := range list {
+		pbList = append(pbList, toPBAlliance(item))
+	}
+	resp := ok()
+	resp.Body = &playerpb.PlayerResponse_AllianceListResponse{
+		AllianceListResponse: &playerpb.AllianceListResponse{
+			List: pbList,
+		},
+	}
+	return resp
+}
+
+func toPBAlliance(in messages.Alliance) *playerpb.Alliance {
+	majors := make([]*playerpb.Major, 0, len(in.Major))
+	for _, major := range in.Major {
+		if major == nil {
+			continue
+		}
+		majors = append(majors, &playerpb.Major{
+			Rid:   major.Rid,
+			Name:  major.Name,
+			Title: toPBAllianceTitle(major.Title),
+		})
+	}
+	return &playerpb.Alliance{
+		Id:     in.Id,
+		Name:   in.Name,
+		Cnt:    in.Cnt,
+		Notice: in.Notice,
+		Major:  majors,
+	}
+}
+
+func toPBAllianceTitle(in messages.AllianceTitle) playerpb.AllianceTitle {
+	switch in {
+	case messages.ALLIANCE_CHAIRMAN:
+		return playerpb.AllianceTitle_ALLIANCE_CHAIRMAN
+	case messages.ALLIANCE_VICE_CHAIRMAN:
+		return playerpb.AllianceTitle_ALLIANCE_VICE_CHAIRMAN
+	case messages.ALLIANCE_COMMON:
+		return playerpb.AllianceTitle_ALLIANCE_COMMON
+	default:
+		return playerpb.AllianceTitle_ALLIANCE_COMMON
+	}
 }

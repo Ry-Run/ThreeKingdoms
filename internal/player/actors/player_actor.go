@@ -27,16 +27,19 @@ const seqWindowSize = 1024
 
 type PlayerID = entity.PlayerID
 type WorldID = entity.WorldID
+type AllianceID = entity.AllianceID
 
 type PlayerActor struct {
-	state    State
-	PlayerId *PlayerID
-	WorldId  *WorldID
-	dc       *dc.PlayerDC
+	state      State
+	PlayerId   *PlayerID
+	WorldId    *WorldID
+	AllianceID *AllianceID
+	dc         *dc.PlayerDC
 
-	worldPID   *actor.PID
-	dispatcher *Dispatcher
-	flushStop  chan struct{}
+	worldPID    *actor.PID
+	alliancePID *actor.PID
+	dispatcher  *Dispatcher
+	flushStop   chan struct{}
 
 	seenSeq      map[int64]struct{}
 	seenSeqOrder []int64
@@ -46,15 +49,17 @@ type flushTick struct{}
 
 func (flushTick) NotInfluenceReceiveTimeout() {}
 
-func NewPlayerActor(playerID PlayerID, worldId WorldID, repo port.PlayerRepository, worldPID *actor.PID) *PlayerActor {
+func NewPlayerActor(playerID PlayerID, worldId WorldID, allianceID AllianceID, repo port.PlayerRepository, worldPID *actor.PID, alliancePID *actor.PID) *PlayerActor {
 	return &PlayerActor{
-		state:      None,
-		PlayerId:   &playerID,
-		WorldId:    &worldId,
-		dc:         dc.NewPlayerDC(repo),
-		dispatcher: NewDispatcher(),
-		seenSeq:    make(map[int64]struct{}, seqWindowSize),
-		worldPID:   worldPID,
+		state:       None,
+		PlayerId:    &playerID,
+		WorldId:     &worldId,
+		AllianceID:  &allianceID,
+		dc:          dc.NewPlayerDC(repo),
+		dispatcher:  NewDispatcher(),
+		seenSeq:     make(map[int64]struct{}, seqWindowSize),
+		worldPID:    worldPID,
+		alliancePID: alliancePID,
 	}
 }
 

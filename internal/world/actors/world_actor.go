@@ -107,9 +107,8 @@ func (w *WorldActor) init(actorCtx actor.Context) {
 
 	var needFlush bool
 	if e.LenWorldMap() == 0 {
-		needFlush = true
 		// todo 可以去掉这个字段直接使用 config
-		e.ReplaceWorldMap(w.buildInitialMap())
+		needFlush = e.ReplaceWorldMap(w.buildInitialMap()) || needFlush
 	}
 
 	if needFlush {

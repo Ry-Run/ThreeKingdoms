@@ -12,19 +12,19 @@ type WorldHandler struct{}
 
 var WH = &WorldHandler{}
 
-func (h *WorldHandler) HandleHWCreateCity(ctx actor.Context, w *WorldActor, request messages.HWCreateCity) {
-	if request.PlayerId <= 0 {
-		ctx.Respond(messages.WHCreateCity{})
+func (h *WorldHandler) HandleHWCreateCity(ctx actor.Context, w *WorldActor, request *messages.HWCreateCity) {
+	if request == nil || request.PlayerId <= 0 {
+		ctx.Respond(&messages.WHCreateCity{})
 		return
 	}
 
 	cityID := WS.CreateCity(w.Entity(), request)
-	ctx.Respond(messages.WHCreateCity{CityId: int(cityID)})
+	ctx.Respond(&messages.WHCreateCity{CityId: int(cityID)})
 }
 
-func (h *WorldHandler) HandleHWMyCities(ctx actor.Context, w *WorldActor, request messages.HWMyCities) {
-	var out messages.WHMyCities
-	if request.PlayerId <= 0 || w == nil || w.Entity() == nil {
+func (h *WorldHandler) HandleHWMyCities(ctx actor.Context, w *WorldActor, request *messages.HWMyCities) {
+	out := &messages.WHMyCities{}
+	if request == nil || request.PlayerId <= 0 || w == nil || w.Entity() == nil {
 		ctx.Respond(out)
 		return
 	}
@@ -52,6 +52,6 @@ func (h *WorldHandler) HandleHWMyCities(ctx actor.Context, w *WorldActor, reques
 	ctx.Respond(out)
 }
 
-func (h *WorldHandler) HandleHWScanBlock(ctx actor.Context, p *WorldActor, request messages.HWScanBlock) {
+func (h *WorldHandler) HandleHWScanBlock(ctx actor.Context, p *WorldActor, request *messages.HWScanBlock) {
 	ctx.Respond(WS.ScanBlock(p, request))
 }

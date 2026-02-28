@@ -1,6 +1,8 @@
 package main
 
 import (
+	allianceactor "ThreeKingdoms/internal/alliance/actor"
+	alliancemongo "ThreeKingdoms/internal/alliance/infra/persistence/mongodb"
 	playeractor "ThreeKingdoms/internal/player/actor"
 	playermongo "ThreeKingdoms/internal/player/infra/persistence/mongodb"
 	"ThreeKingdoms/internal/shared/gameconfig"
@@ -63,8 +65,18 @@ func main() {
 	worldRT := worldactor.NewRuntime(worldRepo, 0)
 	defer worldRT.Shutdown()
 
+	worldID := serverconfig.Conf.Logic.WorldID
+	if worldID <= 0 {
+		logs.Fatal("logic.world_id must be greater than 0", zap.Int("world_id", worldID))
+	}
+
+	allianceRepo := alliancemongo.NewAllianceRepository(db)
+	allianceRT := allianceactor.NewRuntimeWithActorSystem(worldRT.ActorSystem(), allianceRepo, worldID, 0)
+	defer allianceRT.Shutdown()
+	allianceID := allianceRT.AllianceActorID()
+
 	repo := playermongo.NewPlayerRepo(db)
-	rt := playeractor.NewRuntimeWithWorldPID(logger, worldRT.ActorSystem(), repo, worldRT.WorldActorID(), 0)
+	rt := playeractor.NewRuntimeWithWorldPID(logger, worldRT.ActorSystem(), repo, worldRT.WorldActorID(), allianceID, 0)
 	defer rt.Shutdown()
 
 	server := grpc.NewServer(

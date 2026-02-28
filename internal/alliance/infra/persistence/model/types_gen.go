@@ -2,15 +2,13 @@
 package model
 
 import (
-	entity "ThreeKingdoms/internal/player/entity"
+	entity "ThreeKingdoms/internal/alliance/entity"
 )
-
-type PlayerID = entity.PlayerID
 
 type WorldID = entity.WorldID
 
-type CityID = entity.CityID
+type PlayerID = entity.PlayerID
 
 type AllianceID = entity.AllianceID
 
-type RoleStatus = entity.RoleStatus
+type CityID = entity.CityID

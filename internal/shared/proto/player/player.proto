@@ -12,6 +12,7 @@ import "player/city.proto";
 import "player/pos_tag.proto";
 import "player/war_report.proto";
 import "player/skill.proto";
+import "player/alliance.proto";
 
 option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
 
@@ -19,7 +20,8 @@ option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
 message PlayerRequest {
   int64 player_id = 1;
   int64 world_id = 2;
-  int64 seq = 3;
+  int64 alliance_id = 3;
+  int64 seq = 4;
 
   oneof body {
     EnterServerRequest enterServerRequest = 10;
@@ -34,6 +36,7 @@ message PlayerRequest {
     ScanBlockRequest scanBlockRequest = 19;
     OpenCollectionRequest openCollectionRequest = 20;
     CollectionRequest collectionRequest = 21;
+    AllianceListRequest allianceListRequest = 22;
   }
 
   string trace_id = 100;
@@ -55,6 +58,7 @@ message PlayerResponse {
     ScanBlockResponse scanBlockResponse = 19;
     OpenCollectionResponse openCollectionResponse = 20;
     CollectionResponse collectionResponse = 21;
+    AllianceListResponse allianceListResponse = 22;
   }
 }
 
@@ -71,6 +75,7 @@ message EnterServerResponse {
   Resource resource = 2;
   int64 time = 3;
   string token = 4;
+  int32 allianceId = 5;
 }
 
 message CreateRoleRequest {
@@ -173,4 +178,11 @@ message CollectionResponse {
   int32 limit = 2;
   int32 curTimes = 3;
   int64 nextTime = 4;
+}
+
+message AllianceListRequest {
+}
+
+message AllianceListResponse {
+  repeated Alliance list = 1;
 }

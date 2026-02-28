@@ -92,6 +92,7 @@ type LogConfig struct {
 }
 
 type LogicConfig struct {
+	WorldID  int    `yaml:"world_id" mapstructure:"world_id"`
 	MapData  string `yaml:"map_data" mapstructure:"map_data"`
 	JSONData string `yaml:"json_data" mapstructure:"json_data"`
 	ServerID int    `yaml:"server_id" mapstructure:"server_id"`

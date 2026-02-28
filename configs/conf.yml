@@ -73,6 +73,7 @@ log:
   dev: false
 
 logic:
+  world_id: 1
   map_data: "./data/conf/mapRes_0.json"
   json_data: "./data/conf/json/"
   server_id: 1

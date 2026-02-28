@@ -47,7 +47,7 @@ type Runtime struct {
 	ownSys  bool
 }
 
-func NewRuntime(logger *zap.Logger, repo port.PlayerRepository, worldAdd string, askTimeout time.Duration) *Runtime {
+func NewRuntime(logger *zap.Logger, repo port.PlayerRepository, worldAdd string, allianceAdd string, askTimeout time.Duration) *Runtime {
 	if askTimeout <= 0 {
 		askTimeout = defaultAskTimeout
 	}
@@ -71,6 +71,7 @@ func NewRuntime(logger *zap.Logger, repo port.PlayerRepository, worldAdd string,
 	组装远端 PID：Address=服务器 ip:port，Id=SpawnNamed 的名字
 	*/
 	worldPID := protoactor.NewPID(worldAdd, "world")
+	alliancePID := protoactor.NewPID(allianceAdd, "alliance")
 
 	/**
 	用 root context 创建（spawn） 一个 actor，返回它的 PID。
@@ -79,7 +80,7 @@ func NewRuntime(logger *zap.Logger, repo port.PlayerRepository, worldAdd string,
 	**/
 	managerProps := protoactor.PropsFromProducer(func() protoactor.Actor {
 		// 具体返回的 actor 实例
-		return actors.NewManagerActor(repo, worldPID)
+		return actors.NewManagerActor(repo, worldPID, alliancePID)
 	})
 	/**
 	配置这个 actor 的 Props（行为+邮箱+中间件等）。
@@ -105,6 +106,7 @@ func NewRuntimeWithWorldPID(
 	system *protoactor.ActorSystem,
 	repo port.PlayerRepository,
 	worldPID *protoactor.PID,
+	alliancePID *protoactor.PID,
 	askTimeout time.Duration,
 ) *Runtime {
 	if askTimeout <= 0 {
@@ -117,7 +119,7 @@ func NewRuntimeWithWorldPID(
 	}
 	root := system.Root
 	managerProps := protoactor.PropsFromProducer(func() protoactor.Actor {
-		return actors.NewManagerActor(repo, worldPID)
+		return actors.NewManagerActor(repo, worldPID, alliancePID)
 	})
 	manager := root.Spawn(managerProps)
 

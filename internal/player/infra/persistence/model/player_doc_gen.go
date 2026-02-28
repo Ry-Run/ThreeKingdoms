@@ -8,6 +8,7 @@ import (
 type PlayerDoc struct {
 	PlayerID   PlayerID             `bson:"player_id"`
 	WorldID    WorldID              `bson:"world_id"`
+	AllianceID AllianceID           `bson:"alliance_id"`
 	Profile    RoleDoc              `bson:"profile"`
 	Resource   ResourceDoc          `bson:"resource"`
 	Attribute  RoleAttributeDoc     `bson:"attribute"`
@@ -180,6 +181,7 @@ func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 	return PlayerDoc{
 		PlayerID:   state.PlayerID,
 		WorldID:    state.WorldID,
+		AllianceID: state.AllianceID,
 		Profile:    RoleStateToDoc(state.Profile),
 		Resource:   ResourceStateToDoc(state.Resource),
 		Attribute:  RoleAttributeStateToDoc(state.Attribute),
@@ -198,6 +200,7 @@ func PlayerDocToState(d PlayerDoc) entity.PlayerState {
 	state := entity.PlayerState{
 		PlayerID:   d.PlayerID,
 		WorldID:    d.WorldID,
+		AllianceID: d.AllianceID,
 		Profile:    RoleDocToState(d.Profile),
 		Resource:   ResourceDocToState(d.Resource),
 		Attribute:  RoleAttributeDocToState(d.Attribute),

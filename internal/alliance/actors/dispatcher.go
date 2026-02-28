@@ -25,21 +25,18 @@ func NewDispatcher() *Dispatcher {
 }
 
 func (d *Dispatcher) registerAll() {
-	register(d, WH.HandleHWCreateCity)
-	register(d, WH.HandleHWMyCities)
-	register(d, WH.HandleHWScanBlock)
 }
 
-func register[Req messages.WorldMessage](
+func register[Req messages.AllianceMessage](
 	d *Dispatcher,
-	fn func(ctx actor.Context, p *WorldActor, req Req),
+	fn func(ctx actor.Context, a *AllianceActor, req Req),
 ) {
 	reqType := reflect.TypeOf((*Req)(nil)).Elem()
 	if reqType == nil {
 		panic("dispatcher req type cannot be nil")
 	}
 	if reqType.Kind() != reflect.Ptr {
-		panic("world dispatcher req type must be pointer message")
+		panic("alliance dispatcher req type must be pointer message")
 	}
 
 	d.handlers[reqType] = Handler{
@@ -48,7 +45,7 @@ func register[Req messages.WorldMessage](
 	}
 }
 
-func (d *Dispatcher) Dispatch(ctx actor.Context, p *WorldActor, req messages.WorldMessage) {
+func (d *Dispatcher) Dispatch(ctx actor.Context, a *AllianceActor, req messages.AllianceMessage) {
 	if req == nil {
 		ctx.Respond("nil req")
 		return
@@ -68,7 +65,7 @@ func (d *Dispatcher) Dispatch(ctx actor.Context, p *WorldActor, req messages.Wor
 
 	handler.fn.Call([]reflect.Value{
 		reflect.ValueOf(ctx),
-		reflect.ValueOf(p),
+		reflect.ValueOf(a),
 		reflect.ValueOf(req),
 	})
 }

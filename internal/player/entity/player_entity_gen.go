@@ -10,6 +10,7 @@ import (
 const (
 	FieldPlayer_playerID   Field = "playerID"
 	FieldPlayer_worldID    Field = "worldID"
+	FieldPlayer_allianceID Field = "allianceID"
 	FieldPlayer_profile    Field = "profile"
 	FieldPlayer_resource   Field = "resource"
 	FieldPlayer_attribute  Field = "attribute"
@@ -214,6 +215,7 @@ func (t *PlayerEntityTrace) childDirtyKeys_skills() []int {
 type PlayerState struct {
 	PlayerID   PlayerID
 	WorldID    WorldID
+	AllianceID AllianceID
 	Profile    RoleState
 	Resource   ResourceState
 	Attribute  RoleAttributeState
@@ -239,6 +241,7 @@ type PlayerEntitySnap struct {
 type PlayerEntity struct {
 	playerID   PlayerID
 	worldID    WorldID
+	allianceID AllianceID
 	profile    *RoleEntity
 	resource   *ResourceEntity
 	attribute  *RoleAttributeEntity
@@ -568,6 +571,7 @@ func HydratePlayerEntity(s PlayerState) *PlayerEntity {
 	return &PlayerEntity{
 		playerID:   s.PlayerID,
 		worldID:    s.WorldID,
+		allianceID: s.AllianceID,
 		profile:    HydrateRoleEntity(s.Profile),
 		resource:   HydrateResourceEntity(s.Resource),
 		attribute:  HydrateRoleAttributeEntity(s.Attribute),
@@ -727,6 +731,7 @@ func (e *PlayerEntity) Save() PlayerState {
 	}
 	s.PlayerID = e.playerID
 	s.WorldID = e.worldID
+	s.AllianceID = e.allianceID
 	if e.profile != nil {
 		s.Profile = e.profile.Save()
 	} else {
@@ -833,6 +838,26 @@ func (e *PlayerEntity) SetWorldID(v WorldID) bool {
 	}
 	e.worldID = v
 	e._dt.mark(FieldPlayer_worldID)
+	return true
+}
+
+func (e *PlayerEntity) AllianceID() AllianceID {
+	if e == nil {
+		var z AllianceID
+		return z
+	}
+	return e.allianceID
+}
+
+func (e *PlayerEntity) SetAllianceID(v AllianceID) bool {
+	if e == nil {
+		return false
+	}
+	if e.allianceID == v {
+		return false
+	}
+	e.allianceID = v
+	e._dt.mark(FieldPlayer_allianceID)
 	return true
 }
 

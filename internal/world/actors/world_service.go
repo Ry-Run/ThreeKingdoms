@@ -18,7 +18,10 @@ type CityID = entity.CityID
 type ArmyID = entity.ArmyID
 type CityState = entity.CityState
 
-func (s *WorldService) CreateCity(e *entity.WorldEntity, request messages.HWCreateCity) CityID {
+func (s *WorldService) CreateCity(e *entity.WorldEntity, request *messages.HWCreateCity) CityID {
+	if request == nil {
+		return -1
+	}
 	PlayerId := entity.PlayerID(request.PlayerId)
 	cities, ok := e.GetCityByPlayer(PlayerId)
 
@@ -55,11 +58,14 @@ func (s *WorldService) CreateCity(e *entity.WorldEntity, request messages.HWCrea
 	return cityID
 }
 
-func (s *WorldService) ScanBlock(w *WorldActor, request messages.HWScanBlock) messages.WHScanBlock {
+func (s *WorldService) ScanBlock(w *WorldActor, request *messages.HWScanBlock) *messages.WHScanBlock {
+	if request == nil {
+		return &messages.WHScanBlock{}
+	}
 	world := w.Entity()
 	x, y, Length := request.X, request.Y, request.Length
 	if x < 0 || x >= _map.MapWidth || y < 0 || y >= _map.MapHeight {
-		return messages.WHScanBlock{}
+		return &messages.WHScanBlock{}
 	}
 	maxX := min(_map.MapWidth-1, x+Length-1)
 	maxY := min(_map.MapHeight-1, y+Length-1)
@@ -126,7 +132,7 @@ func (s *WorldService) ScanBlock(w *WorldActor, request messages.HWScanBlock) me
 		}
 	}
 
-	return messages.WHScanBlock{
+	return &messages.WHScanBlock{
 		Cities:    cities,
 		Armies:    armies,
 		Buildings: buildings,

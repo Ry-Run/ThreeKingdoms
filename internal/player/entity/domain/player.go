@@ -3,11 +3,13 @@ package domain
 type PlayerID int
 type WorldID int
 type CityID int
+type AllianceID int
 
 // entity
 type Player struct {
 	playerID   PlayerID
 	worldID    WorldID
+	allianceID AllianceID
 	profile    *Role
 	resource   *Resource
 	attribute  *RoleAttribute

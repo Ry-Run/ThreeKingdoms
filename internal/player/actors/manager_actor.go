@@ -12,13 +12,15 @@ type ManagerActor struct {
 	repo         port.PlayerRepository
 	playerActors map[PlayerID]*actor.PID // player(uid) -> actor.pid
 	worldPID     *actor.PID
+	alliancePID  *actor.PID
 }
 
-func NewManagerActor(repo port.PlayerRepository, worldPID *actor.PID) *ManagerActor {
+func NewManagerActor(repo port.PlayerRepository, worldPID *actor.PID, alliancePID *actor.PID) *ManagerActor {
 	return &ManagerActor{
 		playerActors: make(map[PlayerID]*actor.PID),
 		repo:         repo,
 		worldPID:     worldPID,
+		alliancePID:  alliancePID,
 	}
 }
 
@@ -33,21 +35,22 @@ func (m *ManagerActor) Receive(ctx actor.Context) {
 	}
 	playerID, ok := toPlayerID(req.GetPlayerId())
 	worldID, ok := toWorldID(req.GetWorldId())
+	allianceID, ok := toAllianceID(req.GetWorldId())
 	if !ok {
 		ctx.Respond(failResponse("invalid player_id"))
 		return
 	}
 
-	ctx.Forward(m.getOrSpawn(ctx, playerID, worldID))
+	ctx.Forward(m.getOrSpawn(ctx, playerID, worldID, allianceID))
 }
 
-func (m *ManagerActor) getOrSpawn(ctx actor.Context, playerId PlayerID, worldId WorldID) *actor.PID {
+func (m *ManagerActor) getOrSpawn(ctx actor.Context, playerId PlayerID, worldId WorldID, allianceId AllianceID) *actor.PID {
 	if pid, ok := m.playerActors[playerId]; ok && pid != nil {
 		return pid
 	}
 
 	props := actor.PropsFromProducer(func() actor.Actor {
-		return NewPlayerActor(playerId, worldId, m.repo, m.worldPID)
+		return NewPlayerActor(playerId, worldId, allianceId, m.repo, m.worldPID, m.alliancePID)
 	})
 	// ManagerActor 创建 子 actor
 	pid := ctx.Spawn(props)
@@ -75,6 +78,17 @@ func toWorldID(raw int64) (WorldID, bool) {
 		return 0, false
 	}
 	return WorldID(raw), true
+}
+
+func toAllianceID(raw int64) (AllianceID, bool) {
+	const maxInt = int64(^uint(0) >> 1)
+	if raw <= 0 {
+		return 0, false
+	}
+	if raw > maxInt {
+		return 0, false
+	}
+	return AllianceID(raw), true
 }
 
 func failResponse(reason string) *playerpb.PlayerResponse {

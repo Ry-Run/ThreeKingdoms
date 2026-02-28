@@ -1,6 +1,6 @@
 // gen_entities 用法说明：
 // 0. 参与生成的前置条件
-//   - domain 结构体必须带 `// entity` 注释（例如 `entity/domain/world.go`）。
+//   - domain 结构体必须带 `// entity` 注释（例如 `entity/domain/alliance.go`）。
 //
 // 1. 生成产物
 //   - XxxEntity：可变实体（含脏标记追踪）。
@@ -876,7 +876,9 @@ func genOneEntity(entityPkg, blueprintPkg pkgInfo, e structInfo, entityNames map
 			}
 		}
 		if f.Kind == kindMap && containsNestedEntityInMapValue(f.TypeExpr, entityNames) {
-			needReflect = true
+			if _, _, isDirectMapNestedEntity := mapNestedEntity(f.TypeExpr, entityNames); !isDirectMapNestedEntity {
+				needReflect = true
+			}
 		}
 		if keyType, nestedEntity, ok := mapNestedEntity(f.TypeExpr, entityNames); ok {
 			nestedMapFields = append(nestedMapFields, nestedMapField{

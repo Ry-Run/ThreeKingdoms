@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package three_kingdoms.player;
+
+option go_package = "ThreeKingdoms/internal/shared/gen/player;playerpb";
+
+// 联盟职位
+enum AllianceTitle {
+  ALLIANCE_CHAIRMAN = 0;        // 盟主
+  ALLIANCE_VICE_CHAIRMAN = 1;   // 副盟主
+  ALLIANCE_COMMON = 2;          // 普通成员
+}
+
+// 申请状态
+enum AllianceApplyStatus {
+  ALLIANCE_UNTREATED = 0;  // 未处理
+  ALLIANCE_REFUSE = 1;     // 拒绝
+  ALLIANCE_ADOPT = 2;      // 通过
+}
+
+message Alliance {
+  int32 id = 1;          // 联盟id
+  string name = 2;       // 联盟名字
+  int32 cnt = 3;         // 联盟人数
+  string notice = 4;     // 公告
+  repeated Major major = 5; // 联盟主要人物（盟主、副盟主）
+}
+
+message Major {
+  int32 rid = 1;
+  string name = 2;
+  AllianceTitle title = 3; // 使用枚举
+}
+
+message Member {
+  int32 rid = 1;
+  string name = 2;
+  AllianceTitle title = 3; // 使用枚举
+  int32 x = 4;
+  int32 y = 5;
+}

@@ -43,10 +43,11 @@ func (s *PlayerService) EnterServer(p *PlayerActor) (*playerpb.PlayerResponse, e
 		Result: &commonpb.BizResult{Ok: true},
 		Body: &playerpb.PlayerResponse_EnterServerResponse{
 			EnterServerResponse: &playerpb.EnterServerResponse{
-				Role:     role,
-				Resource: ToPBResource(player.Resource()),
-				Token:    token,
-				Time:     time.Now().UnixNano() / 1e6,
+				Role:       role,
+				Resource:   ToPBResource(player.Resource()),
+				Token:      token,
+				Time:       time.Now().UnixNano() / 1e6,
+				AllianceId: int32(player.AllianceID()),
 			},
 		},
 	}, nil
@@ -135,15 +136,15 @@ func (s *PlayerService) initPlayer(p *PlayerActor) error {
 
 	var needFlush bool
 	if player.Resource() == nil {
-		needFlush = player.SetResource(s.buildInitialResource())
+		needFlush = player.SetResource(s.buildInitialResource()) || needFlush
 	}
 
 	if player.Attribute() == nil {
-		needFlush = player.SetAttribute(s.buildInitialAttribute())
+		needFlush = player.SetAttribute(s.buildInitialAttribute()) || needFlush
 	}
 
 	if player.LenFacility() <= 0 {
-		needFlush = player.ReplaceFacility(s.buildInitialFacility())
+		needFlush = player.ReplaceFacility(s.buildInitialFacility()) || needFlush
 	}
 
 	if needFlush {

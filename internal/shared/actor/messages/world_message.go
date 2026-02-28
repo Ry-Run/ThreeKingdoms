@@ -10,11 +10,17 @@ type WorldBaseMessage struct {
 	PlayerId int
 }
 
-func (w WorldBaseMessage) WorldID() int {
+func (w *WorldBaseMessage) WorldID() int {
+	if w == nil {
+		return 0
+	}
 	return w.WorldId
 }
 
-func (w WorldBaseMessage) PlayerID() int {
+func (w *WorldBaseMessage) PlayerID() int {
+	if w == nil {
+		return 0
+	}
 	return w.PlayerId
 }
 
@@ -37,6 +43,7 @@ type WHMyCities struct {
 }
 
 type HWScanBlock struct {
+	WorldBaseMessage
 	X, Y, Length int
 }
 
