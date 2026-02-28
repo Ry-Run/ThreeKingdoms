@@ -37,6 +37,7 @@ message PlayerRequest {
     OpenCollectionRequest openCollectionRequest = 20;
     CollectionRequest collectionRequest = 21;
     AllianceListRequest allianceListRequest = 22;
+    AllianceInfoRequest allianceInfoRequest = 23;
   }
 
   string trace_id = 100;
@@ -59,6 +60,7 @@ message PlayerResponse {
     OpenCollectionResponse openCollectionResponse = 20;
     CollectionResponse collectionResponse = 21;
     AllianceListResponse allianceListResponse = 22;
+    AllianceInfoResponse allianceInfoResponse = 23;
   }
 }
 
@@ -185,4 +187,12 @@ message AllianceListRequest {
 
 message AllianceListResponse {
   repeated Alliance list = 1;
+}
+
+message AllianceInfoRequest {
+  int32 allianceId = 1;
+}
+
+message AllianceInfoResponse {
+  Alliance alliance = 1;
 }

@@ -374,6 +374,43 @@ func (h *PlayerHandler) HandleAllianceListRequest(ctx actor.Context, p *PlayerAc
 	})
 }
 
+func (h *PlayerHandler) HandleAllianceInfoRequest(ctx actor.Context, p *PlayerActor, request *playerpb.AllianceInfoRequest) {
+	if p == nil || p.WorldId == nil || p.alliancePID == nil || request == nil || request.AllianceId <= 0 {
+		ctx.Respond(fail("request parameter error"))
+		return
+	}
+
+	req := &messages.HAAllianceInfo{
+		AllianceBaseMessage: messages.AllianceBaseMessage{
+			WorldId:    int(*p.WorldId),
+			AllianceId: int(request.AllianceId),
+		},
+	}
+	f := ctx.RequestFuture(p.alliancePID, req, 500*time.Millisecond)
+	ctx.ReenterAfter(f, func(res interface{}, err error) {
+		if err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
+		switch msg := res.(type) {
+		case *messages.AHAllianceInfo:
+			if msg == nil || msg.Alliance.Id <= 0 {
+				ctx.Respond(fail("alliance not found"))
+				return
+			}
+			response := ok()
+			response.Body = &playerpb.PlayerResponse_AllianceInfoResponse{
+				AllianceInfoResponse: &playerpb.AllianceInfoResponse{
+					Alliance: toPBAlliance(msg.Alliance),
+				},
+			}
+			ctx.Respond(response)
+		default:
+			ctx.Respond(fail("invalid alliance response type"))
+		}
+	})
+}
+
 func okWithAllianceList(list []messages.Alliance) *playerpb.PlayerResponse {
 	pbList := make([]*playerpb.Alliance, 0, len(list))
 	for _, item := range list {
