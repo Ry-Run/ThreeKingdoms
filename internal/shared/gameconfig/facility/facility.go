@@ -210,3 +210,28 @@ func (f *Facility) GetFacilityYield(level int) FacilityYield {
 	}
 	return y
 }
+
+func (f *facilityConf) MaxLevel(t int8) int {
+	facility, b := f.GetFacility(t)
+
+	if !b {
+		return 0
+	}
+	return len(facility.Levels)
+}
+
+func (f *facilityConf) Cost(t int8, l int) NeedResource {
+	facility, b := f.GetFacility(t)
+
+	if !b {
+		return NeedResource{}
+	}
+
+	level, ok := facility.LevelMap[l]
+
+	if !ok {
+		return NeedResource{}
+	}
+
+	return level.Need
+}

@@ -5,6 +5,7 @@ import (
 	"ThreeKingdoms/internal/shared/actor/messages"
 	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	"ThreeKingdoms/internal/shared/gameconfig/building"
+	"ThreeKingdoms/internal/shared/gameconfig/facility"
 	"ThreeKingdoms/internal/shared/gameconfig/general"
 	_map "ThreeKingdoms/internal/shared/gameconfig/map"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
@@ -544,6 +545,127 @@ func (h *PlayerHandler) HandleFacilitiesRequest(ctx actor.Context, p *PlayerActo
 	ctx.Respond(response)
 }
 
+func (h *PlayerHandler) HandleUpFacilityRequest(ctx actor.Context, p *PlayerActor, request *playerpb.UpFacilityRequest) {
+	if p == nil || request == nil {
+		ctx.Respond(fail("request parameter error"))
+		return
+	}
+	player := p.Entity()
+	if player == nil || player.Resource() == nil {
+		ctx.Respond(fail("player state invalid"))
+		return
+	}
+
+	playerCityID := int32(player.CityID())
+	if request.GetCityId() <= 0 || request.GetCityId() != playerCityID {
+		ctx.Respond(fail("city id mismatch"))
+		return
+	}
+
+	fType := int8(request.GetFType())
+	nowMS := time.Now().UnixMilli()
+
+	var (
+		err           error
+		found         bool
+		dirty         bool
+		facilityState entity.FacilityState
+	)
+
+	player.RangeFacility(func(i int, v entity.FacilityState) bool {
+		if v.FType != fType {
+			return true
+		}
+		found = true
+
+		maxLevel := facility.FacilityConf.MaxLevel(fType)
+		if maxLevel <= 0 {
+			err = fmt.Errorf("facility config not found")
+			return false
+		}
+
+		// 结算已经完成但尚未清理的升级进度，避免永久卡在升级中状态。
+		if v.UpTime > 0 {
+			if v.UpTime > nowMS {
+				err = fmt.Errorf("facility is upgrading")
+				return false
+			}
+			if v.PrivateLevel < maxLevel {
+				dirty = player.UpdateFacilityAt(i, func(fe *entity.FacilityEntity) {
+					fe.SetPrivateLevel(v.PrivateLevel + 1)
+					fe.SetUpTime(0)
+				}) || dirty
+				v.PrivateLevel++
+			} else {
+				dirty = player.UpdateFacilityAt(i, func(fe *entity.FacilityEntity) {
+					fe.SetUpTime(0)
+				}) || dirty
+			}
+			v.UpTime = 0
+		}
+
+		if v.PrivateLevel >= maxLevel {
+			err = fmt.Errorf("facility level max")
+			return false
+		}
+
+		nextLevel := v.PrivateLevel + 1
+		cfg, ok := facility.FacilityConf.GetFacility(fType)
+		if !ok || cfg == nil {
+			err = fmt.Errorf("facility config not found")
+			return false
+		}
+		levelCfg, ok := cfg.LevelMap[nextLevel]
+		if !ok {
+			err = fmt.Errorf("facility level config not found")
+			return false
+		}
+
+		cost := entity.ResourceState{
+			Wood:   levelCfg.Need.Wood,
+			Iron:   levelCfg.Need.Iron,
+			Stone:  levelCfg.Need.Stone,
+			Grain:  levelCfg.Need.Grain,
+			Gold:   levelCfg.Need.Gold,
+			Decree: levelCfg.Need.Decree,
+		}
+		if !Consume(player.Resource(), cost) {
+			err = fmt.Errorf("resource is not enough")
+			return false
+		}
+
+		dirty = player.UpdateFacilityAt(i, func(fe *entity.FacilityEntity) {
+			fe.SetUpTime(nowMS)
+		}) || dirty
+		facilityState, _ = player.AtFacility(i)
+		return false
+	})
+
+	if err != nil {
+		ctx.Respond(fail(err.Error()))
+		return
+	}
+
+	if !found {
+		ctx.Respond(fail("facility not found"))
+		return
+	}
+
+	if dirty {
+		_ = p.DC().FlushSync(context.TODO())
+	}
+
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_UpFacilityResponse{
+		UpFacilityResponse: &playerpb.UpFacilityResponse{
+			CityId:   playerCityID,
+			Facility: toPBFacility(facilityState),
+			Resource: ToPBResource(player.Resource()),
+		},
+	}
+	ctx.Respond(response)
+}
+
 func draw(times int) ([]entity.GeneralState, error) {
 	if times <= 0 {
 		return nil, fmt.Errorf("invalid draw times")
@@ -644,4 +766,27 @@ func toPBFacility(in entity.FacilityState) *playerpb.Facility {
 		Type:   int32(in.FType),
 		UpTime: in.UpTime,
 	}
+}
+
+func IsEnough(r *entity.ResourceEntity, cost entity.ResourceState) bool {
+	return r.Wood() >= cost.Wood &&
+		r.Iron() >= cost.Iron &&
+		r.Stone() >= cost.Stone &&
+		r.Grain() >= cost.Grain &&
+		r.Gold() >= cost.Gold &&
+		r.Decree() >= cost.Decree
+}
+
+func Consume(r *entity.ResourceEntity, cost entity.ResourceState) bool {
+	enough := IsEnough(r, cost)
+	if !enough {
+		return false
+	}
+	r.SetWood(r.Wood() - cost.Wood)
+	r.SetIron(r.Iron() - cost.Iron)
+	r.SetStone(r.Stone() - cost.Stone)
+	r.SetGrain(r.Grain() - cost.Grain)
+	r.SetGold(r.Gold() - cost.Gold)
+	r.SetDecree(r.Decree() - cost.Decree)
+	return true
 }
