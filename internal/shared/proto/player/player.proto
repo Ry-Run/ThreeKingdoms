@@ -44,6 +44,7 @@ message PlayerRequest {
     FacilitiesRequest facilitiesRequest = 26;
     UpFacilityRequest upFacilityRequest = 27;
     TransformRequest transformRequest = 28;
+    DisposeRequest disposeRequest = 29;
   }
 
   string trace_id = 100;
@@ -72,6 +73,7 @@ message PlayerResponse {
     FacilitiesResponse facilitiesResponse = 26;
     UpFacilityResponse upFacilityResponse = 27;
     TransformResponse transformResponse = 28;
+    DisposeResponse disposeResponse = 29;
   }
 }
 
@@ -248,6 +250,18 @@ message TransformRequest {
 }
 
 message TransformResponse {
+}
+
+// 配置武将
+message DisposeRequest {
+  int32 city_id = 1;
+  int32 general_id = 2;
+  int32 order = 3; //第几队，1-5队
+  int32 position = 4; //位置，-1到2,-1是解除该武将上阵状态, 0 1 2 分别是三个武将槽位
+}
+
+message DisposeResponse {
+  Army Army = 1;
 }
 
 

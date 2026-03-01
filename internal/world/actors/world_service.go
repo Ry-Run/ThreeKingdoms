@@ -18,23 +18,24 @@ type CityID = entity.CityID
 type ArmyID = entity.ArmyID
 type CityState = entity.CityState
 
-func (s *WorldService) CreateCity(e *entity.WorldEntity, request *messages.HWCreateCity) CityID {
+func (s *WorldService) CreateCity(e *entity.WorldEntity, request *messages.HWCreateCity) *messages.WHCreateCity {
 	if request == nil {
-		return -1
+		return &messages.WHCreateCity{}
 	}
 	PlayerId := entity.PlayerID(request.PlayerId)
 	cities, ok := e.GetCityByPlayer(PlayerId)
 
 	if ok && cities != nil {
-		return -1
+		return &messages.WHCreateCity{}
 	}
 	id, _ := utils.NextSnowflakeID()
 	cityID := CityID(id)
 
 	var city CityState
+	var x, y int
 	for {
-		x := rand.Intn(_map.MapWidth)
-		y := rand.Intn(_map.MapHeight)
+		x = rand.Intn(_map.MapWidth)
+		y = rand.Intn(_map.MapHeight)
 
 		if !CanBuildCity(e, x, y) {
 			continue
@@ -56,7 +57,7 @@ func (s *WorldService) CreateCity(e *entity.WorldEntity, request *messages.HWCre
 	cityMap := make(map[CityID]CityState)
 	cityMap[cityID] = city
 	e.PutCityByPlayer(PlayerId, cityMap)
-	return cityID
+	return &messages.WHCreateCity{CityId: int(id), X: x, Y: y}
 }
 
 func (s *WorldService) ScanBlock(w *WorldActor, request *messages.HWScanBlock) *messages.WHScanBlock {

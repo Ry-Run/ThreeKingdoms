@@ -8,6 +8,8 @@ import (
 type CityDoc struct {
 	Name  string `bson:"name"`
 	Level int8   `bson:"level"`
+	X     int    `bson:"x"`
+	Y     int    `bson:"y"`
 }
 
 func CityStateToDoc(s entity.CityState) CityDoc {
@@ -15,6 +17,8 @@ func CityStateToDoc(s entity.CityState) CityDoc {
 	return CityDoc{
 		Name:  state.Name,
 		Level: state.Level,
+		X:     state.X,
+		Y:     state.Y,
 	}
 }
 
@@ -22,6 +26,8 @@ func CityDocToState(d CityDoc) entity.CityState {
 	state := entity.CityState{
 		Name:  d.Name,
 		Level: d.Level,
+		X:     d.X,
+		Y:     d.Y,
 	}
 	return entity.HydrateCityEntity(state).Save()
 }

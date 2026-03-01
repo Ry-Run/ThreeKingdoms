@@ -14,11 +14,9 @@ type Player struct {
 	profile    *Role
 	resource   *Resource
 	attribute  *RoleAttribute
-	x          int
-	y          int
 	buildings  []*Building
-	armies     map[CityID][]*Army
-	generals   []*General
+	armies     map[int]*Army
+	generals   map[int]*General
 	facility   []*Facility
 	warReports map[int]*WarReport
 	skills     map[int]*Skill

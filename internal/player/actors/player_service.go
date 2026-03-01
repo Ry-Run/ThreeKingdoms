@@ -9,6 +9,7 @@ import (
 	commonpb "ThreeKingdoms/internal/shared/gen/common"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/security"
+	"ThreeKingdoms/internal/shared/utils"
 	"context"
 	"errors"
 	"time"
@@ -109,10 +110,8 @@ func (s *PlayerService) MyProperty(player *entity.PlayerEntity) *playerpb.Player
 	})
 	//军队
 	armies := make([]*playerpb.Army, 0, player.LenArmies())
-	player.ForEachArmies(func(i CityID, v []entity.ArmyState) {
-		for _, arm := range v {
-			armies = append(armies, ToPBArmy(arm))
-		}
+	player.ForEachArmies(func(k int, v entity.ArmyState) {
+		armies = append(armies, ToPBArmy(player.CityID(), v))
 	})
 
 	return &playerpb.PlayerResponse{
@@ -206,7 +205,9 @@ func (s *PlayerService) GetGenerals(player *entity.PlayerEntity) (*playerpb.Play
 			cfgId := general.Rand()
 			// 创建 general
 			cfg := general.General.GMap[cfgId]
+			id, _ := utils.NextSnowflakeID()
 			generalState := entity.GeneralState{
+				Id:             int(id),
 				Power:          basic.BasicConf.General.PowerLimit,
 				CfgId:          cfg.CfgId,
 				Order:          0,
@@ -228,7 +229,7 @@ func (s *PlayerService) GetGenerals(player *entity.PlayerEntity) (*playerpb.Play
 				Skills:         make([]entity.GSkillState, 0),
 				State:          general.GeneralNormal,
 			}
-			player.AppendGenerals(generalState)
+			player.PutGenerals(generalState.Id, generalState)
 		}
 	}
 
@@ -370,7 +371,7 @@ func ToPBGSkill(skill entity.GSkillState) *playerpb.GSkill {
 	}
 }
 
-func ToPBArmy(a entity.ArmyState) *playerpb.Army {
+func ToPBArmy(cityId CityID, a entity.ArmyState) *playerpb.Army {
 	// ArmyEntity 当前无 unionId，proto.UnionId 保持默认值。
 	// start/end 参照旧 ToModel 使用秒；若前端期望毫秒需改为 UnixNano()/1e6。
 	generals := make([]int32, 0, len(a.GeneralArray))
@@ -392,7 +393,7 @@ func ToPBArmy(a entity.ArmyState) *playerpb.Army {
 
 	return &playerpb.Army{
 		Id:       int32(a.Id),
-		CityId:   int32(a.CityId),
+		CityId:   int32(cityId),
 		Order:    int32(a.Order),
 		UnionId:  0,
 		Generals: generals,
@@ -514,17 +515,17 @@ func timeToMillis(t time.Time) int64 {
 	return t.UnixNano() / 1e6
 }
 
-func ToPBWarReport(v entity.WarReportState) *playerpb.WarReport {
+func ToPBWarReport(cityId CityID, v entity.WarReportState) *playerpb.WarReport {
 	// CTime 在实体中是 int，当前直接透传到 proto int64；
 	// 若后续统一时间单位（秒/毫秒）规范，这里再一起收敛。
 	return &playerpb.WarReport{
 		Id:                int32(v.Id),
 		AttackRid:         int32(v.Attacker),
 		DefenseRid:        int32(v.Defender),
-		BegAttackArmy:     ToPBArmy(v.BegAttackArmy),
-		BegDefenseArmy:    ToPBArmy(v.BegDefenseArmy),
-		EndAttackArmy:     ToPBArmy(v.EndAttackArmy),
-		EndDefenseArmy:    ToPBArmy(v.EndDefenseArmy),
+		BegAttackArmy:     ToPBArmy(cityId, v.BegAttackArmy),
+		BegDefenseArmy:    ToPBArmy(cityId, v.BegDefenseArmy),
+		EndAttackArmy:     ToPBArmy(cityId, v.EndAttackArmy),
+		EndDefenseArmy:    ToPBArmy(cityId, v.EndDefenseArmy),
 		BegAttackGeneral:  ToPBGeneral(v.BegAttackGeneral),
 		BegDefenseGeneral: ToPBGeneral(v.BegDefenseGeneral),
 		EndAttackGeneral:  ToPBGeneral(v.EndAttackGeneral),

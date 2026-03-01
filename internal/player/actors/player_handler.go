@@ -67,6 +67,8 @@ func (h *PlayerHandler) HandleEnterServerRequest(ctx actor.Context, p *PlayerAct
 		if createCityRes, ok := res.(*messages.WHCreateCity); ok {
 			player.SetCityID(CityID(createCityRes.CityId))
 			player.City().SetLevel(1)
+			player.City().SetX(createCityRes.X)
+			player.City().SetY(createCityRes.Y)
 		} else {
 			ctx.Logger().Info("position", "err", entity.ErrCreateCity)
 		}
@@ -191,11 +193,12 @@ func (h *PlayerHandler) HandleMyGeneralsRequest(ctx actor.Context, p *PlayerActo
 }
 
 func (h *PlayerHandler) HandleArmyListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.ArmyListRequest) {
-	armies, _ := p.Entity().GetArmies(CityID(request.CityId))
-	pbArmies := make([]*playerpb.Army, 0, len(armies))
-	for _, v := range armies {
-		pbArmies = append(pbArmies, ToPBArmy(v))
-	}
+	player := p.Entity()
+	pbArmies := make([]*playerpb.Army, 0, player.LenArmies())
+	player.ForEachArmies(func(i int, v entity.ArmyState) {
+		pbArmies = append(pbArmies, ToPBArmy(player.CityID(), v))
+	})
+
 	ctx.Respond(&playerpb.ArmyListResponse{
 		CityId: request.CityId,
 		Armies: pbArmies,
@@ -206,7 +209,7 @@ func (h *PlayerHandler) HandleWarReportRequest(ctx actor.Context, p *PlayerActor
 	player := p.Entity()
 	warReports := make([]*playerpb.WarReport, 0, player.LenWarReports())
 	player.ForEachWarReports(func(i int, v entity.WarReportState) {
-		warReports = append(warReports, ToPBWarReport(v))
+		warReports = append(warReports, ToPBWarReport(player.CityID(), v))
 	})
 	ctx.Respond(&playerpb.WarReportResponse{
 		WarReports: warReports,
@@ -494,7 +497,11 @@ func (h *PlayerHandler) HandleDrawGeneralRequest(ctx actor.Context, p *PlayerAct
 		ctx.Respond(fail(err.Error()))
 		return
 	}
-	dirty := player.AppendGenerals(generals...)
+
+	var dirty bool
+	for _, g := range generals {
+		dirty = player.PutGenerals(g.Id, g) || dirty
+	}
 
 	// 扣钱
 	dirty = resource.SetGold(resource.Gold()-totalCost) || dirty
@@ -710,6 +717,173 @@ func (h *PlayerHandler) HandleTransformRequest(ctx actor.Context, p *PlayerActor
 	ctx.Respond(response)
 }
 
+func (h *PlayerHandler) HandleDisposeRequest(ctx actor.Context, p *PlayerActor, request *playerpb.DisposeRequest) {
+	order := int(request.Order)
+	position := int(request.Position)
+	generalId := int(request.GeneralId)
+	if order <= 0 || order > 5 || position < -1 || position > 2 || generalId <= 0 {
+		ctx.Respond(fail("request param is invalid"))
+		return
+	}
+	// 校场每升一级一个队伍
+	player := p.Entity()
+	if f, b := player.AtFacility(facility.JiaoChang); !b || f.PrivateLevel < order {
+		ctx.Respond(fail("order is unlock"))
+		return
+	}
+
+	opGeneral, b := player.GetGenerals(generalId)
+	if !b {
+		ctx.Respond(fail("generals not found"))
+		return
+	}
+
+	army, b := player.GetArmies(order)
+	x := player.City().X()
+	y := player.City().Y()
+	if !b {
+		army.Id = order
+		army = entity.ArmyState{
+			Id:                order,
+			Order:             int8(order),
+			CityId:            player.CityID(),
+			Generals:          []int{0, 0, 0},
+			Soldiers:          []int{0, 0, 0},
+			ConscriptCounts:   []int{0, 0, 0},
+			ConscriptEndTimes: []int64{0, 0, 0},
+			CellX:             x,
+			CellY:             y,
+			FromX:             x,
+			FromY:             y,
+			ToX:               x,
+			ToY:               y,
+		}
+	}
+
+	// 判断 army 是否在城内
+	//if army.CellX != x || army.CellY != y {
+	//	ctx.Respond(fail("army dont in city"))
+	//	return
+	//}
+
+	if army.ToX != 0 || army.ToY != 0 {
+		ctx.Respond(fail("army dont in city"))
+		return
+	}
+
+	//下阵
+	if position == -1 {
+		for pos, g := range army.Generals {
+			if g != 0 && g == opGeneral.Id {
+				// 征兵中不能下阵
+				if !PositionCanModify(army, pos) {
+					if army.Cmd == entity.ArmyCmdConscript {
+						ctx.Respond(fail("generals busy"))
+					} else {
+						ctx.Respond(fail("army busy"))
+					}
+					return
+				}
+				player.UpdateArmies(army.Id, func(value *entity.ArmyEntity) {
+					value.SetGeneralsAt(pos, 0)
+					value.SetSoldiersAt(pos, 0)
+					value.SetCityId(0)
+				})
+				break
+			}
+		}
+		player.UpdateGenerals(opGeneral.Id, func(value *entity.GeneralEntity) {
+			value.SetCurArms(0)
+			value.SetOrder(0)
+		})
+	} else {
+		//征兵中不能上阵
+		if !PositionCanModify(army, position) == false {
+			if army.Cmd == entity.ArmyCmdConscript {
+				ctx.Respond(fail("generals busy"))
+			} else {
+				ctx.Respond(fail("army busy"))
+			}
+			return
+		}
+		if opGeneral.CityId != 0 {
+			ctx.Respond(fail("generals busy"))
+			return
+		}
+		if GeneralIsRepeat(player, army, opGeneral.CfgId) {
+			ctx.Respond(fail("generals repeat"))
+			return
+		}
+		// position == 2 是前锋，判断是否能配前锋
+		var err error
+		if position == 2 {
+			player.RangeFacility(func(i int, v entity.FacilityState) bool {
+				if v.FType == facility.TongShuaiTing {
+					if v.PrivateLevel <= 0 {
+						err = fmt.Errorf("TongShuaiTing is unlock")
+					}
+					return false
+				}
+				return true
+			})
+		}
+
+		if err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
+
+		//判断 cost。点数不足不能上阵
+		cost := general.General.Cost(opGeneral.CfgId)
+		for i, g := range army.Generals {
+			curGeneral, b := player.GetGenerals(g)
+			if !b || g == 0 || i == position {
+				continue
+			}
+			cost += general.General.Cost(curGeneral.CfgId)
+		}
+
+		if GetCost(player) < cost {
+			ctx.Respond(fail("cost is insufficient"))
+			return
+		}
+
+		oldG := army.Generals[position]
+		if oldG != 0 {
+			//旧的下阵
+			player.UpdateGenerals(oldG, func(value *entity.GeneralEntity) {
+				value.SetCurArms(0)
+				value.SetOrder(0)
+				value.SetCityId(0)
+			})
+		}
+
+		//新的上阵
+		army.Generals[position] = opGeneral.Id
+		army.Soldiers[position] = 0
+
+		player.UpdateGenerals(opGeneral.Id, func(value *entity.GeneralEntity) {
+			value.SetCurArms(order)
+			value.SetOrder(int8(order))
+			value.SetCityId(int(request.CityId))
+		})
+
+		player.UpdateArmies(army.Id, func(value *entity.ArmyEntity) {
+			value.SetFromX(player.City().X())
+			value.SetFromY(player.City().Y())
+		})
+	}
+
+	army, _ = player.GetArmies(order)
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_DisposeResponse{
+		DisposeResponse: &playerpb.DisposeResponse{
+			Army: ToPBArmy(player.CityID(), army),
+		},
+	}
+	ctx.Respond(response)
+}
+
 func draw(times int) ([]entity.GeneralState, error) {
 	if times <= 0 {
 		return nil, fmt.Errorf("invalid draw times")
@@ -727,11 +901,59 @@ func draw(times int) ([]entity.GeneralState, error) {
 		generalS := entity.GeneralState{
 			Id:    int(id),
 			CfgId: cfgId,
-			Level: 0,
+			Level: 1,
 		}
 		generals = append(generals, generalS)
 	}
 	return generals, nil
+}
+
+func PositionCanModify(a entity.ArmyState, pos int) bool {
+	if pos >= 3 || pos < 0 {
+		return false
+	}
+
+	if a.Cmd == entity.ArmyCmdIdle {
+		return true
+	} else if a.Cmd == entity.ArmyCmdConscript {
+		endTime := a.ConscriptEndTimes[pos]
+		return endTime == 0
+	}
+
+	return false
+}
+
+func GeneralIsRepeat(p *entity.PlayerEntity, a entity.ArmyState, cfgId int) bool {
+	if p == nil {
+		return true
+	}
+	for _, g := range a.Generals {
+		generalState, ok := p.GetGenerals(g)
+		if ok && generalState.CfgId == cfgId {
+			return true
+		}
+	}
+	return false
+}
+
+func GetCost(p *entity.PlayerEntity) int8 {
+	cost := 0
+	p.ForEachFacility(func(i int, v entity.FacilityState) {
+		if v.PrivateLevel > 0 {
+			f, ok := facility.FacilityConf.GetFacility(v.FType)
+			if ok {
+				level, ok := f.LevelMap[v.PrivateLevel]
+				if ok {
+					for i, fType := range f.Additions {
+						if fType == facility.TypeCost {
+							cost += level.Values[i]
+						}
+					}
+				}
+			}
+		}
+	})
+	return int8(cost)
 }
 
 func okWithAllianceList(list []messages.Alliance) *playerpb.PlayerResponse {

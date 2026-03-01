@@ -13,11 +13,9 @@ type PlayerDoc struct {
 	Profile    RoleDoc              `bson:"profile"`
 	Resource   ResourceDoc          `bson:"resource"`
 	Attribute  RoleAttributeDoc     `bson:"attribute"`
-	X          int                  `bson:"x"`
-	Y          int                  `bson:"y"`
 	Buildings  []BuildingDoc        `bson:"buildings"`
-	Armies     map[CityID][]ArmyDoc `bson:"armies"`
-	Generals   []GeneralDoc         `bson:"generals"`
+	Armies     map[int]ArmyDoc      `bson:"armies"`
+	Generals   map[int]GeneralDoc   `bson:"generals"`
 	Facility   []FacilityDoc        `bson:"facility"`
 	WarReports map[int]WarReportDoc `bson:"war_reports"`
 	Skills     map[int]SkillDoc     `bson:"skills"`
@@ -46,68 +44,46 @@ func toStateSlice_buildings(in []BuildingDoc) []entity.BuildingState {
 	return out
 }
 
-func toDoc_armies(in map[CityID][]entity.ArmyState) map[CityID][]ArmyDoc {
-	var out map[CityID][]ArmyDoc
-	if in == nil {
-		out = nil
-	} else {
-		out0 := make(map[CityID][]ArmyDoc, len(in))
-		for k1, v2 := range in {
-			if v2 == nil {
-				out0[k1] = nil
-			} else {
-				out3 := make([]ArmyDoc, len(v2))
-				for i4, v5 := range v2 {
-					out3[i4] = ArmyStateToDoc(v5)
-				}
-				out0[k1] = out3
-			}
-		}
-		out = out0
-	}
-	return out
-}
-
-func toState_armies(in map[CityID][]ArmyDoc) map[CityID][]entity.ArmyState {
-	var out map[CityID][]entity.ArmyState
-	if in == nil {
-		out = nil
-	} else {
-		out0 := make(map[CityID][]entity.ArmyState, len(in))
-		for k1, v2 := range in {
-			if v2 == nil {
-				out0[k1] = nil
-			} else {
-				out3 := make([]entity.ArmyState, len(v2))
-				for i4, v5 := range v2 {
-					out3[i4] = ArmyDocToState(v5)
-				}
-				out0[k1] = out3
-			}
-		}
-		out = out0
-	}
-	return out
-}
-
-func toDocSlice_generals(in []entity.GeneralState) []GeneralDoc {
+func toDocMap_armies(in map[int]entity.ArmyState) map[int]ArmyDoc {
 	if in == nil {
 		return nil
 	}
-	out := make([]GeneralDoc, len(in))
-	for i, v := range in {
-		out[i] = GeneralStateToDoc(v)
+	out := make(map[int]ArmyDoc, len(in))
+	for k, v := range in {
+		out[k] = ArmyStateToDoc(v)
 	}
 	return out
 }
 
-func toStateSlice_generals(in []GeneralDoc) []entity.GeneralState {
+func toStateMap_armies(in map[int]ArmyDoc) map[int]entity.ArmyState {
 	if in == nil {
 		return nil
 	}
-	out := make([]entity.GeneralState, len(in))
-	for i, v := range in {
-		out[i] = GeneralDocToState(v)
+	out := make(map[int]entity.ArmyState, len(in))
+	for k, v := range in {
+		out[k] = ArmyDocToState(v)
+	}
+	return out
+}
+
+func toDocMap_generals(in map[int]entity.GeneralState) map[int]GeneralDoc {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]GeneralDoc, len(in))
+	for k, v := range in {
+		out[k] = GeneralStateToDoc(v)
+	}
+	return out
+}
+
+func toStateMap_generals(in map[int]GeneralDoc) map[int]entity.GeneralState {
+	if in == nil {
+		return nil
+	}
+	out := make(map[int]entity.GeneralState, len(in))
+	for k, v := range in {
+		out[k] = GeneralDocToState(v)
 	}
 	return out
 }
@@ -188,11 +164,9 @@ func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 		Profile:    RoleStateToDoc(state.Profile),
 		Resource:   ResourceStateToDoc(state.Resource),
 		Attribute:  RoleAttributeStateToDoc(state.Attribute),
-		X:          state.X,
-		Y:          state.Y,
 		Buildings:  toDocSlice_buildings(state.Buildings),
-		Armies:     toDoc_armies(state.Armies),
-		Generals:   toDocSlice_generals(state.Generals),
+		Armies:     toDocMap_armies(state.Armies),
+		Generals:   toDocMap_generals(state.Generals),
 		Facility:   toDocSlice_facility(state.Facility),
 		WarReports: toDocMap_warReports(state.WarReports),
 		Skills:     toDocMap_skills(state.Skills),
@@ -209,11 +183,9 @@ func PlayerDocToState(d PlayerDoc) entity.PlayerState {
 		Profile:    RoleDocToState(d.Profile),
 		Resource:   ResourceDocToState(d.Resource),
 		Attribute:  RoleAttributeDocToState(d.Attribute),
-		X:          d.X,
-		Y:          d.Y,
 		Buildings:  toStateSlice_buildings(d.Buildings),
-		Armies:     toState_armies(d.Armies),
-		Generals:   toStateSlice_generals(d.Generals),
+		Armies:     toStateMap_armies(d.Armies),
+		Generals:   toStateMap_generals(d.Generals),
 		Facility:   toStateSlice_facility(d.Facility),
 		WarReports: toStateMap_warReports(d.WarReports),
 		Skills:     toStateMap_skills(d.Skills),

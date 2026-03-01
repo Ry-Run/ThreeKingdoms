@@ -804,7 +804,7 @@ func genBasicTypesAndEnums(entityPkg pkgInfo, blueprintAbs string, entityNames m
 			if !ok || gd.Tok != token.CONST {
 				continue
 			}
-			if !constBlockUsesTypes(gd, typeNames) {
+			if !constBlockShouldEmit(gd, typeNames) {
 				continue
 			}
 			constDecls = append(constDecls, renderNode(fset, gd))
@@ -851,14 +851,18 @@ func renderNode(fset *token.FileSet, node ast.Node) string {
 	return b.String()
 }
 
-func constBlockUsesTypes(gd *ast.GenDecl, typeNames map[string]bool) bool {
+func constBlockShouldEmit(gd *ast.GenDecl, typeNames map[string]bool) bool {
+	hasValueSpec := false
+	hasExplicitType := false
 	currentType := ""
 	for _, spec := range gd.Specs {
 		vs, ok := spec.(*ast.ValueSpec)
 		if !ok {
 			continue
 		}
+		hasValueSpec = true
 		if vs.Type != nil {
+			hasExplicitType = true
 			if id, ok := vs.Type.(*ast.Ident); ok {
 				currentType = id.Name
 			} else {
@@ -869,6 +873,13 @@ func constBlockUsesTypes(gd *ast.GenDecl, typeNames map[string]bool) bool {
 			return true
 		}
 	}
+
+	// 额外支持 domain 中“无显式类型”的常量块（例如 ArmyCmd/ArmyState 等枚举）镜像到 types_gen.go。
+	// 这类常量不依赖本地类型声明，复制到生成包通常是安全的。
+	if hasValueSpec && !hasExplicitType {
+		return true
+	}
+
 	return false
 }
 

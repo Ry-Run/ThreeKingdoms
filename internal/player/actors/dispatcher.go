@@ -49,6 +49,7 @@ func (d *Dispatcher) registerAll() {
 	register(d, PH.HandleFacilitiesRequest)
 	register(d, PH.HandleUpFacilityRequest)
 	register(d, PH.HandleTransformRequest)
+	register(d, PH.HandleDisposeRequest)
 }
 
 // register 注册统一分发函数，要求 Req/Rep 都是 protobuf 指针消息。
@@ -138,6 +139,8 @@ func unwrapPlayerRequestBody(req *playerpb.PlayerRequest) proto.Message {
 		return body.UpFacilityRequest
 	case *playerpb.PlayerRequest_TransformRequest:
 		return body.TransformRequest
+	case *playerpb.PlayerRequest_DisposeRequest:
+		return body.DisposeRequest
 	default:
 		return nil
 	}

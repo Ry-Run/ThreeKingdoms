@@ -18,8 +18,7 @@ func (h *WorldHandler) HandleHWCreateCity(ctx actor.Context, w *WorldActor, requ
 		return
 	}
 
-	cityID := WS.CreateCity(w.Entity(), request)
-	ctx.Respond(&messages.WHCreateCity{CityId: int(cityID)})
+	ctx.Respond(WS.CreateCity(w.Entity(), request))
 }
 
 func (h *WorldHandler) HandleHWMyCities(ctx actor.Context, w *WorldActor, request *messages.HWMyCities) {

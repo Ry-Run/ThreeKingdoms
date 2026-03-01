@@ -7,104 +7,67 @@ import (
 )
 
 type ArmyDoc struct {
-	Id                 int          `bson:"id"`
-	CityId             CityID       `bson:"city_id"`
-	Order              int8         `bson:"order"`
-	Generals           string       `bson:"generals"`
-	Soldiers           string       `bson:"soldiers"`
-	ConscriptEndTime   string       `bson:"conscript_end_time"`
-	ConscriptQuantity  string       `bson:"conscript_quantity"`
-	Cmd                int8         `bson:"cmd"`
-	FromX              int          `bson:"from_x"`
-	FromY              int          `bson:"from_y"`
-	ToX                int          `bson:"to_x"`
-	ToY                int          `bson:"to_y"`
-	StartTime          time.Time    `bson:"start_time"`
-	EndTime            time.Time    `bson:"end_time"`
-	State              int8         `bson:"state"`
-	GeneralArray       []int        `bson:"general_array"`
-	SoldierArray       []int        `bson:"soldier_array"`
-	ConscriptTimeArray []int64      `bson:"conscript_time_array"`
-	ConscriptCntArray  []int        `bson:"conscript_cnt_array"`
-	Gens               []GeneralDoc `bson:"gens"`
-	CellX              int          `bson:"cell_x"`
-	CellY              int          `bson:"cell_y"`
-}
-
-func toDocSlice_gens(in []entity.GeneralState) []GeneralDoc {
-	if in == nil {
-		return nil
-	}
-	out := make([]GeneralDoc, len(in))
-	for i, v := range in {
-		out[i] = GeneralStateToDoc(v)
-	}
-	return out
-}
-
-func toStateSlice_gens(in []GeneralDoc) []entity.GeneralState {
-	if in == nil {
-		return nil
-	}
-	out := make([]entity.GeneralState, len(in))
-	for i, v := range in {
-		out[i] = GeneralDocToState(v)
-	}
-	return out
+	Id                int       `bson:"id"`
+	CityId            CityID    `bson:"city_id"`
+	Order             int8      `bson:"order"`
+	Generals          []int     `bson:"generals"`
+	Soldiers          []int     `bson:"soldiers"`
+	Cmd               int8      `bson:"cmd"`
+	FromX             int       `bson:"from_x"`
+	FromY             int       `bson:"from_y"`
+	ToX               int       `bson:"to_x"`
+	ToY               int       `bson:"to_y"`
+	StartTime         time.Time `bson:"start_time"`
+	EndTime           time.Time `bson:"end_time"`
+	State             int8      `bson:"state"`
+	ConscriptEndTimes []int64   `bson:"conscript_end_times"`
+	ConscriptCounts   []int     `bson:"conscript_counts"`
+	CellX             int       `bson:"cell_x"`
+	CellY             int       `bson:"cell_y"`
 }
 
 func ArmyStateToDoc(s entity.ArmyState) ArmyDoc {
 	state := entity.HydrateArmyEntity(s).Save()
 	return ArmyDoc{
-		Id:                 state.Id,
-		CityId:             state.CityId,
-		Order:              state.Order,
-		Generals:           state.Generals,
-		Soldiers:           state.Soldiers,
-		ConscriptEndTime:   state.ConscriptEndTime,
-		ConscriptQuantity:  state.ConscriptQuantity,
-		Cmd:                state.Cmd,
-		FromX:              state.FromX,
-		FromY:              state.FromY,
-		ToX:                state.ToX,
-		ToY:                state.ToY,
-		StartTime:          state.StartTime,
-		EndTime:            state.EndTime,
-		State:              state.State,
-		GeneralArray:       state.GeneralArray,
-		SoldierArray:       state.SoldierArray,
-		ConscriptTimeArray: state.ConscriptTimeArray,
-		ConscriptCntArray:  state.ConscriptCntArray,
-		Gens:               toDocSlice_gens(state.Gens),
-		CellX:              state.CellX,
-		CellY:              state.CellY,
+		Id:                state.Id,
+		CityId:            state.CityId,
+		Order:             state.Order,
+		Generals:          state.Generals,
+		Soldiers:          state.Soldiers,
+		Cmd:               state.Cmd,
+		FromX:             state.FromX,
+		FromY:             state.FromY,
+		ToX:               state.ToX,
+		ToY:               state.ToY,
+		StartTime:         state.StartTime,
+		EndTime:           state.EndTime,
+		State:             state.State,
+		ConscriptEndTimes: state.ConscriptEndTimes,
+		ConscriptCounts:   state.ConscriptCounts,
+		CellX:             state.CellX,
+		CellY:             state.CellY,
 	}
 }
 
 func ArmyDocToState(d ArmyDoc) entity.ArmyState {
 	state := entity.ArmyState{
-		Id:                 d.Id,
-		CityId:             d.CityId,
-		Order:              d.Order,
-		Generals:           d.Generals,
-		Soldiers:           d.Soldiers,
-		ConscriptEndTime:   d.ConscriptEndTime,
-		ConscriptQuantity:  d.ConscriptQuantity,
-		Cmd:                d.Cmd,
-		FromX:              d.FromX,
-		FromY:              d.FromY,
-		ToX:                d.ToX,
-		ToY:                d.ToY,
-		StartTime:          d.StartTime,
-		EndTime:            d.EndTime,
-		State:              d.State,
-		GeneralArray:       d.GeneralArray,
-		SoldierArray:       d.SoldierArray,
-		ConscriptTimeArray: d.ConscriptTimeArray,
-		ConscriptCntArray:  d.ConscriptCntArray,
-		Gens:               toStateSlice_gens(d.Gens),
-		CellX:              d.CellX,
-		CellY:              d.CellY,
+		Id:                d.Id,
+		CityId:            d.CityId,
+		Order:             d.Order,
+		Generals:          d.Generals,
+		Soldiers:          d.Soldiers,
+		Cmd:               d.Cmd,
+		FromX:             d.FromX,
+		FromY:             d.FromY,
+		ToX:               d.ToX,
+		ToY:               d.ToY,
+		StartTime:         d.StartTime,
+		EndTime:           d.EndTime,
+		State:             d.State,
+		ConscriptEndTimes: d.ConscriptEndTimes,
+		ConscriptCounts:   d.ConscriptCounts,
+		CellX:             d.CellX,
+		CellY:             d.CellY,
 	}
 	return entity.HydrateArmyEntity(state).Save()
 }

@@ -8,6 +8,8 @@ import (
 const (
 	FieldCity_name  Field = "name"
 	FieldCity_level Field = "level"
+	FieldCity_x     Field = "x"
+	FieldCity_y     Field = "y"
 )
 
 var emptyCityEntity = &CityEntity{}
@@ -145,6 +147,8 @@ func (t *CityEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 type CityState struct {
 	Name  string
 	Level int8
+	X     int
+	Y     int
 }
 
 type CityEntitySnap struct {
@@ -157,6 +161,8 @@ type CityEntitySnap struct {
 type CityEntity struct {
 	name  string
 	level int8
+	x     int
+	y     int
 	_dt   CityEntityTrace
 }
 
@@ -164,6 +170,8 @@ func HydrateCityEntity(s CityState) *CityEntity {
 	return &CityEntity{
 		name:  s.Name,
 		level: s.Level,
+		x:     s.X,
+		y:     s.Y,
 	}
 }
 
@@ -285,6 +293,8 @@ func (e *CityEntity) Save() CityState {
 	}
 	s.Name = e.name
 	s.Level = e.level
+	s.X = e.x
+	s.Y = e.y
 	return s
 }
 
@@ -355,5 +365,45 @@ func (e *CityEntity) SetLevel(v int8) bool {
 	}
 	e.level = v
 	e._dt.mark(FieldCity_level)
+	return true
+}
+
+func (e *CityEntity) X() int {
+	if e == nil {
+		var z int
+		return z
+	}
+	return e.x
+}
+
+func (e *CityEntity) SetX(v int) bool {
+	if e == nil {
+		return false
+	}
+	if e.x == v {
+		return false
+	}
+	e.x = v
+	e._dt.mark(FieldCity_x)
+	return true
+}
+
+func (e *CityEntity) Y() int {
+	if e == nil {
+		var z int
+		return z
+	}
+	return e.y
+}
+
+func (e *CityEntity) SetY(v int) bool {
+	if e == nil {
+		return false
+	}
+	if e.y == v {
+		return false
+	}
+	e.y = v
+	e._dt.mark(FieldCity_y)
 	return true
 }

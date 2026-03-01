@@ -14,6 +14,14 @@ type general struct {
 	totalProbability int
 }
 
+func (g general) Cost(id int) int8 {
+	curGeneral, ok := g.GMap[id]
+	if !ok {
+		return 0
+	}
+	return curGeneral.Cost
+}
+
 type generalDetail struct {
 	Name         string `json:"name"`
 	CfgId        int    `json:"cfgId"`

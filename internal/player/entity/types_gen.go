@@ -10,3 +10,24 @@ type CityID int
 type AllianceID int
 
 type RoleStatus int
+
+const (
+	ArmyCmdIdle        = 0 //空闲
+	ArmyCmdAttack      = 1 //攻击
+	ArmyCmdDefend      = 2 //驻守
+	ArmyCmdReclamation = 3 //屯垦
+	ArmyCmdBack        = 4 //撤退
+	ArmyCmdConscript   = 5 //征兵
+	ArmyCmdTransfer    = 6 //调动
+)
+
+const (
+	ArmyStop    = 0
+	ArmyRunning = 1
+)
+
+const (
+	BuildingSysFortress = 50 //系统要塞
+	BuildingSysCity     = 51 //系统城市
+	BuildingFortress    = 56 //玩家要塞
+)
