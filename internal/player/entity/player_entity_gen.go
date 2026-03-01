@@ -23,6 +23,7 @@ const (
 	FieldPlayer_facility   Field = "facility"
 	FieldPlayer_warReports Field = "warReports"
 	FieldPlayer_skills     Field = "skills"
+	FieldPlayer_city       Field = "city"
 )
 
 var emptyPlayerEntity = &PlayerEntity{}
@@ -229,6 +230,7 @@ type PlayerState struct {
 	Facility   []FacilityState
 	WarReports map[int]WarReportState
 	Skills     map[int]SkillState
+	City       CityState
 }
 
 type PlayerEntitySnap struct {
@@ -256,6 +258,7 @@ type PlayerEntity struct {
 	facility   []*FacilityEntity
 	warReports map[int]*WarReportEntity
 	skills     map[int]*SkillEntity
+	city       *CityEntity
 	_dt        PlayerEntityTrace
 }
 
@@ -587,6 +590,7 @@ func HydratePlayerEntity(s PlayerState) *PlayerEntity {
 		facility:   emptyPlayerEntity.hydrateSliceFacility(s.Facility),
 		warReports: emptyPlayerEntity.hydrateMapWarReports(s.WarReports),
 		skills:     emptyPlayerEntity.hydrateMapSkills(s.Skills),
+		city:       HydrateCityEntity(s.City),
 	}
 }
 
@@ -606,6 +610,9 @@ func (e *PlayerEntity) Dirty() bool {
 	if e.attribute != nil && e.attribute.Dirty() {
 		return true
 	}
+	if e.city != nil && e.city.Dirty() {
+		return true
+	}
 	return false
 }
 
@@ -622,6 +629,9 @@ func (e *PlayerEntity) ClearDirty() {
 	}
 	if e.attribute != nil {
 		e.attribute.ClearDirty()
+	}
+	if e.city != nil {
+		e.city.ClearDirty()
 	}
 }
 
@@ -641,6 +651,9 @@ func (e *PlayerEntity) DirtyFields() []Field {
 	}
 	if e.attribute != nil && e.attribute.Dirty() {
 		trace[FieldPlayer_attribute] = true
+	}
+	if e.city != nil && e.city.Dirty() {
+		trace[FieldPlayer_city] = true
 	}
 	if len(trace) == 0 {
 		return nil
@@ -763,6 +776,12 @@ func (e *PlayerEntity) Save() PlayerState {
 	s.Facility = e.snapshotSliceFacility(e.facility)
 	s.WarReports = e.snapshotMapWarReports(e.warReports)
 	s.Skills = e.snapshotMapSkills(e.skills)
+	if e.city != nil {
+		s.City = e.city.Save()
+	} else {
+		var z CityState
+		s.City = z
+	}
 	return s
 }
 
@@ -1960,5 +1979,49 @@ func (e *PlayerEntity) ClearSkills() bool {
 	e.skills = nil
 	e._dt.markFullReplace(FieldPlayer_skills)
 	e._dt.childDirty_skills = nil
+	return true
+}
+
+func (e *PlayerEntity) City() *CityEntity {
+	if e == nil {
+		return nil
+	}
+	return e.city
+}
+
+func (e *PlayerEntity) SetCity(v CityState) bool {
+	if e == nil {
+		return false
+	}
+	next := HydrateCityEntity(v)
+	if e.city == next {
+		return false
+	}
+	e.city = next
+	e._dt.mark(FieldPlayer_city)
+	return true
+}
+
+func (e *PlayerEntity) SetCityEntity(v *CityEntity) bool {
+	if e == nil {
+		return false
+	}
+	if e.city == v {
+		return false
+	}
+	e.city = v
+	e._dt.mark(FieldPlayer_city)
+	return true
+}
+
+func (e *PlayerEntity) UpdateCity(fn func(value *CityEntity)) bool {
+	if e == nil || fn == nil {
+		return false
+	}
+	if e.city == nil {
+		e.city = &CityEntity{}
+	}
+	fn(e.city)
+	e._dt.mark(FieldPlayer_city)
 	return true
 }

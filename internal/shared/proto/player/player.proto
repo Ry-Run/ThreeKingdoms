@@ -43,6 +43,7 @@ message PlayerRequest {
     DrawGeneralRequest drawGeneralRequest = 25;
     FacilitiesRequest facilitiesRequest = 26;
     UpFacilityRequest upFacilityRequest = 27;
+    TransformRequest transformRequest = 28;
   }
 
   string trace_id = 100;
@@ -70,6 +71,7 @@ message PlayerResponse {
     DrawGeneralResponse drawGeneralResponse = 25;
     FacilitiesResponse facilitiesResponse = 26;
     UpFacilityResponse upFacilityResponse = 27;
+    TransformResponse transformResponse = 28;
   }
 }
 
@@ -238,6 +240,14 @@ message UpFacilityResponse {
   int32 city_id = 1;
   Facility facility = 2;
   Resource resource = 3;
+}
+
+message TransformRequest {
+  repeated int32 from = 1; //0 Wood 1 Iron 2 Stone 3 Grain
+  repeated int32 to = 2; //0 Wood 1 Iron 2 Stone 3 Grain
+}
+
+message TransformResponse {
 }
 
 

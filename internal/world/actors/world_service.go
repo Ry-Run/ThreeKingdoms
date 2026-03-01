@@ -49,6 +49,7 @@ func (s *WorldService) CreateCity(e *entity.WorldEntity, request *messages.HWCre
 			Name:       request.NickName,
 			CurDurable: basic.BasicConf.City.Durable,
 			IsMain:     true,
+			Level:      1,
 		}
 		break
 	}

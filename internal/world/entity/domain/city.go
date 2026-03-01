@@ -11,8 +11,8 @@ type City struct {
 	parentId   int       //上级id
 	pos        *Pos      // 坐标
 	isMain     bool      // 是否是主城
-	level      int8      // 最大耐久
+	level      int8      // 等级
 	curDurable int       // 当前耐久
-	maxDurable int       // 最大等级
+	maxDurable int       // 最大耐久
 	occupyTime time.Time // 占领时间
 }

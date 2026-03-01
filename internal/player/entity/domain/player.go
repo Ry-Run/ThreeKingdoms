@@ -22,4 +22,5 @@ type Player struct {
 	facility   []*Facility
 	warReports map[int]*WarReport
 	skills     map[int]*Skill
+	city       *City
 }

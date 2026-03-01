@@ -66,6 +66,7 @@ func (h *PlayerHandler) HandleEnterServerRequest(ctx actor.Context, p *PlayerAct
 
 		if createCityRes, ok := res.(*messages.WHCreateCity); ok {
 			player.SetCityID(CityID(createCityRes.CityId))
+			player.City().SetLevel(1)
 		} else {
 			ctx.Logger().Info("position", "err", entity.ErrCreateCity)
 		}
@@ -666,6 +667,49 @@ func (h *PlayerHandler) HandleUpFacilityRequest(ctx actor.Context, p *PlayerActo
 	ctx.Respond(response)
 }
 
+func (h *PlayerHandler) HandleTransformRequest(ctx actor.Context, p *PlayerActor, request *playerpb.TransformRequest) {
+	player := p.Entity()
+	if f, ok := player.AtFacility(facility.JiShi); !ok || f.PrivateLevel <= 0 {
+		ctx.Respond(fail("f is unlock"))
+		return
+	}
+
+	from := make([]int, 0, 4)
+	to := make([]int, 0, 4)
+	for _, v := range request.From {
+		from = append(from, int(v))
+	}
+	for _, v := range request.To {
+		to = append(to, int(v))
+	}
+
+	isEnough := Consume(player.Resource(), entity.ResourceState{
+		Wood:  from[0],
+		Iron:  from[1],
+		Stone: from[2],
+		Grain: from[3],
+	})
+
+	if !isEnough {
+		ctx.Respond(fail("resource not enough"))
+		return
+	}
+
+	Gain(player.Resource(), entity.ResourceState{
+		Wood:  to[0],
+		Iron:  to[1],
+		Stone: to[2],
+		Grain: to[3],
+	})
+
+	_ = p.DC().FlushSync(context.TODO())
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_UpFacilityResponse{
+		UpFacilityResponse: &playerpb.UpFacilityResponse{},
+	}
+	ctx.Respond(response)
+}
+
 func draw(times int) ([]entity.GeneralState, error) {
 	if times <= 0 {
 		return nil, fmt.Errorf("invalid draw times")
@@ -788,5 +832,15 @@ func Consume(r *entity.ResourceEntity, cost entity.ResourceState) bool {
 	r.SetGrain(r.Grain() - cost.Grain)
 	r.SetGold(r.Gold() - cost.Gold)
 	r.SetDecree(r.Decree() - cost.Decree)
+	return true
+}
+
+func Gain(r *entity.ResourceEntity, gain entity.ResourceState) bool {
+	r.SetWood(r.Wood() + gain.Wood)
+	r.SetIron(r.Iron() + gain.Iron)
+	r.SetStone(r.Stone() + gain.Stone)
+	r.SetGrain(r.Grain() + gain.Grain)
+	r.SetGold(r.Gold() + gain.Gold)
+	r.SetDecree(r.Decree() + gain.Decree)
 	return true
 }

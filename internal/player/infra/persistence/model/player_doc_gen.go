@@ -21,6 +21,7 @@ type PlayerDoc struct {
 	Facility   []FacilityDoc        `bson:"facility"`
 	WarReports map[int]WarReportDoc `bson:"war_reports"`
 	Skills     map[int]SkillDoc     `bson:"skills"`
+	City       CityDoc              `bson:"city"`
 }
 
 func toDocSlice_buildings(in []entity.BuildingState) []BuildingDoc {
@@ -195,6 +196,7 @@ func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 		Facility:   toDocSlice_facility(state.Facility),
 		WarReports: toDocMap_warReports(state.WarReports),
 		Skills:     toDocMap_skills(state.Skills),
+		City:       CityStateToDoc(state.City),
 	}
 }
 
@@ -215,6 +217,7 @@ func PlayerDocToState(d PlayerDoc) entity.PlayerState {
 		Facility:   toStateSlice_facility(d.Facility),
 		WarReports: toStateMap_warReports(d.WarReports),
 		Skills:     toStateMap_skills(d.Skills),
+		City:       CityDocToState(d.City),
 	}
 	return entity.HydratePlayerEntity(state).Save()
 }
