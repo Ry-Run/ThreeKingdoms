@@ -42,6 +42,17 @@ type generalDetail struct {
 	Camp         int8   `json:"camp"`
 }
 
+type generalBasic struct {
+	Title  string   `json:"title"`
+	Levels []gLevel `json:"levels"`
+}
+
+type gLevel struct {
+	Level    int8 `json:"level"`
+	Exp      int  `json:"exp"`
+	Soldiers int  `json:"soldiers"`
+}
+
 const (
 	GeneralNormal      = 0 //正常
 	GeneralComposeStar = 1 //星级合成
@@ -52,18 +63,25 @@ const SkillLimit = 3
 
 var General = &general{}
 
+var GeneralBasic = &generalBasic{}
+
 func Load() {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
 		panic("load basic config failed: runtime.Caller(0) error")
 	}
-	configPath := filepath.Join(filepath.Dir(file), "basic.json")
+	configDir := filepath.Dir(file)
+	configPath := filepath.Join(configDir, "general.json")
 	config.Load(configPath, &General)
 	General.GMap = make(map[int]generalDetail)
+	General.totalProbability = 0
 	for _, v := range General.GList {
 		General.GMap[v.CfgId] = v
 		General.totalProbability += v.Probability
 	}
+
+	basicPath := filepath.Join(configDir, "general_basic.json")
+	config.Load(basicPath, &GeneralBasic)
 }
 
 // 随机武将
@@ -80,4 +98,13 @@ func Rand() int {
 		current += v.Probability
 	}
 	return 0
+}
+
+func (g *generalBasic) GetLevel(level int8) *gLevel {
+	for i := range g.Levels {
+		if g.Levels[i].Level == level {
+			return &g.Levels[i]
+		}
+	}
+	return nil
 }

@@ -886,7 +886,7 @@ func (h *PlayerHandler) HandleDisposeRequest(ctx actor.Context, p *PlayerActor, 
 }
 
 // 资源基础设施的产出，前端不支持，仅提供后端部分
-func (h *PlayerHandler) HandleResourceRecovery(ctx actor.Context, p *PlayerActor, request *playerpb.UpFacilityRequest) {
+func (h *PlayerHandler) HandleResourceRecovery(ctx actor.Context, p *PlayerActor) {
 	// basic.BasicConf.Role.RecoveryTime: 产出间隔时间，单位秒
 	recoveryMills := int64(basic.BasicConf.Role.RecoveryTime * 1000)
 	nowMills := time.Now().UnixMilli()
@@ -929,6 +929,108 @@ func (h *PlayerHandler) HandleResourceRecovery(ctx actor.Context, p *PlayerActor
 		Grain: yield.Grain * turn,
 	})
 	player.Resource().SetLastClaim(nowMills)
+}
+
+func (h *PlayerHandler) HandleConscriptRequest(ctx actor.Context, p *PlayerActor, request *playerpb.ConscriptRequest) {
+	counts := request.Counts
+	armyId := int(request.ArmyId)
+	//检查参数
+	if len(counts) != 3 || armyId <= 0 {
+		if counts[0] < 0 || counts[1] < 0 || counts[2] < 0 {
+			ctx.Respond(fail("Request param Invalid"))
+			return
+		}
+	}
+	player := p.Entity()
+	army, b := player.GetArmies(armyId)
+	if !b {
+		ctx.Respond(fail("Army Not Found"))
+		return
+	}
+	// 判断位置是否可以征兵。counts 主将、副将、副将：[20,20,0]
+	for pos, v := range counts {
+		if v > 0 {
+			if army.Generals[pos] == 0 {
+				ctx.Respond(fail("Request param Invalid"))
+				return
+			}
+			if !PositionCanModify(army, pos) {
+				ctx.Respond(fail("general busy"))
+				return
+			}
+		}
+	}
+	// 募兵所等级
+	var level int
+	player.RangeFacility(func(i int, v entity.FacilityState) bool {
+		if v.FType == facility.MBS {
+			level = v.PrivateLevel
+			return false
+		}
+		return true
+	})
+	if level <= 0 {
+		ctx.Respond(fail("MBS is unlock"))
+		return
+	}
+	// 是否征兵超限制 根据武将的等级和设施的加成 计算征兵上限
+	for i, g := range army.Generals {
+		generalState, b := player.GetGenerals(g)
+		if g == 0 || !b {
+			continue
+		}
+
+		lv := general.GeneralBasic.GetLevel(generalState.Level)
+		if lv == nil {
+			ctx.Respond(fail("Request param Invalid"))
+			return
+		}
+		add := GetSoldierLimit(player)
+		// 将领带兵数量+基础设施增加的数量 < 当前带兵数量 + 当前征兵数量
+		if lv.Soldiers+add < int(counts[i])+army.Soldiers[i] {
+			ctx.Respond(fail("out of army limit"))
+			return
+		}
+	}
+
+	// 开始征兵 计算消耗资源
+	var total int
+	for _, v := range counts {
+		total += int(v)
+	}
+	cost := entity.ResourceState{
+		Decree: 0,
+		Gold:   total * basic.BasicConf.ConScript.CostGold,
+		Wood:   total * basic.BasicConf.ConScript.CostWood,
+		Iron:   total * basic.BasicConf.ConScript.CostIron,
+		Grain:  total * basic.BasicConf.ConScript.CostGrain,
+		Stone:  total * basic.BasicConf.ConScript.CostStone,
+	}
+	if isEnough := Consume(player.Resource(), cost); !isEnough {
+		ctx.Respond(fail("insufficient resources"))
+		return
+	}
+	//更新部队配置
+	CostMills := int64(basic.BasicConf.ConScript.CostTime * 1000)
+	nowMills := time.Now().UnixMilli()
+	for i, _ := range army.Soldiers {
+		if counts[i] > 0 {
+			army.ConscriptCounts[i] = int(counts[i])
+			army.ConscriptEndTimes[i] = int64(counts[i])*CostMills + nowMills
+		}
+	}
+
+	_ = p.DC().FlushSync(context.TODO())
+
+	army, _ = player.GetArmies(armyId)
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_ConscriptResponse{
+		ConscriptResponse: &playerpb.ConscriptResponse{
+			Army:     ToPBArmy(player.CityID(), army),
+			Resource: ToPBResource(player.Resource()),
+		},
+	}
+	ctx.Respond(response)
 }
 
 func draw(times int) ([]entity.GeneralState, error) {
@@ -1001,6 +1103,26 @@ func GetCost(p *entity.PlayerEntity) int8 {
 		}
 	})
 	return int8(cost)
+}
+
+func GetSoldierLimit(p *entity.PlayerEntity) int {
+	cost := 0
+	p.ForEachFacility(func(i int, v entity.FacilityState) {
+		if v.PrivateLevel > 0 {
+			f, ok := facility.FacilityConf.GetFacility(v.FType)
+			if ok {
+				level, ok := f.LevelMap[v.PrivateLevel]
+				if ok {
+					for i, fType := range f.Additions {
+						if fType == facility.TypeSoldierLimit {
+							cost += level.Values[i]
+						}
+					}
+				}
+			}
+		}
+	})
+	return cost
 }
 
 func okWithAllianceList(list []messages.Alliance) *playerpb.PlayerResponse {

@@ -45,6 +45,7 @@ message PlayerRequest {
     UpFacilityRequest upFacilityRequest = 27;
     TransformRequest transformRequest = 28;
     DisposeRequest disposeRequest = 29;
+    ConscriptRequest ConscriptRequest = 30;
   }
 
   string trace_id = 100;
@@ -74,6 +75,7 @@ message PlayerResponse {
     UpFacilityResponse upFacilityResponse = 27;
     TransformResponse transformResponse = 28;
     DisposeResponse disposeResponse = 29;
+    ConscriptResponse ConscriptResponse = 30;
   }
 }
 
@@ -264,4 +266,13 @@ message DisposeResponse {
   Army Army = 1;
 }
 
+message ConscriptRequest {
+  int32 army_id = 1; //队伍 id
+  repeated int32 counts = 2; //征兵人数 主将、副将、副将：[20,20,0]
+}
+
+message ConscriptResponse {
+    Army army = 1;
+    Resource resource = 2;
+}
 
