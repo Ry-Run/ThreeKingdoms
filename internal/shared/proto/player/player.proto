@@ -46,6 +46,7 @@ message PlayerRequest {
     TransformRequest transformRequest = 28;
     DisposeRequest disposeRequest = 29;
     ConscriptRequest ConscriptRequest = 30;
+    ArmyInfoRequest armyInfoRequest = 31;
   }
 
   string trace_id = 100;
@@ -76,6 +77,7 @@ message PlayerResponse {
     TransformResponse transformResponse = 28;
     DisposeResponse disposeResponse = 29;
     ConscriptResponse ConscriptResponse = 30;
+    ArmyInfoResponse armyInfoResponse = 31;
   }
 }
 
@@ -276,3 +278,11 @@ message ConscriptResponse {
     Resource resource = 2;
 }
 
+// 路由 army.myOne
+message ArmyInfoRequest {
+  int32 order = 1;
+}
+
+message ArmyInfoResponse {
+  Army army = 1;
+}

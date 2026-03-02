@@ -1033,6 +1033,51 @@ func (h *PlayerHandler) HandleConscriptRequest(ctx actor.Context, p *PlayerActor
 	ctx.Respond(response)
 }
 
+func (h *PlayerHandler) HandleArmyInfoRequest(ctx actor.Context, p *PlayerActor, request *playerpb.ArmyInfoRequest) {
+	order := int(request.Order)
+	if order <= 0 || order > 5 {
+		ctx.Respond(fail("Request param Invalid"))
+		return
+	}
+
+	player := p.Entity()
+	army, b := player.GetArmies(order)
+	if !b {
+		ctx.Respond(fail("Army Not Found"))
+		return
+	}
+	if army.Cmd == entity.ArmyCmdConscript {
+		curTime := time.Now().UnixMilli()
+		finish := true
+		for i, endTime := range army.ConscriptEndTimes {
+			if endTime > 0 {
+				if endTime <= curTime {
+					army.Soldiers[i] += army.ConscriptCounts[i]
+					army.ConscriptCounts[i] = 0
+					army.ConscriptEndTimes[i] = 0
+				} else {
+					finish = false
+				}
+			}
+		}
+
+		if finish {
+			army.Cmd = entity.ArmyCmdIdle
+		}
+
+		player.PutArmies(order, army)
+	}
+
+	army, _ = player.GetArmies(order)
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_ArmyInfoResponse{
+		ArmyInfoResponse: &playerpb.ArmyInfoResponse{
+			Army: ToPBArmy(player.CityID(), army),
+		},
+	}
+	ctx.Respond(response)
+}
+
 func draw(times int) ([]entity.GeneralState, error) {
 	if times <= 0 {
 		return nil, fmt.Errorf("invalid draw times")
