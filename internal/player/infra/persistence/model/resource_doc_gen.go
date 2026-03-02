@@ -6,34 +6,37 @@ import (
 )
 
 type ResourceDoc struct {
-	Wood   int `bson:"wood"`
-	Iron   int `bson:"iron"`
-	Stone  int `bson:"stone"`
-	Grain  int `bson:"grain"`
-	Gold   int `bson:"gold"`
-	Decree int `bson:"decree"`
+	Wood      int   `bson:"wood"`
+	Iron      int   `bson:"iron"`
+	Stone     int   `bson:"stone"`
+	Grain     int   `bson:"grain"`
+	Gold      int   `bson:"gold"`
+	Decree    int   `bson:"decree"`
+	LastClaim int64 `bson:"last_claim"`
 }
 
 func ResourceStateToDoc(s entity.ResourceState) ResourceDoc {
 	state := entity.HydrateResourceEntity(s).Save()
 	return ResourceDoc{
-		Wood:   state.Wood,
-		Iron:   state.Iron,
-		Stone:  state.Stone,
-		Grain:  state.Grain,
-		Gold:   state.Gold,
-		Decree: state.Decree,
+		Wood:      state.Wood,
+		Iron:      state.Iron,
+		Stone:     state.Stone,
+		Grain:     state.Grain,
+		Gold:      state.Gold,
+		Decree:    state.Decree,
+		LastClaim: state.LastClaim,
 	}
 }
 
 func ResourceDocToState(d ResourceDoc) entity.ResourceState {
 	state := entity.ResourceState{
-		Wood:   d.Wood,
-		Iron:   d.Iron,
-		Stone:  d.Stone,
-		Grain:  d.Grain,
-		Gold:   d.Gold,
-		Decree: d.Decree,
+		Wood:      d.Wood,
+		Iron:      d.Iron,
+		Stone:     d.Stone,
+		Grain:     d.Grain,
+		Gold:      d.Gold,
+		Decree:    d.Decree,
+		LastClaim: d.LastClaim,
 	}
 	return entity.HydrateResourceEntity(state).Save()
 }

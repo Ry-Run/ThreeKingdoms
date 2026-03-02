@@ -6,12 +6,13 @@ import (
 )
 
 const (
-	FieldResource_wood   Field = "wood"
-	FieldResource_iron   Field = "iron"
-	FieldResource_stone  Field = "stone"
-	FieldResource_grain  Field = "grain"
-	FieldResource_gold   Field = "gold"
-	FieldResource_decree Field = "decree"
+	FieldResource_wood      Field = "wood"
+	FieldResource_iron      Field = "iron"
+	FieldResource_stone     Field = "stone"
+	FieldResource_grain     Field = "grain"
+	FieldResource_gold      Field = "gold"
+	FieldResource_decree    Field = "decree"
+	FieldResource_lastClaim Field = "lastClaim"
 )
 
 var emptyResourceEntity = &ResourceEntity{}
@@ -147,12 +148,13 @@ func (t *ResourceEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 }
 
 type ResourceState struct {
-	Wood   int
-	Iron   int
-	Stone  int
-	Grain  int
-	Gold   int
-	Decree int
+	Wood      int
+	Iron      int
+	Stone     int
+	Grain     int
+	Gold      int
+	Decree    int
+	LastClaim int64
 }
 
 type ResourceEntitySnap struct {
@@ -163,23 +165,25 @@ type ResourceEntitySnap struct {
 }
 
 type ResourceEntity struct {
-	wood   int
-	iron   int
-	stone  int
-	grain  int
-	gold   int
-	decree int
-	_dt    ResourceEntityTrace
+	wood      int
+	iron      int
+	stone     int
+	grain     int
+	gold      int
+	decree    int
+	lastClaim int64
+	_dt       ResourceEntityTrace
 }
 
 func HydrateResourceEntity(s ResourceState) *ResourceEntity {
 	return &ResourceEntity{
-		wood:   s.Wood,
-		iron:   s.Iron,
-		stone:  s.Stone,
-		grain:  s.Grain,
-		gold:   s.Gold,
-		decree: s.Decree,
+		wood:      s.Wood,
+		iron:      s.Iron,
+		stone:     s.Stone,
+		grain:     s.Grain,
+		gold:      s.Gold,
+		decree:    s.Decree,
+		lastClaim: s.LastClaim,
 	}
 }
 
@@ -305,6 +309,7 @@ func (e *ResourceEntity) Save() ResourceState {
 	s.Grain = e.grain
 	s.Gold = e.gold
 	s.Decree = e.decree
+	s.LastClaim = e.lastClaim
 	return s
 }
 
@@ -459,5 +464,25 @@ func (e *ResourceEntity) SetDecree(v int) bool {
 	}
 	e.decree = v
 	e._dt.mark(FieldResource_decree)
+	return true
+}
+
+func (e *ResourceEntity) LastClaim() int64 {
+	if e == nil {
+		var z int64
+		return z
+	}
+	return e.lastClaim
+}
+
+func (e *ResourceEntity) SetLastClaim(v int64) bool {
+	if e == nil {
+		return false
+	}
+	if e.lastClaim == v {
+		return false
+	}
+	e.lastClaim = v
+	e._dt.mark(FieldResource_lastClaim)
 	return true
 }

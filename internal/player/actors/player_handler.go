@@ -718,6 +718,7 @@ func (h *PlayerHandler) HandleTransformRequest(ctx actor.Context, p *PlayerActor
 }
 
 func (h *PlayerHandler) HandleDisposeRequest(ctx actor.Context, p *PlayerActor, request *playerpb.DisposeRequest) {
+	// 前端有一个 bug，下阵不会实时刷新将领信息，所以点击后页面没反应出将领下阵，还在原地不动，需要退出重登的时候拉取新信息
 	order := int(request.Order)
 	position := int(request.Position)
 	generalId := int(request.GeneralId)
@@ -882,6 +883,52 @@ func (h *PlayerHandler) HandleDisposeRequest(ctx actor.Context, p *PlayerActor, 
 		},
 	}
 	ctx.Respond(response)
+}
+
+// 资源基础设施的产出，前端不支持，仅提供后端部分
+func (h *PlayerHandler) HandleResourceRecovery(ctx actor.Context, p *PlayerActor, request *playerpb.UpFacilityRequest) {
+	// basic.BasicConf.Role.RecoveryTime: 产出间隔时间，单位秒
+	recoveryMills := int64(basic.BasicConf.Role.RecoveryTime * 1000)
+	nowMills := time.Now().UnixMilli()
+	conf := facility.FacilityConf
+	player := p.Entity()
+	// 每秒的产出
+	var yield facility.FacilityYield
+	player.ForEachFacility(func(i int, v entity.FacilityState) {
+		f, b := conf.GetFacility(v.FType)
+		if !b {
+			return
+		}
+		y := f.GetFacilityYield(v.PrivateLevel)
+		yield.Wood += y.Wood
+		yield.Iron += y.Iron
+		yield.Stone += y.Stone
+		yield.Grain += y.Grain
+	})
+
+	// 设施升级应该发出一个升级完成的事件，然后触发一次结算，但是目前没有事件总线
+	lastClaim := player.Resource().LastClaim()
+
+	if lastClaim == 0 {
+		// 先简单设为现在，应该是设施的创建时间
+		lastClaim = nowMills
+	}
+
+	// 调整 yield 避免超出库存
+	// 每个设施的生产速率也不一样
+	// 这里只是基本的模拟
+
+	passedMills := nowMills - lastClaim
+	// 计算产出了多少轮
+	turn := int(passedMills / recoveryMills)
+
+	Gain(player.Resource(), entity.ResourceState{
+		Wood:  yield.Wood * turn,
+		Iron:  yield.Iron * turn,
+		Stone: yield.Stone * turn,
+		Grain: yield.Grain * turn,
+	})
+	player.Resource().SetLastClaim(nowMills)
 }
 
 func draw(times int) ([]entity.GeneralState, error) {
