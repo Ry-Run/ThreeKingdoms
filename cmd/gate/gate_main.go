@@ -2,6 +2,8 @@ package main
 
 import (
 	"ThreeKingdoms/internal/gate/interfaces"
+	gategrpc "ThreeKingdoms/internal/gate/interfaces/grpc"
+	gatepb "ThreeKingdoms/internal/shared/gen/gate"
 	"ThreeKingdoms/internal/shared/logs"
 	"ThreeKingdoms/internal/shared/serverconfig"
 	"ThreeKingdoms/internal/shared/session"
@@ -12,6 +14,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	nethttp "net/http"
 	"os/signal"
 	"syscall"
@@ -19,6 +22,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	googlegrpc "google.golang.org/grpc"
 )
 
 func main() {
@@ -87,6 +91,28 @@ func main() {
 	httpServer.Engine().Any("/ws", gin.WrapH(wsServer))
 	httpServer.Engine().Any("/ws/*any", gin.WrapH(wsServer))
 
+	gateGRPCHost := serverConfig.Host
+	if gateGRPCHost == "" || gateGRPCHost == "0.0.0.0" {
+		gateGRPCHost = "127.0.0.1"
+	}
+	gateGRPCPort := serverConfig.GRPCPort
+	if gateGRPCPort <= 0 {
+		gateGRPCPort = serverConfig.Port + 10000
+	}
+	gateGRPCAddr := fmt.Sprintf("%s:%d", gateGRPCHost, gateGRPCPort)
+	grpcLis, err := net.Listen("tcp", gateGRPCAddr)
+	if err != nil {
+		logs.Fatal("listen gate grpc failed", zap.Error(err))
+	}
+	defer func() {
+		_ = grpcLis.Close()
+	}()
+	grpcServer := googlegrpc.NewServer(
+		googlegrpc.ChainUnaryInterceptor(grpc.UnaryServerTraceInterceptor()),
+		googlegrpc.ChainStreamInterceptor(grpc.StreamServerTraceInterceptor()),
+	)
+	gatepb.RegisterGatePushServiceServer(grpcServer, gategrpc.NewPushServer(sessMgr))
+
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -96,7 +122,13 @@ func main() {
 			errCh <- fmt.Errorf("gate server start failed: %w", err)
 			return
 		}
-		errCh <- nil
+	}()
+	go func() {
+		logs.Info("gate grpc server started", zap.String("addr", gateGRPCAddr))
+		if err := grpcServer.Serve(grpcLis); err != nil {
+			errCh <- fmt.Errorf("gate grpc serve failed: %w", err)
+			return
+		}
 	}()
 
 	select {
@@ -110,5 +142,15 @@ func main() {
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	grpcStopCh := make(chan struct{})
+	go func() {
+		grpcServer.GracefulStop()
+		close(grpcStopCh)
+	}()
+	select {
+	case <-grpcStopCh:
+	case <-time.After(10 * time.Second):
+		grpcServer.Stop()
+	}
 	_ = httpServer.Shutdown(shutdownCtx)
 }

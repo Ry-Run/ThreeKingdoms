@@ -1,5 +1,10 @@
 package messages
 
+import (
+	playerpb "ThreeKingdoms/internal/shared/gen/player"
+	"time"
+)
+
 type WorldMessage interface {
 	WorldID() int
 	PlayerID() int
@@ -26,7 +31,9 @@ func (w *WorldBaseMessage) PlayerID() int {
 
 type HWCreateCity struct {
 	WorldBaseMessage
-	NickName string
+	NickName     string
+	AllianceId   int
+	AllianceName string
 }
 
 type WHCreateCity struct {
@@ -51,4 +58,43 @@ type WHScanBlock struct {
 	Cities    []WorldCity
 	Armies    []Army
 	Buildings []Building
+}
+
+type HWAttack struct {
+	WorldBaseMessage
+	DefenderPos Pos
+	Army        Army
+}
+
+type WHAttack struct {
+	OK        bool
+	StartTime time.Time
+	EndTime   time.Time
+}
+
+type HWSyncCityFacility struct {
+	WorldBaseMessage
+	CityId     int
+	Facilities []Facility
+}
+
+type WHSyncCityFacility struct {
+	OK bool
+}
+
+type WorldPushBatch struct {
+	WorldBaseMessage
+	MsgType MsgType
+	Items   []WorldPushItem
+}
+
+type MsgType string
+
+const (
+	ArmyPush = "army.push"
+)
+
+type WorldPushItem struct {
+	PlayerID int64
+	Army     *playerpb.Army // ArmyPush
 }

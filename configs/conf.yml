@@ -20,6 +20,7 @@ httpserver:
 gateserver:
   host: "0.0.0.0"
   port: 8004
+  grpc_port: 18004
   need_secret: true
   slg_proxy: "ws://127.0.0.1:8001"
   chat_proxy: "ws://127.0.0.1:8002"

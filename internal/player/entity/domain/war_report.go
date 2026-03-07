@@ -9,10 +9,10 @@ type WarReport struct {
 	begDefenseArmy    *Army
 	endAttackArmy     *Army
 	endDefenseArmy    *Army
-	begAttackGeneral  *General
-	begDefenseGeneral *General
-	endAttackGeneral  *General
-	endDefenseGeneral *General
+	begAttackGeneral  []*General
+	begDefenseGeneral []*General
+	endAttackGeneral  []*General
+	endDefenseGeneral []*General
 	result            int    // 0失败，1打平，2胜利
 	rounds            string // 回合
 	attackIsRead      bool

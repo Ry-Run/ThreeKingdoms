@@ -47,6 +47,7 @@ message PlayerRequest {
     DisposeRequest disposeRequest = 29;
     ConscriptRequest ConscriptRequest = 30;
     ArmyInfoRequest armyInfoRequest = 31;
+    AssignArmyRequest assignArmyRequest = 32;
   }
 
   string trace_id = 100;
@@ -78,6 +79,7 @@ message PlayerResponse {
     DisposeResponse disposeResponse = 29;
     ConscriptResponse ConscriptResponse = 30;
     ArmyInfoResponse armyInfoResponse = 31;
+    AssignArmyResponse assignArmyResponse = 32;
   }
 }
 
@@ -284,5 +286,17 @@ message ArmyInfoRequest {
 }
 
 message ArmyInfoResponse {
+  Army army = 1;
+}
+
+// 路由 army.assign
+message AssignArmyRequest {
+  int32 army_id = 1; //队伍 id
+  int32 cmd = 2;
+  int32 x = 3;
+  int32 y = 4;
+}
+
+message AssignArmyResponse {
   Army army = 1;
 }

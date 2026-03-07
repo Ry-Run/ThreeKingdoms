@@ -47,14 +47,21 @@ func (h *PlayerHandler) HandleEnterServerRequest(ctx actor.Context, p *PlayerAct
 	}
 
 	player := p.Entity()
+	worldPID := p.WorldPID()
+	if worldPID == nil {
+		ctx.Respond(fail("world actor unavailable"))
+		return
+	}
 	f := ctx.RequestFuture(
-		p.worldPID,
+		worldPID,
 		&messages.HWCreateCity{
 			WorldBaseMessage: messages.WorldBaseMessage{
 				PlayerId: int(*p.PlayerId),
 				WorldId:  0,
 			},
-			NickName: player.Profile().NickName(),
+			NickName:     player.Profile().NickName(),
+			AllianceId:   int(player.AllianceID()),
+			AllianceName: player.AllianceName(),
 		},
 		5*time.Second,
 	)
@@ -122,8 +129,13 @@ func (h *PlayerHandler) HandleMyPropertyRequest(ctx actor.Context, p *PlayerActo
 		ctx.Respond(fail("myProperty response is nil"))
 		return
 	}
+	worldPID := p.WorldPID()
+	if worldPID == nil || p.WorldId == nil {
+		ctx.Respond(resp)
+		return
+	}
 
-	f := ctx.RequestFuture(p.worldPID, &messages.HWMyCities{
+	f := ctx.RequestFuture(worldPID, &messages.HWMyCities{
 		WorldBaseMessage: messages.WorldBaseMessage{
 			WorldId:  int(*p.WorldId),
 			PlayerId: int(*p.PlayerId),
@@ -153,8 +165,8 @@ func (h *PlayerHandler) HandleMyPropertyRequest(ctx actor.Context, p *PlayerActo
 				PlayerId:   int32(*p.PlayerId),
 				CityId:     c.CityId,
 				Name:       c.Name,
-				UnionId:    int32(c.UnionId),
-				UnionName:  c.UnionName,
+				UnionId:    int32(c.AllianceId),
+				UnionName:  c.AllianceName,
 				ParentId:   int32(c.ParentId),
 				X:          int32(c.Pos.X),
 				Y:          int32(c.Pos.Y),
@@ -216,6 +228,25 @@ func (h *PlayerHandler) HandleWarReportRequest(ctx actor.Context, p *PlayerActor
 	})
 }
 
+func (h *PlayerHandler) HandleWHWarReport(ctx actor.Context, p *PlayerActor, message *messages.WHWarReport) {
+	if p == nil || p.Entity() == nil || message == nil {
+		return
+	}
+	player := p.Entity()
+	state := ToWarReport(message.WarReport)
+	if state.Id <= 0 {
+		return
+	}
+	player.PutWarReports(state.Id, state)
+}
+
+func (h *PlayerHandler) HandleWHBattleResult(ctx actor.Context, p *PlayerActor, message *messages.WHBattleResult) {
+	if p == nil || p.Entity() == nil || message == nil {
+		return
+	}
+	applyBattleResult(p.Entity(), message.Army)
+}
+
 func (h *PlayerHandler) HandleSkillListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.SkillListRequest) {
 	player := p.Entity()
 	skills := make([]*playerpb.Skill, 0, player.LenSkills())
@@ -233,8 +264,13 @@ func (h *PlayerHandler) HandleScanBlockRequest(ctx actor.Context, p *PlayerActor
 		ctx.Respond(fail("request param err"))
 		return
 	}
+	worldPID := p.WorldPID()
+	if worldPID == nil || p.WorldId == nil {
+		ctx.Respond(fail("world actor unavailable"))
+		return
+	}
 
-	f := ctx.RequestFuture(p.worldPID,
+	f := ctx.RequestFuture(worldPID,
 		&messages.HWScanBlock{
 			WorldBaseMessage: messages.WorldBaseMessage{
 				WorldId:  int(*p.WorldId),
@@ -355,7 +391,12 @@ func (h *PlayerHandler) HandleCollectionRequest(ctx actor.Context, p *PlayerActo
 }
 
 func (h *PlayerHandler) HandleAllianceListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.AllianceListRequest) {
-	if p == nil || p.WorldId == nil || p.alliancePID == nil {
+	if p == nil || p.WorldId == nil {
+		ctx.Respond(okWithAllianceList(nil))
+		return
+	}
+	alliancePID := p.AlliancePID()
+	if alliancePID == nil {
 		ctx.Respond(okWithAllianceList(nil))
 		return
 	}
@@ -364,7 +405,7 @@ func (h *PlayerHandler) HandleAllianceListRequest(ctx actor.Context, p *PlayerAc
 			WorldId: int(*p.WorldId),
 		},
 	}
-	f := ctx.RequestFuture(p.alliancePID, req, 500*time.Millisecond)
+	f := ctx.RequestFuture(alliancePID, req, 500*time.Millisecond)
 	ctx.ReenterAfter(f, func(res interface{}, err error) {
 		if err != nil {
 			ctx.Respond(fail(err.Error()))
@@ -384,7 +425,12 @@ func (h *PlayerHandler) HandleAllianceListRequest(ctx actor.Context, p *PlayerAc
 }
 
 func (h *PlayerHandler) HandleAllianceInfoRequest(ctx actor.Context, p *PlayerActor, request *playerpb.AllianceInfoRequest) {
-	if p == nil || p.WorldId == nil || p.alliancePID == nil || request == nil || request.AllianceId <= 0 {
+	if p == nil || p.WorldId == nil || request == nil || request.AllianceId <= 0 {
+		ctx.Respond(fail("request parameter error"))
+		return
+	}
+	alliancePID := p.AlliancePID()
+	if alliancePID == nil {
 		ctx.Respond(fail("request parameter error"))
 		return
 	}
@@ -395,7 +441,7 @@ func (h *PlayerHandler) HandleAllianceInfoRequest(ctx actor.Context, p *PlayerAc
 			AllianceId: int(request.AllianceId),
 		},
 	}
-	f := ctx.RequestFuture(p.alliancePID, req, 500*time.Millisecond)
+	f := ctx.RequestFuture(alliancePID, req, 500*time.Millisecond)
 	ctx.ReenterAfter(f, func(res interface{}, err error) {
 		if err != nil {
 			ctx.Respond(fail(err.Error()))
@@ -421,7 +467,12 @@ func (h *PlayerHandler) HandleAllianceInfoRequest(ctx actor.Context, p *PlayerAc
 }
 
 func (h *PlayerHandler) HandleAllianceApplyListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.AllianceApplyListRequest) {
-	if p == nil || p.WorldId == nil || p.alliancePID == nil || request == nil {
+	if p == nil || p.WorldId == nil || request == nil {
+		ctx.Respond(fail("request parameter error"))
+		return
+	}
+	alliancePID := p.AlliancePID()
+	if alliancePID == nil {
 		ctx.Respond(fail("request parameter error"))
 		return
 	}
@@ -436,7 +487,7 @@ func (h *PlayerHandler) HandleAllianceApplyListRequest(ctx actor.Context, p *Pla
 			AllianceId: int(*p.AllianceID),
 		},
 	}
-	f := ctx.RequestFuture(p.alliancePID, req, 500*time.Millisecond)
+	f := ctx.RequestFuture(alliancePID, req, 500*time.Millisecond)
 	ctx.ReenterAfter(f, func(res interface{}, err error) {
 		if err != nil {
 			ctx.Respond(fail(err.Error()))
@@ -563,6 +614,11 @@ func (h *PlayerHandler) HandleUpFacilityRequest(ctx actor.Context, p *PlayerActo
 		ctx.Respond(fail("player state invalid"))
 		return
 	}
+	worldPID := p.WorldPID()
+	if worldPID == nil || p.WorldId == nil {
+		ctx.Respond(fail("world actor unavailable"))
+		return
+	}
 
 	playerCityID := int32(player.CityID())
 	if request.GetCityId() <= 0 || request.GetCityId() != playerCityID {
@@ -659,10 +715,6 @@ func (h *PlayerHandler) HandleUpFacilityRequest(ctx actor.Context, p *PlayerActo
 		return
 	}
 
-	if dirty {
-		_ = p.DC().FlushSync(context.TODO())
-	}
-
 	response := ok()
 	response.Body = &playerpb.PlayerResponse_UpFacilityResponse{
 		UpFacilityResponse: &playerpb.UpFacilityResponse{
@@ -671,7 +723,54 @@ func (h *PlayerHandler) HandleUpFacilityRequest(ctx actor.Context, p *PlayerActo
 			Resource: ToPBResource(player.Resource()),
 		},
 	}
-	ctx.Respond(response)
+
+	if !dirty {
+		ctx.Respond(response)
+		return
+	}
+
+	facilitiesForSync := collectFacilitiesForWorldSync(player)
+	future := ctx.RequestFuture(worldPID, &messages.HWSyncCityFacility{
+		WorldBaseMessage: messages.WorldBaseMessage{
+			WorldId:  int(*p.WorldId),
+			PlayerId: int(*p.PlayerId),
+		},
+		CityId:     int(playerCityID),
+		Facilities: facilitiesForSync,
+	}, 500*time.Millisecond)
+
+	ctx.ReenterAfter(future, func(res interface{}, syncErr error) {
+		if syncErr != nil {
+			ctx.Respond(fail(syncErr.Error()))
+			return
+		}
+		syncResp, ok := res.(*messages.WHSyncCityFacility)
+		if !ok || syncResp == nil || !syncResp.OK {
+			ctx.Respond(fail("sync city facility failed"))
+			return
+		}
+		if err := p.DC().FlushSync(context.TODO()); err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
+		ctx.Respond(response)
+	})
+}
+
+func collectFacilitiesForWorldSync(player *entity.PlayerEntity) []messages.Facility {
+	if player == nil || player.LenFacility() == 0 {
+		return nil
+	}
+	facilities := make([]messages.Facility, 0, player.LenFacility())
+	player.ForEachFacility(func(i int, v entity.FacilityState) {
+		facilities = append(facilities, messages.Facility{
+			Name:         v.Name,
+			PrivateLevel: v.PrivateLevel,
+			FType:        v.FType,
+			UpTime:       v.UpTime,
+		})
+	})
+	return facilities
 }
 
 func (h *PlayerHandler) HandleTransformRequest(ctx actor.Context, p *PlayerActor, request *playerpb.TransformRequest) {
@@ -759,6 +858,10 @@ func (h *PlayerHandler) HandleDisposeRequest(ctx actor.Context, p *PlayerActor, 
 			ToX:               x,
 			ToY:               y,
 		}
+	}
+	if army.Frozen {
+		ctx.Respond(fail("army frozen"))
+		return
 	}
 
 	// 判断 army 是否在城内
@@ -947,6 +1050,10 @@ func (h *PlayerHandler) HandleConscriptRequest(ctx actor.Context, p *PlayerActor
 		ctx.Respond(fail("Army Not Found"))
 		return
 	}
+	if army.Frozen {
+		ctx.Respond(fail("army frozen"))
+		return
+	}
 	// 判断位置是否可以征兵。counts 主将、副将、副将：[20,20,0]
 	for pos, v := range counts {
 		if v > 0 {
@@ -1078,6 +1185,45 @@ func (h *PlayerHandler) HandleArmyInfoRequest(ctx actor.Context, p *PlayerActor,
 	ctx.Respond(response)
 }
 
+func (h *PlayerHandler) HandleAssignArmyRequest(ctx actor.Context, p *PlayerActor, request *playerpb.AssignArmyRequest) {
+	armyId := int(request.ArmyId)
+	x := int(request.X)
+	y := int(request.Y)
+	cmd := int(request.Cmd)
+	if armyId <= 0 || armyId > 5 || x < 0 || x > _map.MapWidth || y < 0 || y > _map.MapHeight {
+		ctx.Respond(fail("Request param Invalid"))
+		return
+	}
+	player := p.Entity()
+	army, b := player.GetArmies(armyId)
+	if !b {
+		ctx.Respond(fail("Army Not Found"))
+		return
+	}
+	if army.Frozen {
+		ctx.Respond(fail("army frozen"))
+		return
+	}
+
+	if err := PS.AssignPreCheck(army, x, y); err != nil {
+		ctx.Respond(fail(err.Error()))
+		return
+	}
+
+	switch cmd {
+	case entity.ArmyCmdBack:
+		PS.Back(p, army)
+	case entity.ArmyCmdAttack:
+		PS.Attack(ctx, p, army, x, y)
+	case entity.ArmyCmdDefend:
+		PS.Defend(ctx, p, army, x, y)
+	case entity.ArmyCmdReclamation:
+		PS.Reclamation(ctx, p, army, x, y)
+	case entity.ArmyCmdTransfer:
+		PS.Transfer(ctx, p, army, x, y)
+	}
+}
+
 func draw(times int) ([]entity.GeneralState, error) {
 	if times <= 0 {
 		return nil, fmt.Errorf("invalid draw times")
@@ -1115,6 +1261,24 @@ func PositionCanModify(a entity.ArmyState, pos int) bool {
 	}
 
 	return false
+}
+
+func applyBattleResult(player *entity.PlayerEntity, army *messages.Army) bool {
+	if player == nil || army == nil {
+		return false
+	}
+
+	state := msgArmyToArmy(army)
+	state.Frozen = false
+	player.PutArmies(state.Id, state)
+
+	for _, general := range army.Generals {
+		if general == nil || general.Id <= 0 {
+			continue
+		}
+		player.PutGenerals(general.Id, msgToEntityGeneral(general))
+	}
+	return true
 }
 
 func GeneralIsRepeat(p *entity.PlayerEntity, a entity.ArmyState, cfgId int) bool {
@@ -1280,3 +1444,5 @@ func Gain(r *entity.ResourceEntity, gain entity.ResourceState) bool {
 	r.SetDecree(r.Decree() + gain.Decree)
 	return true
 }
+
+// 玩家申请联盟后，没有同意玩家申请的地方，处理完后需要给对应 PlayerActor 发送消息赋值 allianceID 和 allianceName

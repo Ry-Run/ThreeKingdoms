@@ -1,6 +1,7 @@
 package actor
 
 import (
+	sharedactor "ThreeKingdoms/internal/shared/actor"
 	"ThreeKingdoms/internal/shared/transport"
 	"ThreeKingdoms/internal/world/actors"
 	"ThreeKingdoms/internal/world/service/port"
@@ -43,7 +44,7 @@ type Runtime struct {
 	timeout time.Duration
 }
 
-func NewRuntime(repo port.WorldRepository, askTimeout time.Duration) *Runtime {
+func NewRuntime(repo port.WorldRepository, resolver sharedactor.ManagerPIDResolver, pusher actors.WorldPushBatchPusher, askTimeout time.Duration) *Runtime {
 	if askTimeout <= 0 {
 		askTimeout = defaultAskTimeout
 	}
@@ -51,7 +52,7 @@ func NewRuntime(repo port.WorldRepository, askTimeout time.Duration) *Runtime {
 	system := protoactor.NewActorSystem()
 	root := system.Root
 	managerProps := protoactor.PropsFromProducer(func() protoactor.Actor {
-		return actors.NewManagerActor(repo)
+		return actors.NewManagerActor(repo, resolver, pusher)
 	})
 	manager := root.Spawn(managerProps)
 

@@ -8,20 +8,21 @@ import (
 )
 
 const (
-	FieldPlayer_playerID   Field = "playerID"
-	FieldPlayer_worldID    Field = "worldID"
-	FieldPlayer_allianceID Field = "allianceID"
-	FieldPlayer_cityID     Field = "cityID"
-	FieldPlayer_profile    Field = "profile"
-	FieldPlayer_resource   Field = "resource"
-	FieldPlayer_attribute  Field = "attribute"
-	FieldPlayer_buildings  Field = "buildings"
-	FieldPlayer_armies     Field = "armies"
-	FieldPlayer_generals   Field = "generals"
-	FieldPlayer_facility   Field = "facility"
-	FieldPlayer_warReports Field = "warReports"
-	FieldPlayer_skills     Field = "skills"
-	FieldPlayer_city       Field = "city"
+	FieldPlayer_playerID     Field = "playerID"
+	FieldPlayer_worldID      Field = "worldID"
+	FieldPlayer_allianceID   Field = "allianceID"
+	FieldPlayer_allianceName Field = "allianceName"
+	FieldPlayer_cityID       Field = "cityID"
+	FieldPlayer_profile      Field = "profile"
+	FieldPlayer_resource     Field = "resource"
+	FieldPlayer_attribute    Field = "attribute"
+	FieldPlayer_buildings    Field = "buildings"
+	FieldPlayer_armies       Field = "armies"
+	FieldPlayer_generals     Field = "generals"
+	FieldPlayer_facility     Field = "facility"
+	FieldPlayer_warReports   Field = "warReports"
+	FieldPlayer_skills       Field = "skills"
+	FieldPlayer_city         Field = "city"
 )
 
 var emptyPlayerEntity = &PlayerEntity{}
@@ -269,20 +270,21 @@ func (t *PlayerEntityTrace) childDirtyKeys_skills() []int {
 }
 
 type PlayerState struct {
-	PlayerID   PlayerID
-	WorldID    WorldID
-	AllianceID AllianceID
-	CityID     CityID
-	Profile    RoleState
-	Resource   ResourceState
-	Attribute  RoleAttributeState
-	Buildings  []BuildingState
-	Armies     map[int]ArmyState
-	Generals   map[int]GeneralState
-	Facility   []FacilityState
-	WarReports map[int]WarReportState
-	Skills     map[int]SkillState
-	City       CityState
+	PlayerID     PlayerID
+	WorldID      WorldID
+	AllianceID   AllianceID
+	AllianceName string
+	CityID       CityID
+	Profile      RoleState
+	Resource     ResourceState
+	Attribute    RoleAttributeState
+	Buildings    []BuildingState
+	Armies       map[int]ArmyState
+	Generals     map[int]GeneralState
+	Facility     []FacilityState
+	WarReports   map[int]WarReportState
+	Skills       map[int]SkillState
+	City         CityState
 }
 
 type PlayerEntitySnap struct {
@@ -297,21 +299,22 @@ type PlayerEntitySnap struct {
 }
 
 type PlayerEntity struct {
-	playerID   PlayerID
-	worldID    WorldID
-	allianceID AllianceID
-	cityID     CityID
-	profile    *RoleEntity
-	resource   *ResourceEntity
-	attribute  *RoleAttributeEntity
-	buildings  []*BuildingEntity
-	armies     map[int]*ArmyEntity
-	generals   map[int]*GeneralEntity
-	facility   []*FacilityEntity
-	warReports map[int]*WarReportEntity
-	skills     map[int]*SkillEntity
-	city       *CityEntity
-	_dt        PlayerEntityTrace
+	playerID     PlayerID
+	worldID      WorldID
+	allianceID   AllianceID
+	allianceName string
+	cityID       CityID
+	profile      *RoleEntity
+	resource     *ResourceEntity
+	attribute    *RoleAttributeEntity
+	buildings    []*BuildingEntity
+	armies       map[int]*ArmyEntity
+	generals     map[int]*GeneralEntity
+	facility     []*FacilityEntity
+	warReports   map[int]*WarReportEntity
+	skills       map[int]*SkillEntity
+	city         *CityEntity
+	_dt          PlayerEntityTrace
 }
 
 func (e *PlayerEntity) hydrateSliceBuildings(in []BuildingState) []*BuildingEntity {
@@ -586,20 +589,21 @@ func (e *PlayerEntity) snapshotMapSkills(in map[int]*SkillEntity) map[int]SkillS
 
 func HydratePlayerEntity(s PlayerState) *PlayerEntity {
 	return &PlayerEntity{
-		playerID:   s.PlayerID,
-		worldID:    s.WorldID,
-		allianceID: s.AllianceID,
-		cityID:     s.CityID,
-		profile:    HydrateRoleEntity(s.Profile),
-		resource:   HydrateResourceEntity(s.Resource),
-		attribute:  HydrateRoleAttributeEntity(s.Attribute),
-		buildings:  emptyPlayerEntity.hydrateSliceBuildings(s.Buildings),
-		armies:     emptyPlayerEntity.hydrateMapArmies(s.Armies),
-		generals:   emptyPlayerEntity.hydrateMapGenerals(s.Generals),
-		facility:   emptyPlayerEntity.hydrateSliceFacility(s.Facility),
-		warReports: emptyPlayerEntity.hydrateMapWarReports(s.WarReports),
-		skills:     emptyPlayerEntity.hydrateMapSkills(s.Skills),
-		city:       HydrateCityEntity(s.City),
+		playerID:     s.PlayerID,
+		worldID:      s.WorldID,
+		allianceID:   s.AllianceID,
+		allianceName: s.AllianceName,
+		cityID:       s.CityID,
+		profile:      HydrateRoleEntity(s.Profile),
+		resource:     HydrateResourceEntity(s.Resource),
+		attribute:    HydrateRoleAttributeEntity(s.Attribute),
+		buildings:    emptyPlayerEntity.hydrateSliceBuildings(s.Buildings),
+		armies:       emptyPlayerEntity.hydrateMapArmies(s.Armies),
+		generals:     emptyPlayerEntity.hydrateMapGenerals(s.Generals),
+		facility:     emptyPlayerEntity.hydrateSliceFacility(s.Facility),
+		warReports:   emptyPlayerEntity.hydrateMapWarReports(s.WarReports),
+		skills:       emptyPlayerEntity.hydrateMapSkills(s.Skills),
+		city:         HydrateCityEntity(s.City),
 	}
 }
 
@@ -758,6 +762,7 @@ func (e *PlayerEntity) Save() PlayerState {
 	s.PlayerID = e.playerID
 	s.WorldID = e.worldID
 	s.AllianceID = e.allianceID
+	s.AllianceName = e.allianceName
 	s.CityID = e.cityID
 	if e.profile != nil {
 		s.Profile = e.profile.Save()
@@ -893,6 +898,26 @@ func (e *PlayerEntity) SetAllianceID(v AllianceID) bool {
 	}
 	e.allianceID = v
 	e._dt.mark(FieldPlayer_allianceID)
+	return true
+}
+
+func (e *PlayerEntity) AllianceName() string {
+	if e == nil {
+		var z string
+		return z
+	}
+	return e.allianceName
+}
+
+func (e *PlayerEntity) SetAllianceName(v string) bool {
+	if e == nil {
+		return false
+	}
+	if e.allianceName == v {
+		return false
+	}
+	e.allianceName = v
+	e._dt.mark(FieldPlayer_allianceName)
 	return true
 }
 

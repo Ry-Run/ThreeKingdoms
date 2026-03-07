@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package three_kingdoms.gate;
+
+option go_package = "ThreeKingdoms/internal/shared/gen/gate;gatepb";
+
+import "player/arm.proto";
+
+message WorldPushItem {
+  int64 player_id = 1 [json_name = "playerId"];
+  three_kingdoms.player.Army army = 2 [json_name = "army"];
+}
+
+message PushWorldBatchRequest {
+  int32 world_id = 1 [json_name = "worldId"];
+  string msg_type = 2 [json_name = "msgType"];
+  repeated WorldPushItem items = 3 [json_name = "items"];
+}
+
+message PushWorldBatchReply {
+  bool ok = 1 [json_name = "ok"];
+}
+
+service GatePushService {
+  rpc PushWorldBatch(PushWorldBatchRequest) returns (PushWorldBatchReply);
+}

@@ -4,6 +4,8 @@ import (
 	"ThreeKingdoms/internal/player/dc"
 	"ThreeKingdoms/internal/player/entity"
 	"ThreeKingdoms/internal/player/service/port"
+	sharedactor "ThreeKingdoms/internal/shared/actor"
+	"ThreeKingdoms/internal/shared/actor/messages"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"context"
 	"errors"
@@ -36,10 +38,9 @@ type PlayerActor struct {
 	AllianceID *AllianceID
 	dc         *dc.PlayerDC
 
-	worldPID    *actor.PID
-	alliancePID *actor.PID
-	dispatcher  *Dispatcher
-	flushStop   chan struct{}
+	resolver   sharedactor.ManagerPIDResolver
+	dispatcher *Dispatcher
+	flushStop  chan struct{}
 
 	seenSeq      map[int64]struct{}
 	seenSeqOrder []int64
@@ -49,16 +50,15 @@ type flushTick struct{}
 
 func (flushTick) NotInfluenceReceiveTimeout() {}
 
-func NewPlayerActor(playerID PlayerID, worldId WorldID, repo port.PlayerRepository, worldPID *actor.PID, alliancePID *actor.PID) *PlayerActor {
+func NewPlayerActor(playerID PlayerID, worldID WorldID, repo port.PlayerRepository, resolver sharedactor.ManagerPIDResolver) *PlayerActor {
 	return &PlayerActor{
-		state:       None,
-		PlayerId:    &playerID,
-		WorldId:     &worldId,
-		dc:          dc.NewPlayerDC(repo),
-		dispatcher:  NewDispatcher(),
-		seenSeq:     make(map[int64]struct{}, seqWindowSize),
-		worldPID:    worldPID,
-		alliancePID: alliancePID,
+		state:      None,
+		PlayerId:   &playerID,
+		WorldId:    &worldID,
+		dc:         dc.NewPlayerDC(repo),
+		dispatcher: NewDispatcher(),
+		seenSeq:    make(map[int64]struct{}, seqWindowSize),
+		resolver:   resolver,
 	}
 }
 
@@ -124,6 +124,30 @@ func (p *PlayerActor) Receive(actorCtx actor.Context) {
 		}
 
 		p.dispatcher.Dispatch(actorCtx, p, msg)
+	case messages.PlayerMessage:
+		if msg == nil {
+			return
+		}
+		if p.state != Online {
+			if err := p.init(context.TODO(), actorCtx, false); err != nil {
+				return
+			}
+		}
+		if p.state != Online || p.Entity() == nil {
+			return
+		}
+		p.handlePlayerMessage(actorCtx, msg)
+	default:
+		return
+	}
+}
+
+func (p *PlayerActor) handlePlayerMessage(ctx actor.Context, msg messages.PlayerMessage) {
+	switch typed := msg.(type) {
+	case *messages.WHWarReport:
+		PH.HandleWHWarReport(ctx, p, typed)
+	case *messages.WHBattleResult:
+		PH.HandleWHBattleResult(ctx, p, typed)
 	default:
 		return
 	}
@@ -202,6 +226,28 @@ func (p *PlayerActor) Entity() *entity.PlayerEntity {
 
 func (p *PlayerActor) DC() *dc.PlayerDC {
 	return p.dc
+}
+
+func (p *PlayerActor) WorldPID() *actor.PID {
+	if p == nil || p.resolver == nil {
+		return nil
+	}
+	pid, ok := p.resolver.ResolveManagerPID(sharedactor.ManagerPIDWorld)
+	if !ok {
+		return nil
+	}
+	return pid
+}
+
+func (p *PlayerActor) AlliancePID() *actor.PID {
+	if p == nil || p.resolver == nil {
+		return nil
+	}
+	pid, ok := p.resolver.ResolveManagerPID(sharedactor.ManagerPIDAlliance)
+	if !ok {
+		return nil
+	}
+	return pid
 }
 
 func (p *PlayerActor) acceptSeq(seq int64) error {

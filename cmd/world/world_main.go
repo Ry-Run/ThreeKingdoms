@@ -49,7 +49,7 @@ func main() {
 	system := protoactor.NewActorSystem()
 	root := system.Root
 	props := protoactor.PropsFromProducer(func() protoactor.Actor {
-		return worldactors.NewManagerActor(repo)
+		return worldactors.NewManagerActor(repo, nil, nil)
 	})
 	worldPID, err := root.SpawnNamed(props, worldActorName)
 	if err != nil {

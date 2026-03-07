@@ -86,6 +86,12 @@ type basic struct {
 
 var BasicConf = basic{}
 
+// 最大回合数
+const MaxRound = 10
+
+// 军队武将数量
+const ArmyGCnt = 3
+
 func Load() {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {

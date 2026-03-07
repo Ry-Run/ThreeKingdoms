@@ -7,49 +7,74 @@ import (
 )
 
 type CityDoc struct {
-	CityId     CityID    `bson:"city_id"`
-	Name       string    `bson:"name"`
-	UnionId    int       `bson:"union_id"`
-	UnionName  string    `bson:"union_name"`
-	ParentId   int       `bson:"parent_id"`
-	Pos        PosDoc    `bson:"pos"`
-	IsMain     bool      `bson:"is_main"`
-	Level      int8      `bson:"level"`
-	CurDurable int       `bson:"cur_durable"`
-	MaxDurable int       `bson:"max_durable"`
-	OccupyTime time.Time `bson:"occupy_time"`
+	CityId       CityID        `bson:"city_id"`
+	Name         string        `bson:"name"`
+	AllianceId   AllianceID    `bson:"alliance_id"`
+	AllianceName string        `bson:"alliance_name"`
+	ParentId     int           `bson:"parent_id"`
+	Pos          PosDoc        `bson:"pos"`
+	IsMain       bool          `bson:"is_main"`
+	Level        int8          `bson:"level"`
+	CurDurable   int           `bson:"cur_durable"`
+	MaxDurable   int           `bson:"max_durable"`
+	OccupyTime   time.Time     `bson:"occupy_time"`
+	Facility     []FacilityDoc `bson:"facility"`
+}
+
+func toDocSlice_facility(in []entity.FacilityState) []FacilityDoc {
+	if in == nil {
+		return nil
+	}
+	out := make([]FacilityDoc, len(in))
+	for i, v := range in {
+		out[i] = FacilityStateToDoc(v)
+	}
+	return out
+}
+
+func toStateSlice_facility(in []FacilityDoc) []entity.FacilityState {
+	if in == nil {
+		return nil
+	}
+	out := make([]entity.FacilityState, len(in))
+	for i, v := range in {
+		out[i] = FacilityDocToState(v)
+	}
+	return out
 }
 
 func CityStateToDoc(s entity.CityState) CityDoc {
 	state := entity.HydrateCityEntity(s).Save()
 	return CityDoc{
-		CityId:     state.CityId,
-		Name:       state.Name,
-		UnionId:    state.UnionId,
-		UnionName:  state.UnionName,
-		ParentId:   state.ParentId,
-		Pos:        PosStateToDoc(state.Pos),
-		IsMain:     state.IsMain,
-		Level:      state.Level,
-		CurDurable: state.CurDurable,
-		MaxDurable: state.MaxDurable,
-		OccupyTime: state.OccupyTime,
+		CityId:       state.CityId,
+		Name:         state.Name,
+		AllianceId:   state.AllianceId,
+		AllianceName: state.AllianceName,
+		ParentId:     state.ParentId,
+		Pos:          PosStateToDoc(state.Pos),
+		IsMain:       state.IsMain,
+		Level:        state.Level,
+		CurDurable:   state.CurDurable,
+		MaxDurable:   state.MaxDurable,
+		OccupyTime:   state.OccupyTime,
+		Facility:     toDocSlice_facility(state.Facility),
 	}
 }
 
 func CityDocToState(d CityDoc) entity.CityState {
 	state := entity.CityState{
-		CityId:     d.CityId,
-		Name:       d.Name,
-		UnionId:    d.UnionId,
-		UnionName:  d.UnionName,
-		ParentId:   d.ParentId,
-		Pos:        PosDocToState(d.Pos),
-		IsMain:     d.IsMain,
-		Level:      d.Level,
-		CurDurable: d.CurDurable,
-		MaxDurable: d.MaxDurable,
-		OccupyTime: d.OccupyTime,
+		CityId:       d.CityId,
+		Name:         d.Name,
+		AllianceId:   d.AllianceId,
+		AllianceName: d.AllianceName,
+		ParentId:     d.ParentId,
+		Pos:          PosDocToState(d.Pos),
+		IsMain:       d.IsMain,
+		Level:        d.Level,
+		CurDurable:   d.CurDurable,
+		MaxDurable:   d.MaxDurable,
+		OccupyTime:   d.OccupyTime,
+		Facility:     toStateSlice_facility(d.Facility),
 	}
 	return entity.HydrateCityEntity(state).Save()
 }

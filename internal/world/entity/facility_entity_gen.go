@@ -6,13 +6,16 @@ import (
 )
 
 const (
-	FieldGarrison_owner  Field = "owner"
-	FieldGarrison_armyId Field = "armyId"
+	FieldFacility_id           Field = "id"
+	FieldFacility_name         Field = "name"
+	FieldFacility_privateLevel Field = "privateLevel"
+	FieldFacility_fType        Field = "fType"
+	FieldFacility_upTime       Field = "upTime"
 )
 
-var emptyGarrisonEntity = &GarrisonEntity{}
+var emptyFacilityEntity = &FacilityEntity{}
 
-type GarrisonEntityCollectionChange struct {
+type FacilityEntityCollectionChange struct {
 	FullReplace       bool
 	MapSet            map[string]any
 	MapDeleteKeys     []string
@@ -22,7 +25,7 @@ type GarrisonEntityCollectionChange struct {
 	SliceSwapRemoveAt []int
 }
 
-type GarrisonEntityCollectionChangeInner struct {
+type FacilityEntityCollectionChangeInner struct {
 	fullReplace       bool
 	mapSet            map[string]any
 	mapDelete         map[string]struct{}
@@ -32,13 +35,13 @@ type GarrisonEntityCollectionChangeInner struct {
 	sliceSwapRemoveAt []int
 }
 
-type GarrisonEntityTrace struct {
+type FacilityEntityTrace struct {
 	dirty   bool
 	trace   map[Field]bool
-	changes map[Field]*GarrisonEntityCollectionChangeInner
+	changes map[Field]*FacilityEntityCollectionChangeInner
 }
 
-func (t *GarrisonEntityTrace) mark(f Field) {
+func (t *FacilityEntityTrace) mark(f Field) {
 	t.dirty = true
 	if t.trace == nil {
 		t.trace = make(map[Field]bool, 8)
@@ -46,19 +49,19 @@ func (t *GarrisonEntityTrace) mark(f Field) {
 	t.trace[f] = true
 }
 
-func (t *GarrisonEntityTrace) ensureChange(f Field) *GarrisonEntityCollectionChangeInner {
+func (t *FacilityEntityTrace) ensureChange(f Field) *FacilityEntityCollectionChangeInner {
 	if t.changes == nil {
-		t.changes = make(map[Field]*GarrisonEntityCollectionChangeInner, 4)
+		t.changes = make(map[Field]*FacilityEntityCollectionChangeInner, 4)
 	}
 	ch, ok := t.changes[f]
 	if !ok || ch == nil {
-		ch = &GarrisonEntityCollectionChangeInner{}
+		ch = &FacilityEntityCollectionChangeInner{}
 		t.changes[f] = ch
 	}
 	return ch
 }
 
-func (t *GarrisonEntityTrace) markFullReplace(f Field) {
+func (t *FacilityEntityTrace) markFullReplace(f Field) {
 	t.mark(f)
 	ch := t.ensureChange(f)
 	ch.fullReplace = true
@@ -70,7 +73,7 @@ func (t *GarrisonEntityTrace) markFullReplace(f Field) {
 	ch.sliceSwapRemoveAt = nil
 }
 
-func (t *GarrisonEntityTrace) markMapSet(f Field, key string, value any) {
+func (t *FacilityEntityTrace) markMapSet(f Field, key string, value any) {
 	t.mark(f)
 	ch := t.ensureChange(f)
 	if ch.fullReplace {
@@ -85,7 +88,7 @@ func (t *GarrisonEntityTrace) markMapSet(f Field, key string, value any) {
 	}
 }
 
-func (t *GarrisonEntityTrace) markMapDelete(f Field, key string) {
+func (t *FacilityEntityTrace) markMapDelete(f Field, key string) {
 	t.mark(f)
 	ch := t.ensureChange(f)
 	if ch.fullReplace {
@@ -100,7 +103,7 @@ func (t *GarrisonEntityTrace) markMapDelete(f Field, key string) {
 	}
 }
 
-func (t *GarrisonEntityTrace) markSliceAppend(f Field, values ...any) {
+func (t *FacilityEntityTrace) markSliceAppend(f Field, values ...any) {
 	if len(values) == 0 {
 		return
 	}
@@ -112,7 +115,7 @@ func (t *GarrisonEntityTrace) markSliceAppend(f Field, values ...any) {
 	ch.sliceAppend = append(ch.sliceAppend, values...)
 }
 
-func (t *GarrisonEntityTrace) markSliceSet(f Field, index int, value any) {
+func (t *FacilityEntityTrace) markSliceSet(f Field, index int, value any) {
 	t.mark(f)
 	ch := t.ensureChange(f)
 	if ch.fullReplace {
@@ -124,7 +127,7 @@ func (t *GarrisonEntityTrace) markSliceSet(f Field, index int, value any) {
 	ch.sliceSet[index] = value
 }
 
-func (t *GarrisonEntityTrace) markSliceRemoveAt(f Field, index int) {
+func (t *FacilityEntityTrace) markSliceRemoveAt(f Field, index int) {
 	t.mark(f)
 	ch := t.ensureChange(f)
 	if ch.fullReplace {
@@ -133,7 +136,7 @@ func (t *GarrisonEntityTrace) markSliceRemoveAt(f Field, index int) {
 	ch.sliceRemoveAt = append(ch.sliceRemoveAt, index)
 }
 
-func (t *GarrisonEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
+func (t *FacilityEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 	t.mark(f)
 	ch := t.ensureChange(f)
 	if ch.fullReplace {
@@ -142,32 +145,41 @@ func (t *GarrisonEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 	ch.sliceSwapRemoveAt = append(ch.sliceSwapRemoveAt, index)
 }
 
-type GarrisonState struct {
-	Owner  int
-	ArmyId ArmyID
+type FacilityState struct {
+	Id           int
+	Name         string
+	PrivateLevel int
+	FType        int8
+	UpTime       int64
 }
 
-type GarrisonEntitySnap struct {
+type FacilityEntitySnap struct {
 	Version     uint64
-	State       GarrisonState
+	State       FacilityState
 	DirtyFields []Field
-	Changes     map[Field]GarrisonEntityCollectionChange
+	Changes     map[Field]FacilityEntityCollectionChange
 }
 
-type GarrisonEntity struct {
-	owner  int
-	armyId ArmyID
-	_dt    GarrisonEntityTrace
+type FacilityEntity struct {
+	id           int
+	name         string
+	privateLevel int
+	fType        int8
+	upTime       int64
+	_dt          FacilityEntityTrace
 }
 
-func HydrateGarrisonEntity(s GarrisonState) *GarrisonEntity {
-	return &GarrisonEntity{
-		owner:  s.Owner,
-		armyId: s.ArmyId,
+func HydrateFacilityEntity(s FacilityState) *FacilityEntity {
+	return &FacilityEntity{
+		id:           s.Id,
+		name:         s.Name,
+		privateLevel: s.PrivateLevel,
+		fType:        s.FType,
+		upTime:       s.UpTime,
 	}
 }
 
-func (e *GarrisonEntity) Dirty() bool {
+func (e *FacilityEntity) Dirty() bool {
 	if e == nil {
 		return false
 	}
@@ -177,14 +189,14 @@ func (e *GarrisonEntity) Dirty() bool {
 	return false
 }
 
-func (e *GarrisonEntity) ClearDirty() {
+func (e *FacilityEntity) ClearDirty() {
 	if e == nil {
 		return
 	}
-	e._dt = GarrisonEntityTrace{}
+	e._dt = FacilityEntityTrace{}
 }
 
-func (e *GarrisonEntity) DirtyFields() []Field {
+func (e *FacilityEntity) DirtyFields() []Field {
 	if e == nil {
 		return nil
 	}
@@ -203,16 +215,16 @@ func (e *GarrisonEntity) DirtyFields() []Field {
 	return out
 }
 
-func (e *GarrisonEntity) DirtyChanges() map[Field]GarrisonEntityCollectionChange {
+func (e *FacilityEntity) DirtyChanges() map[Field]FacilityEntityCollectionChange {
 	if e == nil || len(e._dt.changes) == 0 {
 		return nil
 	}
-	out := make(map[Field]GarrisonEntityCollectionChange, len(e._dt.changes))
+	out := make(map[Field]FacilityEntityCollectionChange, len(e._dt.changes))
 	for f, ch := range e._dt.changes {
 		if ch == nil {
 			continue
 		}
-		item := GarrisonEntityCollectionChange{
+		item := FacilityEntityCollectionChange{
 			FullReplace: ch.fullReplace,
 		}
 		if len(ch.mapSet) > 0 {
@@ -249,7 +261,7 @@ func (e *GarrisonEntity) DirtyChanges() map[Field]GarrisonEntityCollectionChange
 	return out
 }
 
-func cloneGarrisonEntityCollectionChange(in GarrisonEntityCollectionChange) GarrisonEntityCollectionChange {
+func cloneFacilityEntityCollectionChange(in FacilityEntityCollectionChange) FacilityEntityCollectionChange {
 	out := in
 	if in.MapSet != nil {
 		out.MapSet = make(map[string]any, len(in.MapSet))
@@ -278,23 +290,26 @@ func cloneGarrisonEntityCollectionChange(in GarrisonEntityCollectionChange) Garr
 	return out
 }
 
-func (e *GarrisonEntity) Save() GarrisonState {
-	var s GarrisonState
+func (e *FacilityEntity) Save() FacilityState {
+	var s FacilityState
 	if e == nil {
 		return s
 	}
-	s.Owner = e.owner
-	s.ArmyId = e.armyId
+	s.Id = e.id
+	s.Name = e.name
+	s.PrivateLevel = e.privateLevel
+	s.FType = e.fType
+	s.UpTime = e.upTime
 	return s
 }
 
-func NewGarrisonEntitySnap(version uint64, e *GarrisonEntity) *GarrisonEntitySnap {
+func NewFacilityEntitySnap(version uint64, e *FacilityEntity) *FacilityEntitySnap {
 	if e == nil {
 		return nil
 	}
 	dirtyFields := e.DirtyFields()
 	changes := e.DirtyChanges()
-	return &GarrisonEntitySnap{
+	return &FacilityEntitySnap{
 		Version:     version,
 		State:       e.Save(),
 		DirtyFields: dirtyFields,
@@ -302,58 +317,118 @@ func NewGarrisonEntitySnap(version uint64, e *GarrisonEntity) *GarrisonEntitySna
 	}
 }
 
-func (s *GarrisonEntitySnap) Clone() *GarrisonEntitySnap {
+func (s *FacilityEntitySnap) Clone() *FacilityEntitySnap {
 	if s == nil {
 		return nil
 	}
-	out := &GarrisonEntitySnap{Version: s.Version}
+	out := &FacilityEntitySnap{Version: s.Version}
 	out.State = s.State
 	out.DirtyFields = append([]Field(nil), s.DirtyFields...)
 	if len(s.Changes) > 0 {
-		out.Changes = make(map[Field]GarrisonEntityCollectionChange, len(s.Changes))
+		out.Changes = make(map[Field]FacilityEntityCollectionChange, len(s.Changes))
 		for f, ch := range s.Changes {
-			out.Changes[f] = cloneGarrisonEntityCollectionChange(ch)
+			out.Changes[f] = cloneFacilityEntityCollectionChange(ch)
 		}
 	}
 	return out
 }
 
-func (e *GarrisonEntity) Owner() int {
+func (e *FacilityEntity) Id() int {
 	if e == nil {
 		var z int
 		return z
 	}
-	return e.owner
+	return e.id
 }
 
-func (e *GarrisonEntity) SetOwner(v int) bool {
+func (e *FacilityEntity) SetId(v int) bool {
 	if e == nil {
 		return false
 	}
-	if e.owner == v {
+	if e.id == v {
 		return false
 	}
-	e.owner = v
-	e._dt.mark(FieldGarrison_owner)
+	e.id = v
+	e._dt.mark(FieldFacility_id)
 	return true
 }
 
-func (e *GarrisonEntity) ArmyId() ArmyID {
+func (e *FacilityEntity) Name() string {
 	if e == nil {
-		var z ArmyID
+		var z string
 		return z
 	}
-	return e.armyId
+	return e.name
 }
 
-func (e *GarrisonEntity) SetArmyId(v ArmyID) bool {
+func (e *FacilityEntity) SetName(v string) bool {
 	if e == nil {
 		return false
 	}
-	if e.armyId == v {
+	if e.name == v {
 		return false
 	}
-	e.armyId = v
-	e._dt.mark(FieldGarrison_armyId)
+	e.name = v
+	e._dt.mark(FieldFacility_name)
+	return true
+}
+
+func (e *FacilityEntity) PrivateLevel() int {
+	if e == nil {
+		var z int
+		return z
+	}
+	return e.privateLevel
+}
+
+func (e *FacilityEntity) SetPrivateLevel(v int) bool {
+	if e == nil {
+		return false
+	}
+	if e.privateLevel == v {
+		return false
+	}
+	e.privateLevel = v
+	e._dt.mark(FieldFacility_privateLevel)
+	return true
+}
+
+func (e *FacilityEntity) FType() int8 {
+	if e == nil {
+		var z int8
+		return z
+	}
+	return e.fType
+}
+
+func (e *FacilityEntity) SetFType(v int8) bool {
+	if e == nil {
+		return false
+	}
+	if e.fType == v {
+		return false
+	}
+	e.fType = v
+	e._dt.mark(FieldFacility_fType)
+	return true
+}
+
+func (e *FacilityEntity) UpTime() int64 {
+	if e == nil {
+		var z int64
+		return z
+	}
+	return e.upTime
+}
+
+func (e *FacilityEntity) SetUpTime(v int64) bool {
+	if e == nil {
+		return false
+	}
+	if e.upTime == v {
+		return false
+	}
+	e.upTime = v
+	e._dt.mark(FieldFacility_upTime)
 	return true
 }

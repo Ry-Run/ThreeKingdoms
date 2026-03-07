@@ -2,6 +2,7 @@ package grpc
 
 import (
 	accountpb "ThreeKingdoms/internal/shared/gen/account"
+	gatepb "ThreeKingdoms/internal/shared/gen/gate"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"fmt"
 
@@ -42,4 +43,18 @@ func DialPlayerService(playerService string) (*grpc.ClientConn, playerpb.PlayerS
 		return nil, nil, fmt.Errorf("dial player service failed: %w", err)
 	}
 	return conn, playerpb.NewPlayerServiceClient(conn), nil
+}
+
+// DialGatePushService 建立 gate push grpc 连接并返回 typed client。
+func DialGatePushService(gateService string) (*grpc.ClientConn, gatepb.GatePushServiceClient, error) {
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(UnaryClientTraceInterceptor()),
+		grpc.WithChainStreamInterceptor(StreamClientTraceInterceptor()),
+	}
+	conn, err := grpc.NewClient(gateService, opts...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("dial gate push service failed: %w", err)
+	}
+	return conn, gatepb.NewGatePushServiceClient(conn), nil
 }

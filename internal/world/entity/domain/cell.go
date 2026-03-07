@@ -27,18 +27,18 @@ type Cell struct {
 
 // entity
 type Occupancy struct {
-	kind      int8 // 玩家城市, 系统城市, 系统要塞
-	refId     int  // 关联对象ID（如城市ID/要塞ID等）
-	owner     int  // 所属玩家ID（PlayerID），用于判断玩家动态占据态；不是 rid
-	roleNick  string
-	unionId   int
-	unionName string
-	parentId  int       // 上级联盟 ID
-	garrison  *Garrison // 持久化驻军信息
+	kind         int8 // 玩家城市, 系统城市, 系统要塞
+	refId        int  // 关联对象ID（如城市ID/要塞ID等）
+	owner        int  // 所属玩家ID（PlayerID），用于判断玩家动态占据态；不是 rid
+	roleNick     string
+	allianceId   int
+	allianceName string
+	parentId     int       // 上级联盟 ID
+	garrison     *Garrison // 持久化驻军信息
 }
 
 // entity
 type Garrison struct {
-	owner  int // CityID / BuildingID / FortressID
-	armyId int // 军队 id
+	owner  int    // CityID / BuildingID / FortressID
+	armyId ArmyID // 军队 id
 }

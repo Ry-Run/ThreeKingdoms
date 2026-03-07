@@ -1,6 +1,7 @@
 package actors
 
 import (
+	sharedactor "ThreeKingdoms/internal/shared/actor"
 	"ThreeKingdoms/internal/shared/actor/messages"
 	"ThreeKingdoms/internal/shared/gameconfig/building"
 	"ThreeKingdoms/internal/shared/gameconfig/map"
@@ -28,19 +29,19 @@ type WorldActor struct {
 	worldID    *WorldID
 	dc         *dc.WorldDC
 	entity     *entity.WorldEntity
+	resolver   sharedactor.ManagerPIDResolver
 	dispatcher *Dispatcher
 	flushStop  chan struct{}
+	// 玩家的视野
+	PlayerView map[PlayerID]View
 }
 
-type flushTick struct{}
-
-func (flushTick) NotInfluenceReceiveTimeout() {}
-
-func NewWorldActor(worldID WorldID, repo port.WorldRepository) *WorldActor {
+func NewWorldActor(worldID WorldID, repo port.WorldRepository, resolver sharedactor.ManagerPIDResolver) *WorldActor {
 	return &WorldActor{
 		state:      None,
 		worldID:    &worldID,
 		dc:         dc.NewWorldDC(repo),
+		resolver:   resolver,
 		dispatcher: NewDispatcher(),
 	}
 }
@@ -67,13 +68,20 @@ func (w *WorldActor) Receive(ctx actor.Context) {
 		w.stopFlushLoop()
 		w.state = Init
 		return
-	case flushTick:
+	case *messages.DCTick:
 		if w.state != Online {
 			return
 		}
 		if _, err := w.dc.Tick(); err != nil {
 			ctx.Logger().Error("world periodic flush failed", "world_id", w.worldID, "err", err)
 		}
+		return
+	case *messages.Tick:
+		if w.state != Online {
+			return
+		}
+		// 检查
+		WS.march(ctx, w)
 		return
 	case messages.WorldMessage:
 		if msg == nil {
@@ -132,6 +140,27 @@ func (w *WorldActor) DC() *dc.WorldDC {
 	return w.dc
 }
 
+func (w *WorldActor) WorldPID() *actor.PID {
+	if w == nil || w.resolver == nil {
+		return nil
+	}
+	pid, ok := w.resolver.ResolveManagerPID(sharedactor.ManagerPIDWorld)
+	if !ok {
+		return nil
+	}
+	return pid
+}
+
+func (w *WorldActor) ResolveManagerPID(key sharedactor.ManagerPIDKey) (*actor.PID, bool) {
+	if w == nil {
+		return nil, false
+	}
+	if w.resolver == nil {
+		return nil, false
+	}
+	return w.resolver.ResolveManagerPID(key)
+}
+
 func (w *WorldActor) startFlushLoop(ctx actor.Context) {
 	if w.flushStop != nil {
 		return
@@ -145,13 +174,17 @@ func (w *WorldActor) startFlushLoop(ctx actor.Context) {
 	root := ctx.ActorSystem().Root
 
 	go func(stop <-chan struct{}, every time.Duration) {
-		ticker := time.NewTicker(every)
-		defer ticker.Stop()
+		dcTicker := time.NewTicker(every)
+		ticker := time.NewTicker(1 * time.Second)
+		defer dcTicker.Stop()
 		for {
 			select {
+			case <-dcTicker.C:
+				root.Send(self, &messages.DCTick{})
 			case <-ticker.C:
-				root.Send(self, flushTick{})
+				root.Send(self, &messages.Tick{})
 			case <-stop:
+				dcTicker.Stop()
 				return
 			}
 		}

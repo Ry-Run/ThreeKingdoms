@@ -7,6 +7,8 @@ type CityID int
 
 type ArmyID int
 
+type AllianceID int
+
 // entity
 type World struct {
 	worldId      WorldID

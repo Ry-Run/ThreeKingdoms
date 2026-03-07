@@ -6,13 +6,18 @@ import (
 	"ThreeKingdoms/internal/shared/gameconfig/basic"
 	"ThreeKingdoms/internal/shared/gameconfig/facility"
 	"ThreeKingdoms/internal/shared/gameconfig/general"
+	_map "ThreeKingdoms/internal/shared/gameconfig/map"
 	commonpb "ThreeKingdoms/internal/shared/gen/common"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/security"
 	"ThreeKingdoms/internal/shared/utils"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
+
+	"github.com/asynkron/protoactor-go/actor"
 )
 
 type PlayerService struct{}
@@ -248,6 +253,204 @@ func (s *PlayerService) GetGenerals(player *entity.PlayerEntity) (*playerpb.Play
 	}, nil
 }
 
+func (s *PlayerService) Back(p *PlayerActor, army entity.ArmyState) {
+
+}
+
+func (s *PlayerService) Attack(ctx actor.Context, p *PlayerActor, army entity.ArmyState, x, y int) {
+	player := p.Entity()
+	worldPID := p.WorldPID()
+	if worldPID == nil || p.WorldId == nil {
+		ctx.Respond(fail("world actor unavailable"))
+		return
+	}
+
+	f := ctx.RequestFuture(worldPID,
+		&messages.HWAttack{
+			WorldBaseMessage: messages.WorldBaseMessage{WorldId: int(*p.WorldId), PlayerId: int(*p.PlayerId)},
+			DefenderPos:      messages.Pos{X: x, Y: y},
+			Army:             s.toMessageArmy(player, army),
+		},
+		500*time.Millisecond,
+	)
+	ctx.ReenterAfter(f, func(res interface{}, err error) {
+		if err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
+
+		if attackRes, ok := res.(*messages.WHAttack); ok {
+			updated := player.UpdateArmies(army.Id, func(v *entity.ArmyEntity) {
+				if v == nil {
+					return
+				}
+
+				if !attackRes.OK {
+					ctx.Respond(fail("can't attack the aim"))
+					return
+				}
+
+				v.SetCmd(entity.ArmyCmdAttack)
+				v.SetState(entity.ArmyRunning)
+				v.SetFromX(player.City().X())
+				v.SetFromY(player.City().Y())
+				v.SetToX(x)
+				v.SetToY(y)
+				v.SetStartTime(attackRes.StartTime)
+				v.SetEndTime(attackRes.EndTime)
+				v.SetFrozen(true)
+			})
+			if !updated {
+				ctx.Respond(fail("army not found"))
+				return
+			}
+			AssignArmyResponse(ctx, player, army.Id)
+		} else {
+			ctx.Logger().Info("position", "err", entity.ErrCreateCity)
+			ctx.Respond(fail(""))
+		}
+	})
+}
+
+func (s *PlayerService) toMessageArmy(player *entity.PlayerEntity, army entity.ArmyState) messages.Army {
+	var soldiers [3]int
+	for i := 0; i < len(soldiers) && i < len(army.Soldiers); i++ {
+		soldiers[i] = army.Soldiers[i]
+	}
+	var conTimes [3]int64
+	for i := 0; i < len(conTimes) && i < len(army.ConscriptEndTimes); i++ {
+		conTimes[i] = army.ConscriptEndTimes[i]
+	}
+	var conCounts [3]int
+	for i := 0; i < len(conCounts) && i < len(army.ConscriptCounts); i++ {
+		conCounts[i] = army.ConscriptCounts[i]
+	}
+
+	generals := s.toMessageGenerals(player, army.Generals)
+
+	return messages.Army{
+		Id:         army.Id,
+		CityId:     int(army.CityId),
+		PlayerId:   int(army.PlayerId),
+		AllianceId: int(army.AllianceId),
+		Order:      army.Order,
+		Generals:   generals,
+		Soldiers:   soldiers,
+		ConTimes:   conTimes,
+		ConCounts:  conCounts,
+		Cmd:        army.Cmd,
+		State:      army.State,
+		FromPos:    messages.Pos{X: army.FromX, Y: army.FromY},
+		ToPos:      messages.Pos{X: army.ToX, Y: army.ToY},
+		Start:      timeToMillis(army.StartTime),
+		End:        timeToMillis(army.EndTime),
+	}
+}
+
+func (s *PlayerService) toMessageGenerals(player *entity.PlayerEntity, generalIDs []int) []*messages.General {
+	if player == nil || len(generalIDs) == 0 {
+		return nil
+	}
+	gens := make([]*messages.General, 0, len(generalIDs))
+	for _, generalID := range generalIDs {
+		if generalID <= 0 {
+			continue
+		}
+		general, ok := player.GetGenerals(generalID)
+		if !ok {
+			continue
+		}
+		gens = append(gens, s.toMessageGeneral(general))
+	}
+	return gens
+}
+
+func (s *PlayerService) toMessageGeneral(g entity.GeneralState) *messages.General {
+	return &messages.General{
+		Id:             g.Id,
+		CfgId:          g.CfgId,
+		Power:          g.Power,
+		Level:          g.Level,
+		Exp:            g.Exp,
+		Order:          g.Order,
+		CityId:         g.CityId,
+		CreatedAt:      g.CreatedAt,
+		CurArms:        g.CurArms,
+		HasPrPoint:     g.HasPrPoint,
+		UsePrPoint:     g.UsePrPoint,
+		AttackDistance: g.AttackDistance,
+		ForceAdded:     g.ForceAdded,
+		StrategyAdded:  g.StrategyAdded,
+		DefenseAdded:   g.DefenseAdded,
+		SpeedAdded:     g.SpeedAdded,
+		DestroyAdded:   g.DestroyAdded,
+		StarLv:         g.StarLv,
+		Star:           g.Star,
+		ParentId:       g.ParentId,
+		Skills:         s.toMessageGSkills(g.Skills),
+		State:          g.State,
+	}
+}
+
+func (s *PlayerService) toMessageGSkills(skills []entity.GSkillState) []messages.GSkill {
+	if len(skills) == 0 {
+		return nil
+	}
+	result := make([]messages.GSkill, 0, len(skills))
+	for _, skill := range skills {
+		result = append(result, messages.GSkill{
+			Id:    skill.Id,
+			CfgId: skill.CfgId,
+			Lv:    skill.Lv,
+		})
+	}
+	return result
+}
+
+func (s *PlayerService) Defend(ctx actor.Context, p *PlayerActor, army entity.ArmyState, x int, y int) {
+
+}
+
+func (s *PlayerService) Reclamation(ctx actor.Context, p *PlayerActor, army entity.ArmyState, x int, y int) {
+
+}
+
+func (s *PlayerService) Transfer(ctx actor.Context, p *PlayerActor, army entity.ArmyState, x int, y int) {
+
+}
+
+func AssignArmyResponse(ctx actor.Context, player *entity.PlayerEntity, armyId int) {
+	army, _ := player.GetArmies(armyId)
+	response := ok()
+	response.Body = &playerpb.PlayerResponse_ArmyInfoResponse{
+		ArmyInfoResponse: &playerpb.ArmyInfoResponse{
+			Army: ToPBArmy(player.CityID(), army),
+		},
+	}
+	ctx.Respond(response)
+}
+
+func (s *PlayerService) AssignPreCheck(army entity.ArmyState, x int, y int) error {
+	//是否能出站
+	if !s.IsCanOutWar(army) {
+		return fmt.Errorf("army is busy")
+	}
+	// 判断此土地是否是能攻击的类型 比如山地
+	nm, ok := _map.MapConf.GetCell(x, y)
+	if !ok {
+		return fmt.Errorf("request param invalid")
+	}
+	// 山地不能移动到此
+	if nm.Type == 0 {
+		return fmt.Errorf("request param invalid")
+	}
+	return nil
+}
+
+func (s *PlayerService) IsCanOutWar(a entity.ArmyState) bool {
+	return a.Generals[0] == 0 && a.Cmd == entity.ArmyCmdIdle
+}
+
 func ComputeFacilityYield(player *entity.PlayerEntity) facility.FacilityYield {
 	var yield facility.FacilityYield
 	player.ForEachFacility(func(i int, v entity.FacilityState) {
@@ -323,8 +526,8 @@ func ToPBBuilding(b entity.BuildingState) *playerpb.Building {
 		CurDurable: int32(b.CurDurable),
 		MaxDurable: int32(b.MaxDurable),
 		Defender:   int32(b.Defender),
-		OccupyTime: b.OccupyTime.UnixNano() / 1e6,
-		EndTime:    b.EndTime.UnixNano() / 1e6,
+		OccupyTime: timeToMillis(b.OccupyTime),
+		EndTime:    timeToMillis(b.EndTime),
 		GiveUpTime: b.GiveUpTime * 1000,
 		ParentId:   0,
 		UnionId:    0,
@@ -372,43 +575,24 @@ func ToPBGSkill(skill entity.GSkillState) *playerpb.GSkill {
 }
 
 func ToPBArmy(cityId CityID, a entity.ArmyState) *playerpb.Army {
-	// ArmyEntity 当前无 unionId，proto.UnionId 保持默认值。
-	// start/end 参照旧 ToModel 使用秒；若前端期望毫秒需改为 UnixNano()/1e6。
-	generals := make([]int32, 0, len(a.GeneralArray))
-	for _, value := range a.GeneralArray {
-		generals = append(generals, int32(value))
-	}
-	soldiers := make([]int32, 0, len(a.SoldierArray))
-	for _, value := range a.SoldierArray {
-		soldiers = append(soldiers, int32(value))
-	}
-	conTimes := make([]int64, 0, len(a.ConscriptTimeArray))
-	for _, value := range a.ConscriptTimeArray {
-		conTimes = append(conTimes, value)
-	}
-	conCnts := make([]int32, 0, len(a.ConscriptCntArray))
-	for _, value := range a.ConscriptCntArray {
-		conCnts = append(conCnts, int32(value))
-	}
-
-	return &playerpb.Army{
-		Id:       int32(a.Id),
-		CityId:   int32(cityId),
-		Order:    int32(a.Order),
-		UnionId:  0,
-		Generals: generals,
-		Soldiers: soldiers,
-		ConTimes: conTimes,
-		ConCnts:  conCnts,
-		Cmd:      int32(a.Cmd),
-		State:    int32(a.State),
-		FromX:    int32(a.FromX),
-		FromY:    int32(a.FromY),
-		ToX:      int32(a.ToX),
-		ToY:      int32(a.ToY),
-		Start:    a.StartTime.Unix(),
-		End:      a.EndTime.Unix(),
-	}
+	return buildPBArmy(pbArmyPayload{
+		id:       a.Id,
+		cityID:   int(cityId),
+		order:    int(a.Order),
+		unionID:  0,
+		generals: append([]int(nil), a.Generals...),
+		soldiers: append([]int(nil), a.Soldiers...),
+		conTimes: append([]int64(nil), a.ConscriptEndTimes...),
+		conCnts:  append([]int(nil), a.ConscriptCounts...),
+		cmd:      int(a.Cmd),
+		state:    int(a.State),
+		fromX:    a.FromX,
+		fromY:    a.FromY,
+		toX:      a.ToX,
+		toY:      a.ToY,
+		start:    timeToMillis(a.StartTime),
+		end:      timeToMillis(a.EndTime),
+	})
 }
 
 func ToPBWHScanBlock(v messages.WHScanBlock) *playerpb.ScanBlockResponse {
@@ -422,7 +606,7 @@ func ToPBWHScanBlock(v messages.WHScanBlock) *playerpb.ScanBlockResponse {
 	}
 	armies := make([]*playerpb.Army, 0, len(v.Armies))
 	for _, a := range v.Armies {
-		armies = append(armies, ToPBScanArmy(a))
+		armies = append(armies, buildPBArmy(pbArmyPayloadFromMessage(a)))
 	}
 	return &playerpb.ScanBlockResponse{
 		Buildings: buildings,
@@ -436,8 +620,8 @@ func ToPBScanBuilding(b messages.Building) *playerpb.Building {
 		PlayerId:   int32(b.PlayerId),
 		Rnick:      b.RNick,
 		Name:       b.Name,
-		UnionId:    int32(b.UnionId),
-		UnionName:  b.UnionName,
+		UnionId:    int32(b.AllianceId),
+		UnionName:  b.AllianceName,
 		ParentId:   int32(b.ParentId),
 		X:          int32(b.Pos.X),
 		Y:          int32(b.Pos.Y),
@@ -458,8 +642,8 @@ func ToPBScanCity(c messages.WorldCity) *playerpb.City {
 		PlayerId:   int32(c.PlayerId),
 		CityId:     c.CityId,
 		Name:       c.Name,
-		UnionId:    int32(c.UnionId),
-		UnionName:  c.UnionName,
+		UnionId:    int32(c.AllianceId),
+		UnionName:  c.AllianceName,
 		ParentId:   int32(c.ParentId),
 		X:          int32(c.Pos.X),
 		Y:          int32(c.Pos.Y),
@@ -471,40 +655,101 @@ func ToPBScanCity(c messages.WorldCity) *playerpb.City {
 	}
 }
 
-func ToPBScanArmy(a messages.Army) *playerpb.Army {
-	generals := make([]int32, 0, len(a.Generals))
-	for _, v := range a.Generals {
-		generals = append(generals, int32(v))
+type pbArmyPayload struct {
+	id       int
+	cityID   int
+	order    int
+	unionID  int
+	generals []int
+	soldiers []int
+	conTimes []int64
+	conCnts  []int
+	cmd      int
+	state    int
+	fromX    int
+	fromY    int
+	toX      int
+	toY      int
+	start    int64
+	end      int64
+}
+
+func buildPBArmy(payload pbArmyPayload) *playerpb.Army {
+	generals := make([]int32, 0, len(payload.generals))
+	for _, value := range payload.generals {
+		generals = append(generals, int32(value))
 	}
-	soldiers := make([]int32, 0, len(a.Soldiers))
+	soldiers := make([]int32, 0, len(payload.soldiers))
+	for _, value := range payload.soldiers {
+		soldiers = append(soldiers, int32(value))
+	}
+	conTimes := make([]int64, 0, len(payload.conTimes))
+	for _, value := range payload.conTimes {
+		conTimes = append(conTimes, value)
+	}
+	conCnts := make([]int32, 0, len(payload.conCnts))
+	for _, value := range payload.conCnts {
+		conCnts = append(conCnts, int32(value))
+	}
+
+	return &playerpb.Army{
+		Id:       int32(payload.id),
+		CityId:   int32(payload.cityID),
+		Order:    int32(payload.order),
+		UnionId:  int32(payload.unionID),
+		Generals: generals,
+		Soldiers: soldiers,
+		ConTimes: conTimes,
+		ConCnts:  conCnts,
+		Cmd:      int32(payload.cmd),
+		State:    int32(payload.state),
+		FromX:    int32(payload.fromX),
+		FromY:    int32(payload.fromY),
+		ToX:      int32(payload.toX),
+		ToY:      int32(payload.toY),
+		Start:    payload.start,
+		End:      payload.end,
+	}
+}
+
+func pbArmyPayloadFromMessage(a messages.Army) pbArmyPayload {
+	generals := make([]int, 0, len(a.Generals))
+	for _, v := range a.Generals {
+		if v == nil {
+			generals = append(generals, 0)
+			continue
+		}
+		generals = append(generals, v.Id)
+	}
+	soldiers := make([]int, 0, len(a.Soldiers))
 	for _, v := range a.Soldiers {
-		soldiers = append(soldiers, int32(v))
+		soldiers = append(soldiers, v)
 	}
 	conTimes := make([]int64, 0, len(a.ConTimes))
 	for _, v := range a.ConTimes {
 		conTimes = append(conTimes, v)
 	}
-	conCnts := make([]int32, 0, len(a.ConCounts))
+	conCnts := make([]int, 0, len(a.ConCounts))
 	for _, v := range a.ConCounts {
-		conCnts = append(conCnts, int32(v))
+		conCnts = append(conCnts, v)
 	}
-	return &playerpb.Army{
-		Id:       int32(a.Id),
-		CityId:   int32(a.CityId),
-		UnionId:  int32(a.UnionId),
-		Order:    int32(a.Order),
-		Generals: generals,
-		Soldiers: soldiers,
-		ConTimes: conTimes,
-		ConCnts:  conCnts,
-		Cmd:      int32(a.Cmd),
-		State:    int32(a.State),
-		FromX:    int32(a.FromPos.X),
-		FromY:    int32(a.FromPos.Y),
-		ToX:      int32(a.ToPos.X),
-		ToY:      int32(a.ToPos.Y),
-		Start:    a.Start,
-		End:      a.End,
+	return pbArmyPayload{
+		id:       a.Id,
+		cityID:   a.CityId,
+		order:    int(a.Order),
+		unionID:  a.AllianceId,
+		generals: generals,
+		soldiers: soldiers,
+		conTimes: conTimes,
+		conCnts:  conCnts,
+		cmd:      int(a.Cmd),
+		state:    int(a.State),
+		fromX:    a.FromPos.X,
+		fromY:    a.FromPos.Y,
+		toX:      a.ToPos.X,
+		toY:      a.ToPos.Y,
+		start:    a.Start,
+		end:      a.End,
 	}
 }
 
@@ -512,12 +757,24 @@ func timeToMillis(t time.Time) int64 {
 	if t.IsZero() {
 		return 0
 	}
-	return t.UnixNano() / 1e6
+	return t.UnixMilli()
+}
+
+func millisToTime(ms int64) time.Time {
+	if ms <= 0 {
+		return time.Time{}
+	}
+	return time.UnixMilli(ms)
+}
+
+func firstOrNil(s []entity.GeneralState) entity.GeneralState {
+	if len(s) == 0 {
+		return entity.GeneralState{}
+	}
+	return s[0]
 }
 
 func ToPBWarReport(cityId CityID, v entity.WarReportState) *playerpb.WarReport {
-	// CTime 在实体中是 int，当前直接透传到 proto int64；
-	// 若后续统一时间单位（秒/毫秒）规范，这里再一起收敛。
 	return &playerpb.WarReport{
 		Id:                int32(v.Id),
 		AttackRid:         int32(v.Attacker),
@@ -526,10 +783,10 @@ func ToPBWarReport(cityId CityID, v entity.WarReportState) *playerpb.WarReport {
 		BegDefenseArmy:    ToPBArmy(cityId, v.BegDefenseArmy),
 		EndAttackArmy:     ToPBArmy(cityId, v.EndAttackArmy),
 		EndDefenseArmy:    ToPBArmy(cityId, v.EndDefenseArmy),
-		BegAttackGeneral:  ToPBGeneral(v.BegAttackGeneral),
-		BegDefenseGeneral: ToPBGeneral(v.BegDefenseGeneral),
-		EndAttackGeneral:  ToPBGeneral(v.EndAttackGeneral),
-		EndDefenseGeneral: ToPBGeneral(v.EndDefenseGeneral),
+		BegAttackGeneral:  ToPBGeneral(firstOrNil(v.BegAttackGeneral)),
+		BegDefenseGeneral: ToPBGeneral(firstOrNil(v.BegDefenseGeneral)),
+		EndAttackGeneral:  ToPBGeneral(firstOrNil(v.EndAttackGeneral)),
+		EndDefenseGeneral: ToPBGeneral(firstOrNil(v.EndDefenseGeneral)),
 		Result:            int32(v.Result),
 		Rounds:            v.Rounds,
 		AttackIsRead:      v.AttackIsRead,
@@ -540,6 +797,146 @@ func ToPBWarReport(cityId CityID, v entity.WarReportState) *playerpb.WarReport {
 		Y:                 int32(v.Y),
 		Ctime:             int64(v.CTime),
 	}
+}
+
+func Generals(v []*messages.General) []entity.GeneralState {
+	generals := make([]entity.GeneralState, 0, len(v))
+	for _, g := range v {
+		generals = append(generals, msgToEntityGeneral(g))
+	}
+	return generals
+}
+
+func serializeWarReportRounds(rounds []*messages.Round) string {
+	if len(rounds) == 0 {
+		return ""
+	}
+	raw, err := json.Marshal(rounds)
+	if err != nil {
+		return ""
+	}
+	return string(raw)
+}
+
+func ToWarReport(v messages.WarReport) entity.WarReportState {
+	state := entity.WarReportState{
+		Id:                v.Id,
+		Attacker:          v.Attacker,
+		Defender:          v.Defender,
+		BegAttackArmy:     msgArmyToArmy(v.BegAttackArmy),
+		BegDefenseArmy:    msgArmyToArmy(v.BegDefenseArmy),
+		EndAttackArmy:     msgArmyToArmy(v.EndAttackArmy),
+		EndDefenseArmy:    msgArmyToArmy(v.EndDefenseArmy),
+		BegAttackGeneral:  Generals(v.BegAttackGeneral),
+		BegDefenseGeneral: Generals(v.BegDefenseGeneral),
+		EndAttackGeneral:  Generals(v.EndAttackGeneral),
+		EndDefenseGeneral: Generals(v.EndDefenseGeneral),
+		Result:            int(v.Result),
+		Rounds:            serializeWarReportRounds(v.Rounds),
+		AttackIsRead:      v.AttackIsRead,
+		DefenseIsRead:     v.DefenseIsRead,
+		DestroyDurable:    v.DestroyDurable,
+		Occupy:            v.Occupy,
+		X:                 v.X,
+		Y:                 v.Y,
+		CTime:             v.CTime,
+	}
+	if state.CTime <= 0 {
+		state.CTime = int(time.Now().UnixMilli())
+	}
+	return state
+}
+
+func msgArmyToArmy(army *messages.Army) entity.ArmyState {
+	if army == nil {
+		return entity.ArmyState{}
+	}
+	generals := make([]int, 0, len(army.Generals))
+	for _, g := range army.Generals {
+		if g == nil {
+			generals = append(generals, 0)
+			continue
+		}
+		generals = append(generals, g.Id)
+	}
+	soldiers := make([]int, 0, len(army.Soldiers))
+	for _, value := range army.Soldiers {
+		soldiers = append(soldiers, value)
+	}
+	conscriptEndTimes := make([]int64, 0, len(army.ConTimes))
+	for _, value := range army.ConTimes {
+		conscriptEndTimes = append(conscriptEndTimes, value)
+	}
+	conscriptCounts := make([]int, 0, len(army.ConCounts))
+	for _, value := range army.ConCounts {
+		conscriptCounts = append(conscriptCounts, value)
+	}
+
+	state := entity.ArmyState{
+		Id:                army.Id,
+		CityId:            entity.CityID(army.CityId),
+		PlayerId:          entity.PlayerID(army.PlayerId),
+		AllianceId:        entity.AllianceID(army.AllianceId),
+		Order:             army.Order,
+		Generals:          generals,
+		Soldiers:          soldiers,
+		Cmd:               army.Cmd,
+		FromX:             army.FromPos.X,
+		FromY:             army.FromPos.Y,
+		ToX:               army.ToPos.X,
+		ToY:               army.ToPos.Y,
+		State:             army.State,
+		ConscriptEndTimes: conscriptEndTimes,
+		ConscriptCounts:   conscriptCounts,
+	}
+	state.StartTime = millisToTime(army.Start)
+	state.EndTime = millisToTime(army.End)
+	return state
+}
+
+func msgToEntityGeneral(g *messages.General) entity.GeneralState {
+	if g == nil {
+		return entity.GeneralState{}
+	}
+	return entity.GeneralState{
+		Id:             g.Id,
+		CfgId:          g.CfgId,
+		Power:          g.Power,
+		Level:          g.Level,
+		Exp:            g.Exp,
+		Order:          g.Order,
+		CityId:         g.CityId,
+		CreatedAt:      g.CreatedAt,
+		CurArms:        g.CurArms,
+		HasPrPoint:     g.HasPrPoint,
+		UsePrPoint:     g.UsePrPoint,
+		AttackDistance: g.AttackDistance,
+		ForceAdded:     g.ForceAdded,
+		StrategyAdded:  g.StrategyAdded,
+		DefenseAdded:   g.DefenseAdded,
+		SpeedAdded:     g.SpeedAdded,
+		DestroyAdded:   g.DestroyAdded,
+		StarLv:         g.StarLv,
+		Star:           g.Star,
+		ParentId:       g.ParentId,
+		Skills:         toEntityWarReportGSkills(g.Skills),
+		State:          g.State,
+	}
+}
+
+func toEntityWarReportGSkills(skills []messages.GSkill) []entity.GSkillState {
+	if len(skills) == 0 {
+		return nil
+	}
+	result := make([]entity.GSkillState, 0, len(skills))
+	for _, skill := range skills {
+		result = append(result, entity.GSkillState{
+			Id:    skill.Id,
+			CfgId: skill.CfgId,
+			Lv:    skill.Lv,
+		})
+	}
+	return result
 }
 
 func ToPBSkill(v entity.SkillState) *playerpb.Skill {

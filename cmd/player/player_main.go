@@ -5,6 +5,7 @@ import (
 	alliancemongo "ThreeKingdoms/internal/alliance/infra/persistence/mongodb"
 	playeractor "ThreeKingdoms/internal/player/actor"
 	playermongo "ThreeKingdoms/internal/player/infra/persistence/mongodb"
+	sharedactor "ThreeKingdoms/internal/shared/actor"
 	"ThreeKingdoms/internal/shared/gameconfig"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	sharedmongo "ThreeKingdoms/internal/shared/infrastructure/mongo"
@@ -12,6 +13,7 @@ import (
 	"ThreeKingdoms/internal/shared/serverconfig"
 	transportgrpc "ThreeKingdoms/internal/shared/transport/grpc"
 	worldactor "ThreeKingdoms/internal/world/actor"
+	worldactors "ThreeKingdoms/internal/world/actors"
 	worldmongo "ThreeKingdoms/internal/world/infra/persistence/mongodb"
 	"context"
 	"fmt"
@@ -60,10 +62,20 @@ func main() {
 		_ = mongoClient.Disconnect(context.Background())
 	}()
 	db := mongoClient.Database(serverconfig.Conf.MongoDB.Database)
+	managerPIDRegistry := sharedactor.NewPIDRegistry()
+	pusherAddr := pusherServiceAddr(serverconfig.Conf.GateServer)
+	pusherConn, pusher, err := transportgrpc.DialGatePushService(pusherAddr)
+	if err != nil {
+		logs.Fatal("dial gate push service failed", zap.Error(err), zap.String("addr", pusherAddr))
+	}
+	defer func() {
+		_ = pusherConn.Close()
+	}()
 
 	worldRepo := worldmongo.NewWorldRepository(db)
-	worldRT := worldactor.NewRuntime(worldRepo, 0)
+	worldRT := worldactor.NewRuntime(worldRepo, managerPIDRegistry, worldactors.NewGRPCWorldPushBatchPusher(pusher), 0)
 	defer worldRT.Shutdown()
+	managerPIDRegistry.RegisterManagerPID(sharedactor.ManagerPIDWorld, worldRT.WorldActorID())
 
 	worldID := serverconfig.Conf.Logic.WorldID
 	if worldID <= 0 {
@@ -71,13 +83,14 @@ func main() {
 	}
 
 	allianceRepo := alliancemongo.NewAllianceRepository(db)
-	allianceRT := allianceactor.NewRuntimeWithActorSystem(worldRT.ActorSystem(), allianceRepo, worldID, 0)
+	allianceRT := allianceactor.NewRuntime(worldRT.ActorSystem(), allianceRepo, worldID, 0)
 	defer allianceRT.Shutdown()
-	allianceID := allianceRT.AllianceActorID()
+	managerPIDRegistry.RegisterManagerPID(sharedactor.ManagerPIDAlliance, allianceRT.AllianceActorID())
 
 	repo := playermongo.NewPlayerRepo(db)
-	rt := playeractor.NewRuntimeWithWorldPID(logger, worldRT.ActorSystem(), repo, worldRT.WorldActorID(), allianceID, 0)
+	rt := playeractor.NewRuntime(logger, worldRT.ActorSystem(), repo, managerPIDRegistry, pusher, 0)
 	defer rt.Shutdown()
+	managerPIDRegistry.RegisterManagerPID(sharedactor.ManagerPIDPlayer, rt.PlayerMangerPID())
 
 	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(transportgrpc.UnaryServerTraceInterceptor()),
@@ -125,4 +138,16 @@ func main() {
 	case <-time.After(10 * time.Second):
 		server.Stop()
 	}
+}
+
+func pusherServiceAddr(cfg serverconfig.GateServerConfig) string {
+	host := cfg.Host
+	if host == "" || host == "0.0.0.0" {
+		host = "127.0.0.1"
+	}
+	port := cfg.GRPCPort
+	if port <= 0 {
+		port = cfg.Port + 10000
+	}
+	return fmt.Sprintf("%s:%d", host, port)
 }

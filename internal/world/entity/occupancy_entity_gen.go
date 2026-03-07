@@ -6,14 +6,14 @@ import (
 )
 
 const (
-	FieldOccupancy_kind      Field = "kind"
-	FieldOccupancy_refId     Field = "refId"
-	FieldOccupancy_owner     Field = "owner"
-	FieldOccupancy_roleNick  Field = "roleNick"
-	FieldOccupancy_unionId   Field = "unionId"
-	FieldOccupancy_unionName Field = "unionName"
-	FieldOccupancy_parentId  Field = "parentId"
-	FieldOccupancy_garrison  Field = "garrison"
+	FieldOccupancy_kind         Field = "kind"
+	FieldOccupancy_refId        Field = "refId"
+	FieldOccupancy_owner        Field = "owner"
+	FieldOccupancy_roleNick     Field = "roleNick"
+	FieldOccupancy_allianceId   Field = "allianceId"
+	FieldOccupancy_allianceName Field = "allianceName"
+	FieldOccupancy_parentId     Field = "parentId"
+	FieldOccupancy_garrison     Field = "garrison"
 )
 
 var emptyOccupancyEntity = &OccupancyEntity{}
@@ -149,14 +149,14 @@ func (t *OccupancyEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 }
 
 type OccupancyState struct {
-	Kind      int8
-	RefId     int
-	Owner     int
-	RoleNick  string
-	UnionId   int
-	UnionName string
-	ParentId  int
-	Garrison  GarrisonState
+	Kind         int8
+	RefId        int
+	Owner        int
+	RoleNick     string
+	AllianceId   int
+	AllianceName string
+	ParentId     int
+	Garrison     GarrisonState
 }
 
 type OccupancyEntitySnap struct {
@@ -167,27 +167,27 @@ type OccupancyEntitySnap struct {
 }
 
 type OccupancyEntity struct {
-	kind      int8
-	refId     int
-	owner     int
-	roleNick  string
-	unionId   int
-	unionName string
-	parentId  int
-	garrison  *GarrisonEntity
-	_dt       OccupancyEntityTrace
+	kind         int8
+	refId        int
+	owner        int
+	roleNick     string
+	allianceId   int
+	allianceName string
+	parentId     int
+	garrison     *GarrisonEntity
+	_dt          OccupancyEntityTrace
 }
 
 func HydrateOccupancyEntity(s OccupancyState) *OccupancyEntity {
 	return &OccupancyEntity{
-		kind:      s.Kind,
-		refId:     s.RefId,
-		owner:     s.Owner,
-		roleNick:  s.RoleNick,
-		unionId:   s.UnionId,
-		unionName: s.UnionName,
-		parentId:  s.ParentId,
-		garrison:  HydrateGarrisonEntity(s.Garrison),
+		kind:         s.Kind,
+		refId:        s.RefId,
+		owner:        s.Owner,
+		roleNick:     s.RoleNick,
+		allianceId:   s.AllianceId,
+		allianceName: s.AllianceName,
+		parentId:     s.ParentId,
+		garrison:     HydrateGarrisonEntity(s.Garrison),
 	}
 }
 
@@ -320,8 +320,8 @@ func (e *OccupancyEntity) Save() OccupancyState {
 	s.RefId = e.refId
 	s.Owner = e.owner
 	s.RoleNick = e.roleNick
-	s.UnionId = e.unionId
-	s.UnionName = e.unionName
+	s.AllianceId = e.allianceId
+	s.AllianceName = e.allianceName
 	s.ParentId = e.parentId
 	if e.garrison != nil {
 		s.Garrison = e.garrison.Save()
@@ -442,43 +442,43 @@ func (e *OccupancyEntity) SetRoleNick(v string) bool {
 	return true
 }
 
-func (e *OccupancyEntity) UnionId() int {
+func (e *OccupancyEntity) AllianceId() int {
 	if e == nil {
 		var z int
 		return z
 	}
-	return e.unionId
+	return e.allianceId
 }
 
-func (e *OccupancyEntity) SetUnionId(v int) bool {
+func (e *OccupancyEntity) SetAllianceId(v int) bool {
 	if e == nil {
 		return false
 	}
-	if e.unionId == v {
+	if e.allianceId == v {
 		return false
 	}
-	e.unionId = v
-	e._dt.mark(FieldOccupancy_unionId)
+	e.allianceId = v
+	e._dt.mark(FieldOccupancy_allianceId)
 	return true
 }
 
-func (e *OccupancyEntity) UnionName() string {
+func (e *OccupancyEntity) AllianceName() string {
 	if e == nil {
 		var z string
 		return z
 	}
-	return e.unionName
+	return e.allianceName
 }
 
-func (e *OccupancyEntity) SetUnionName(v string) bool {
+func (e *OccupancyEntity) SetAllianceName(v string) bool {
 	if e == nil {
 		return false
 	}
-	if e.unionName == v {
+	if e.allianceName == v {
 		return false
 	}
-	e.unionName = v
-	e._dt.mark(FieldOccupancy_unionName)
+	e.allianceName = v
+	e._dt.mark(FieldOccupancy_allianceName)
 	return true
 }
 

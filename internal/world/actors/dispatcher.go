@@ -28,6 +28,8 @@ func (d *Dispatcher) registerAll() {
 	register(d, WH.HandleHWCreateCity)
 	register(d, WH.HandleHWMyCities)
 	register(d, WH.HandleHWScanBlock)
+	register(d, WH.HandleHWAttack)
+	register(d, WH.HandleHWSyncCityFacility)
 }
 
 func register[Req messages.WorldMessage](

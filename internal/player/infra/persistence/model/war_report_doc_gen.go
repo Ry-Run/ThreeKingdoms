@@ -6,26 +6,114 @@ import (
 )
 
 type WarReportDoc struct {
-	Id                int        `bson:"id"`
-	Attacker          int        `bson:"attacker"`
-	Defender          int        `bson:"defender"`
-	BegAttackArmy     ArmyDoc    `bson:"beg_attack_army"`
-	BegDefenseArmy    ArmyDoc    `bson:"beg_defense_army"`
-	EndAttackArmy     ArmyDoc    `bson:"end_attack_army"`
-	EndDefenseArmy    ArmyDoc    `bson:"end_defense_army"`
-	BegAttackGeneral  GeneralDoc `bson:"beg_attack_general"`
-	BegDefenseGeneral GeneralDoc `bson:"beg_defense_general"`
-	EndAttackGeneral  GeneralDoc `bson:"end_attack_general"`
-	EndDefenseGeneral GeneralDoc `bson:"end_defense_general"`
-	Result            int        `bson:"result"`
-	Rounds            string     `bson:"rounds"`
-	AttackIsRead      bool       `bson:"attack_is_read"`
-	DefenseIsRead     bool       `bson:"defense_is_read"`
-	DestroyDurable    int        `bson:"destroy_durable"`
-	Occupy            int        `bson:"occupy"`
-	X                 int        `bson:"x"`
-	Y                 int        `bson:"y"`
-	CTime             int        `bson:"c_time"`
+	Id                int          `bson:"id"`
+	Attacker          int          `bson:"attacker"`
+	Defender          int          `bson:"defender"`
+	BegAttackArmy     ArmyDoc      `bson:"beg_attack_army"`
+	BegDefenseArmy    ArmyDoc      `bson:"beg_defense_army"`
+	EndAttackArmy     ArmyDoc      `bson:"end_attack_army"`
+	EndDefenseArmy    ArmyDoc      `bson:"end_defense_army"`
+	BegAttackGeneral  []GeneralDoc `bson:"beg_attack_general"`
+	BegDefenseGeneral []GeneralDoc `bson:"beg_defense_general"`
+	EndAttackGeneral  []GeneralDoc `bson:"end_attack_general"`
+	EndDefenseGeneral []GeneralDoc `bson:"end_defense_general"`
+	Result            int          `bson:"result"`
+	Rounds            string       `bson:"rounds"`
+	AttackIsRead      bool         `bson:"attack_is_read"`
+	DefenseIsRead     bool         `bson:"defense_is_read"`
+	DestroyDurable    int          `bson:"destroy_durable"`
+	Occupy            int          `bson:"occupy"`
+	X                 int          `bson:"x"`
+	Y                 int          `bson:"y"`
+	CTime             int          `bson:"c_time"`
+}
+
+func toDocSlice_begAttackGeneral(in []entity.GeneralState) []GeneralDoc {
+	if in == nil {
+		return nil
+	}
+	out := make([]GeneralDoc, len(in))
+	for i, v := range in {
+		out[i] = GeneralStateToDoc(v)
+	}
+	return out
+}
+
+func toStateSlice_begAttackGeneral(in []GeneralDoc) []entity.GeneralState {
+	if in == nil {
+		return nil
+	}
+	out := make([]entity.GeneralState, len(in))
+	for i, v := range in {
+		out[i] = GeneralDocToState(v)
+	}
+	return out
+}
+
+func toDocSlice_begDefenseGeneral(in []entity.GeneralState) []GeneralDoc {
+	if in == nil {
+		return nil
+	}
+	out := make([]GeneralDoc, len(in))
+	for i, v := range in {
+		out[i] = GeneralStateToDoc(v)
+	}
+	return out
+}
+
+func toStateSlice_begDefenseGeneral(in []GeneralDoc) []entity.GeneralState {
+	if in == nil {
+		return nil
+	}
+	out := make([]entity.GeneralState, len(in))
+	for i, v := range in {
+		out[i] = GeneralDocToState(v)
+	}
+	return out
+}
+
+func toDocSlice_endAttackGeneral(in []entity.GeneralState) []GeneralDoc {
+	if in == nil {
+		return nil
+	}
+	out := make([]GeneralDoc, len(in))
+	for i, v := range in {
+		out[i] = GeneralStateToDoc(v)
+	}
+	return out
+}
+
+func toStateSlice_endAttackGeneral(in []GeneralDoc) []entity.GeneralState {
+	if in == nil {
+		return nil
+	}
+	out := make([]entity.GeneralState, len(in))
+	for i, v := range in {
+		out[i] = GeneralDocToState(v)
+	}
+	return out
+}
+
+func toDocSlice_endDefenseGeneral(in []entity.GeneralState) []GeneralDoc {
+	if in == nil {
+		return nil
+	}
+	out := make([]GeneralDoc, len(in))
+	for i, v := range in {
+		out[i] = GeneralStateToDoc(v)
+	}
+	return out
+}
+
+func toStateSlice_endDefenseGeneral(in []GeneralDoc) []entity.GeneralState {
+	if in == nil {
+		return nil
+	}
+	out := make([]entity.GeneralState, len(in))
+	for i, v := range in {
+		out[i] = GeneralDocToState(v)
+	}
+	return out
 }
 
 func WarReportStateToDoc(s entity.WarReportState) WarReportDoc {
@@ -38,10 +126,10 @@ func WarReportStateToDoc(s entity.WarReportState) WarReportDoc {
 		BegDefenseArmy:    ArmyStateToDoc(state.BegDefenseArmy),
 		EndAttackArmy:     ArmyStateToDoc(state.EndAttackArmy),
 		EndDefenseArmy:    ArmyStateToDoc(state.EndDefenseArmy),
-		BegAttackGeneral:  GeneralStateToDoc(state.BegAttackGeneral),
-		BegDefenseGeneral: GeneralStateToDoc(state.BegDefenseGeneral),
-		EndAttackGeneral:  GeneralStateToDoc(state.EndAttackGeneral),
-		EndDefenseGeneral: GeneralStateToDoc(state.EndDefenseGeneral),
+		BegAttackGeneral:  toDocSlice_begAttackGeneral(state.BegAttackGeneral),
+		BegDefenseGeneral: toDocSlice_begDefenseGeneral(state.BegDefenseGeneral),
+		EndAttackGeneral:  toDocSlice_endAttackGeneral(state.EndAttackGeneral),
+		EndDefenseGeneral: toDocSlice_endDefenseGeneral(state.EndDefenseGeneral),
 		Result:            state.Result,
 		Rounds:            state.Rounds,
 		AttackIsRead:      state.AttackIsRead,
@@ -63,10 +151,10 @@ func WarReportDocToState(d WarReportDoc) entity.WarReportState {
 		BegDefenseArmy:    ArmyDocToState(d.BegDefenseArmy),
 		EndAttackArmy:     ArmyDocToState(d.EndAttackArmy),
 		EndDefenseArmy:    ArmyDocToState(d.EndDefenseArmy),
-		BegAttackGeneral:  GeneralDocToState(d.BegAttackGeneral),
-		BegDefenseGeneral: GeneralDocToState(d.BegDefenseGeneral),
-		EndAttackGeneral:  GeneralDocToState(d.EndAttackGeneral),
-		EndDefenseGeneral: GeneralDocToState(d.EndDefenseGeneral),
+		BegAttackGeneral:  toStateSlice_begAttackGeneral(d.BegAttackGeneral),
+		BegDefenseGeneral: toStateSlice_begDefenseGeneral(d.BegDefenseGeneral),
+		EndAttackGeneral:  toStateSlice_endAttackGeneral(d.EndAttackGeneral),
+		EndDefenseGeneral: toStateSlice_endDefenseGeneral(d.EndDefenseGeneral),
 		Result:            d.Result,
 		Rounds:            d.Rounds,
 		AttackIsRead:      d.AttackIsRead,

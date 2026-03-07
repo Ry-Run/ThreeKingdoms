@@ -8,3 +8,20 @@ type PlayerID int
 type CityID int
 
 type ArmyID int
+
+type AllianceID int
+
+const (
+	ArmyCmdIdle        = 0 //空闲
+	ArmyCmdAttack      = 1 //攻击
+	ArmyCmdDefend      = 2 //驻守
+	ArmyCmdReclamation = 3 //屯垦
+	ArmyCmdBack        = 4 //撤退
+	ArmyCmdConscript   = 5 //征兵
+	ArmyCmdTransfer    = 6 //调动
+)
+
+const (
+	ArmyStop    = 0
+	ArmyRunning = 1
+)

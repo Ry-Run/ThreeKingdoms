@@ -6,40 +6,40 @@ import (
 )
 
 type OccupancyDoc struct {
-	Kind      int8        `bson:"kind"`
-	RefId     int         `bson:"ref_id"`
-	Owner     int         `bson:"owner"`
-	RoleNick  string      `bson:"role_nick"`
-	UnionId   int         `bson:"union_id"`
-	UnionName string      `bson:"union_name"`
-	ParentId  int         `bson:"parent_id"`
-	Garrison  GarrisonDoc `bson:"garrison"`
+	Kind         int8        `bson:"kind"`
+	RefId        int         `bson:"ref_id"`
+	Owner        int         `bson:"owner"`
+	RoleNick     string      `bson:"role_nick"`
+	AllianceId   int         `bson:"alliance_id"`
+	AllianceName string      `bson:"alliance_name"`
+	ParentId     int         `bson:"parent_id"`
+	Garrison     GarrisonDoc `bson:"garrison"`
 }
 
 func OccupancyStateToDoc(s entity.OccupancyState) OccupancyDoc {
 	state := entity.HydrateOccupancyEntity(s).Save()
 	return OccupancyDoc{
-		Kind:      state.Kind,
-		RefId:     state.RefId,
-		Owner:     state.Owner,
-		RoleNick:  state.RoleNick,
-		UnionId:   state.UnionId,
-		UnionName: state.UnionName,
-		ParentId:  state.ParentId,
-		Garrison:  GarrisonStateToDoc(state.Garrison),
+		Kind:         state.Kind,
+		RefId:        state.RefId,
+		Owner:        state.Owner,
+		RoleNick:     state.RoleNick,
+		AllianceId:   state.AllianceId,
+		AllianceName: state.AllianceName,
+		ParentId:     state.ParentId,
+		Garrison:     GarrisonStateToDoc(state.Garrison),
 	}
 }
 
 func OccupancyDocToState(d OccupancyDoc) entity.OccupancyState {
 	state := entity.OccupancyState{
-		Kind:      d.Kind,
-		RefId:     d.RefId,
-		Owner:     d.Owner,
-		RoleNick:  d.RoleNick,
-		UnionId:   d.UnionId,
-		UnionName: d.UnionName,
-		ParentId:  d.ParentId,
-		Garrison:  GarrisonDocToState(d.Garrison),
+		Kind:         d.Kind,
+		RefId:        d.RefId,
+		Owner:        d.Owner,
+		RoleNick:     d.RoleNick,
+		AllianceId:   d.AllianceId,
+		AllianceName: d.AllianceName,
+		ParentId:     d.ParentId,
+		Garrison:     GarrisonDocToState(d.Garrison),
 	}
 	return entity.HydrateOccupancyEntity(state).Save()
 }

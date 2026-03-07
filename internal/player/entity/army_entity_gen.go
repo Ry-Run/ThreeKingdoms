@@ -9,6 +9,8 @@ import (
 const (
 	FieldArmy_id                Field = "id"
 	FieldArmy_cityId            Field = "cityId"
+	FieldArmy_playerId          Field = "playerId"
+	FieldArmy_allianceId        Field = "allianceId"
 	FieldArmy_order             Field = "order"
 	FieldArmy_generals          Field = "generals"
 	FieldArmy_soldiers          Field = "soldiers"
@@ -20,6 +22,7 @@ const (
 	FieldArmy_startTime         Field = "startTime"
 	FieldArmy_endTime           Field = "endTime"
 	FieldArmy_state             Field = "state"
+	FieldArmy_frozen            Field = "frozen"
 	FieldArmy_conscriptEndTimes Field = "conscriptEndTimes"
 	FieldArmy_conscriptCounts   Field = "conscriptCounts"
 	FieldArmy_cellX             Field = "cellX"
@@ -161,6 +164,8 @@ func (t *ArmyEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 type ArmyState struct {
 	Id                int
 	CityId            CityID
+	PlayerId          PlayerID
+	AllianceId        AllianceID
 	Order             int8
 	Generals          []int
 	Soldiers          []int
@@ -172,6 +177,7 @@ type ArmyState struct {
 	StartTime         time.Time
 	EndTime           time.Time
 	State             int8
+	Frozen            bool
 	ConscriptEndTimes []int64
 	ConscriptCounts   []int
 	CellX             int
@@ -188,6 +194,8 @@ type ArmyEntitySnap struct {
 type ArmyEntity struct {
 	id                int
 	cityId            CityID
+	playerId          PlayerID
+	allianceId        AllianceID
 	order             int8
 	generals          []int
 	soldiers          []int
@@ -199,6 +207,7 @@ type ArmyEntity struct {
 	startTime         time.Time
 	endTime           time.Time
 	state             int8
+	frozen            bool
 	conscriptEndTimes []int64
 	conscriptCounts   []int
 	cellX             int
@@ -282,6 +291,8 @@ func HydrateArmyEntity(s ArmyState) *ArmyEntity {
 	return &ArmyEntity{
 		id:                s.Id,
 		cityId:            s.CityId,
+		playerId:          s.PlayerId,
+		allianceId:        s.AllianceId,
 		order:             s.Order,
 		generals:          append([]int(nil), s.Generals...),
 		soldiers:          append([]int(nil), s.Soldiers...),
@@ -293,6 +304,7 @@ func HydrateArmyEntity(s ArmyState) *ArmyEntity {
 		startTime:         s.StartTime,
 		endTime:           s.EndTime,
 		state:             s.State,
+		frozen:            s.Frozen,
 		conscriptEndTimes: append([]int64(nil), s.ConscriptEndTimes...),
 		conscriptCounts:   append([]int(nil), s.ConscriptCounts...),
 		cellX:             s.CellX,
@@ -418,6 +430,8 @@ func (e *ArmyEntity) Save() ArmyState {
 	}
 	s.Id = e.id
 	s.CityId = e.cityId
+	s.PlayerId = e.playerId
+	s.AllianceId = e.allianceId
 	s.Order = e.order
 	s.Generals = append([]int(nil), e.generals...)
 	s.Soldiers = append([]int(nil), e.soldiers...)
@@ -429,6 +443,7 @@ func (e *ArmyEntity) Save() ArmyState {
 	s.StartTime = e.startTime
 	s.EndTime = e.endTime
 	s.State = e.state
+	s.Frozen = e.frozen
 	s.ConscriptEndTimes = append([]int64(nil), e.conscriptEndTimes...)
 	s.ConscriptCounts = append([]int(nil), e.conscriptCounts...)
 	s.CellX = e.cellX
@@ -507,6 +522,46 @@ func (e *ArmyEntity) SetCityId(v CityID) bool {
 	}
 	e.cityId = v
 	e._dt.mark(FieldArmy_cityId)
+	return true
+}
+
+func (e *ArmyEntity) PlayerId() PlayerID {
+	if e == nil {
+		var z PlayerID
+		return z
+	}
+	return e.playerId
+}
+
+func (e *ArmyEntity) SetPlayerId(v PlayerID) bool {
+	if e == nil {
+		return false
+	}
+	if e.playerId == v {
+		return false
+	}
+	e.playerId = v
+	e._dt.mark(FieldArmy_playerId)
+	return true
+}
+
+func (e *ArmyEntity) AllianceId() AllianceID {
+	if e == nil {
+		var z AllianceID
+		return z
+	}
+	return e.allianceId
+}
+
+func (e *ArmyEntity) SetAllianceId(v AllianceID) bool {
+	if e == nil {
+		return false
+	}
+	if e.allianceId == v {
+		return false
+	}
+	e.allianceId = v
+	e._dt.mark(FieldArmy_allianceId)
 	return true
 }
 
@@ -919,6 +974,26 @@ func (e *ArmyEntity) SetState(v int8) bool {
 	}
 	e.state = v
 	e._dt.mark(FieldArmy_state)
+	return true
+}
+
+func (e *ArmyEntity) Frozen() bool {
+	if e == nil {
+		var z bool
+		return z
+	}
+	return e.frozen
+}
+
+func (e *ArmyEntity) SetFrozen(v bool) bool {
+	if e == nil {
+		return false
+	}
+	if e.frozen == v {
+		return false
+	}
+	e.frozen = v
+	e._dt.mark(FieldArmy_frozen)
 	return true
 }
 

@@ -6,20 +6,21 @@ import (
 )
 
 type PlayerDoc struct {
-	PlayerID   PlayerID             `bson:"player_id"`
-	WorldID    WorldID              `bson:"world_id"`
-	AllianceID AllianceID           `bson:"alliance_id"`
-	CityID     CityID               `bson:"city_id"`
-	Profile    RoleDoc              `bson:"profile"`
-	Resource   ResourceDoc          `bson:"resource"`
-	Attribute  RoleAttributeDoc     `bson:"attribute"`
-	Buildings  []BuildingDoc        `bson:"buildings"`
-	Armies     map[int]ArmyDoc      `bson:"armies"`
-	Generals   map[int]GeneralDoc   `bson:"generals"`
-	Facility   []FacilityDoc        `bson:"facility"`
-	WarReports map[int]WarReportDoc `bson:"war_reports"`
-	Skills     map[int]SkillDoc     `bson:"skills"`
-	City       CityDoc              `bson:"city"`
+	PlayerID     PlayerID             `bson:"player_id"`
+	WorldID      WorldID              `bson:"world_id"`
+	AllianceID   AllianceID           `bson:"alliance_id"`
+	AllianceName string               `bson:"alliance_name"`
+	CityID       CityID               `bson:"city_id"`
+	Profile      RoleDoc              `bson:"profile"`
+	Resource     ResourceDoc          `bson:"resource"`
+	Attribute    RoleAttributeDoc     `bson:"attribute"`
+	Buildings    []BuildingDoc        `bson:"buildings"`
+	Armies       map[int]ArmyDoc      `bson:"armies"`
+	Generals     map[int]GeneralDoc   `bson:"generals"`
+	Facility     []FacilityDoc        `bson:"facility"`
+	WarReports   map[int]WarReportDoc `bson:"war_reports"`
+	Skills       map[int]SkillDoc     `bson:"skills"`
+	City         CityDoc              `bson:"city"`
 }
 
 func toDocSlice_buildings(in []entity.BuildingState) []BuildingDoc {
@@ -157,39 +158,41 @@ func toStateMap_skills(in map[int]SkillDoc) map[int]entity.SkillState {
 func PlayerStateToDoc(s entity.PlayerState) PlayerDoc {
 	state := entity.HydratePlayerEntity(s).Save()
 	return PlayerDoc{
-		PlayerID:   state.PlayerID,
-		WorldID:    state.WorldID,
-		AllianceID: state.AllianceID,
-		CityID:     state.CityID,
-		Profile:    RoleStateToDoc(state.Profile),
-		Resource:   ResourceStateToDoc(state.Resource),
-		Attribute:  RoleAttributeStateToDoc(state.Attribute),
-		Buildings:  toDocSlice_buildings(state.Buildings),
-		Armies:     toDocMap_armies(state.Armies),
-		Generals:   toDocMap_generals(state.Generals),
-		Facility:   toDocSlice_facility(state.Facility),
-		WarReports: toDocMap_warReports(state.WarReports),
-		Skills:     toDocMap_skills(state.Skills),
-		City:       CityStateToDoc(state.City),
+		PlayerID:     state.PlayerID,
+		WorldID:      state.WorldID,
+		AllianceID:   state.AllianceID,
+		AllianceName: state.AllianceName,
+		CityID:       state.CityID,
+		Profile:      RoleStateToDoc(state.Profile),
+		Resource:     ResourceStateToDoc(state.Resource),
+		Attribute:    RoleAttributeStateToDoc(state.Attribute),
+		Buildings:    toDocSlice_buildings(state.Buildings),
+		Armies:       toDocMap_armies(state.Armies),
+		Generals:     toDocMap_generals(state.Generals),
+		Facility:     toDocSlice_facility(state.Facility),
+		WarReports:   toDocMap_warReports(state.WarReports),
+		Skills:       toDocMap_skills(state.Skills),
+		City:         CityStateToDoc(state.City),
 	}
 }
 
 func PlayerDocToState(d PlayerDoc) entity.PlayerState {
 	state := entity.PlayerState{
-		PlayerID:   d.PlayerID,
-		WorldID:    d.WorldID,
-		AllianceID: d.AllianceID,
-		CityID:     d.CityID,
-		Profile:    RoleDocToState(d.Profile),
-		Resource:   ResourceDocToState(d.Resource),
-		Attribute:  RoleAttributeDocToState(d.Attribute),
-		Buildings:  toStateSlice_buildings(d.Buildings),
-		Armies:     toStateMap_armies(d.Armies),
-		Generals:   toStateMap_generals(d.Generals),
-		Facility:   toStateSlice_facility(d.Facility),
-		WarReports: toStateMap_warReports(d.WarReports),
-		Skills:     toStateMap_skills(d.Skills),
-		City:       CityDocToState(d.City),
+		PlayerID:     d.PlayerID,
+		WorldID:      d.WorldID,
+		AllianceID:   d.AllianceID,
+		AllianceName: d.AllianceName,
+		CityID:       d.CityID,
+		Profile:      RoleDocToState(d.Profile),
+		Resource:     ResourceDocToState(d.Resource),
+		Attribute:    RoleAttributeDocToState(d.Attribute),
+		Buildings:    toStateSlice_buildings(d.Buildings),
+		Armies:       toStateMap_armies(d.Armies),
+		Generals:     toStateMap_generals(d.Generals),
+		Facility:     toStateSlice_facility(d.Facility),
+		WarReports:   toStateMap_warReports(d.WarReports),
+		Skills:       toStateMap_skills(d.Skills),
+		City:         CityDocToState(d.City),
 	}
 	return entity.HydratePlayerEntity(state).Save()
 }

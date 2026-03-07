@@ -4,8 +4,9 @@ import "time"
 
 // entity
 type March struct {
-	playerID PlayerID
-	armyID   ArmyID
+	playerId   PlayerID
+	allianceId AllianceID
+	armyID     ArmyID
 
 	from Pos
 	to   Pos

@@ -44,11 +44,12 @@ type Runtime struct {
 	ownSys  bool
 }
 
-func NewRuntime(repo port.AllianceRepository, askTimeout time.Duration) *Runtime {
-	return NewRuntimeWithActorSystem(nil, repo, 0, askTimeout)
-}
-
-func NewRuntimeWithActorSystem(system *protoactor.ActorSystem, repo port.AllianceRepository, worldID int, askTimeout time.Duration) *Runtime {
+func NewRuntime(
+	system *protoactor.ActorSystem,
+	repo port.AllianceRepository,
+	worldID int,
+	askTimeout time.Duration,
+) *Runtime {
 	if askTimeout <= 0 {
 		askTimeout = defaultAskTimeout
 	}

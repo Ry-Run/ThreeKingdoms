@@ -8,28 +8,25 @@ import (
 )
 
 const (
-	FieldArmy_id                 Field = "id"
-	FieldArmy_cityId             Field = "cityId"
-	FieldArmy_order              Field = "order"
-	FieldArmy_generals           Field = "generals"
-	FieldArmy_soldiers           Field = "soldiers"
-	FieldArmy_conscriptEndTime   Field = "conscriptEndTime"
-	FieldArmy_conscriptQuantity  Field = "conscriptQuantity"
-	FieldArmy_cmd                Field = "cmd"
-	FieldArmy_fromX              Field = "fromX"
-	FieldArmy_fromY              Field = "fromY"
-	FieldArmy_toX                Field = "toX"
-	FieldArmy_toY                Field = "toY"
-	FieldArmy_startTime          Field = "startTime"
-	FieldArmy_endTime            Field = "endTime"
-	FieldArmy_state              Field = "state"
-	FieldArmy_generalArray       Field = "generalArray"
-	FieldArmy_soldierArray       Field = "soldierArray"
-	FieldArmy_conscriptTimeArray Field = "conscriptTimeArray"
-	FieldArmy_conscriptCntArray  Field = "conscriptCntArray"
-	FieldArmy_gens               Field = "gens"
-	FieldArmy_cellX              Field = "cellX"
-	FieldArmy_cellY              Field = "cellY"
+	FieldArmy_id                Field = "id"
+	FieldArmy_cityId            Field = "cityId"
+	FieldArmy_playerId          Field = "playerId"
+	FieldArmy_allianceId        Field = "allianceId"
+	FieldArmy_order             Field = "order"
+	FieldArmy_generals          Field = "generals"
+	FieldArmy_soldiers          Field = "soldiers"
+	FieldArmy_cmd               Field = "cmd"
+	FieldArmy_fromX             Field = "fromX"
+	FieldArmy_fromY             Field = "fromY"
+	FieldArmy_toX               Field = "toX"
+	FieldArmy_toY               Field = "toY"
+	FieldArmy_startTime         Field = "startTime"
+	FieldArmy_endTime           Field = "endTime"
+	FieldArmy_state             Field = "state"
+	FieldArmy_conscriptEndTimes Field = "conscriptEndTimes"
+	FieldArmy_conscriptCounts   Field = "conscriptCounts"
+	FieldArmy_cellX             Field = "cellX"
+	FieldArmy_cellY             Field = "cellY"
 )
 
 var emptyArmyEntity = &ArmyEntity{}
@@ -165,28 +162,25 @@ func (t *ArmyEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 }
 
 type ArmyState struct {
-	Id                 int
-	CityId             CityID
-	Order              int8
-	Generals           string
-	Soldiers           string
-	ConscriptEndTime   string
-	ConscriptQuantity  string
-	Cmd                int8
-	FromX              int
-	FromY              int
-	ToX                int
-	ToY                int
-	StartTime          time.Time
-	EndTime            time.Time
-	State              int8
-	GeneralArray       []int
-	SoldierArray       []int
-	ConscriptTimeArray []int64
-	ConscriptCntArray  []int
-	Gens               []GeneralState
-	CellX              int
-	CellY              int
+	Id                int
+	CityId            CityID
+	PlayerId          PlayerID
+	AllianceId        AllianceID
+	Order             int8
+	Generals          []GeneralState
+	Soldiers          []int
+	Cmd               int8
+	FromX             int
+	FromY             int
+	ToX               int
+	ToY               int
+	StartTime         time.Time
+	EndTime           time.Time
+	State             int8
+	ConscriptEndTimes []int64
+	ConscriptCounts   []int
+	CellX             int
+	CellY             int
 }
 
 type ArmyEntitySnap struct {
@@ -197,104 +191,29 @@ type ArmyEntitySnap struct {
 }
 
 type ArmyEntity struct {
-	id                 int
-	cityId             CityID
-	order              int8
-	generals           string
-	soldiers           string
-	conscriptEndTime   string
-	conscriptQuantity  string
-	cmd                int8
-	fromX              int
-	fromY              int
-	toX                int
-	toY                int
-	startTime          time.Time
-	endTime            time.Time
-	state              int8
-	generalArray       []int
-	soldierArray       []int
-	conscriptTimeArray []int64
-	conscriptCntArray  []int
-	gens               []*GeneralEntity
-	cellX              int
-	cellY              int
-	_dt                ArmyEntityTrace
+	id                int
+	cityId            CityID
+	playerId          PlayerID
+	allianceId        AllianceID
+	order             int8
+	generals          []*GeneralEntity
+	soldiers          []int
+	cmd               int8
+	fromX             int
+	fromY             int
+	toX               int
+	toY               int
+	startTime         time.Time
+	endTime           time.Time
+	state             int8
+	conscriptEndTimes []int64
+	conscriptCounts   []int
+	cellX             int
+	cellY             int
+	_dt               ArmyEntityTrace
 }
 
-func (e *ArmyEntity) slicesEqualGeneralArray(a, b []int) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if (a == nil) != (b == nil) {
-		return false
-	}
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func (e *ArmyEntity) slicesEqualSoldierArray(a, b []int) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if (a == nil) != (b == nil) {
-		return false
-	}
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func (e *ArmyEntity) slicesEqualConscriptTimeArray(a, b []int64) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if (a == nil) != (b == nil) {
-		return false
-	}
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func (e *ArmyEntity) slicesEqualConscriptCntArray(a, b []int) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if (a == nil) != (b == nil) {
-		return false
-	}
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func (e *ArmyEntity) hydrateSliceGens(in []GeneralState) []*GeneralEntity {
+func (e *ArmyEntity) hydrateSliceGenerals(in []GeneralState) []*GeneralEntity {
 	if in == nil {
 		return nil
 	}
@@ -305,7 +224,7 @@ func (e *ArmyEntity) hydrateSliceGens(in []GeneralState) []*GeneralEntity {
 	return out
 }
 
-func (e *ArmyEntity) snapshotSliceGens(in []*GeneralEntity) []GeneralState {
+func (e *ArmyEntity) snapshotSliceGenerals(in []*GeneralEntity) []GeneralState {
 	if in == nil {
 		return nil
 	}
@@ -321,7 +240,7 @@ func (e *ArmyEntity) snapshotSliceGens(in []*GeneralEntity) []GeneralState {
 	return out
 }
 
-func (e *ArmyEntity) slicesEqualGens(a, b []GeneralState) bool {
+func (e *ArmyEntity) slicesEqualGenerals(a, b []GeneralState) bool {
 	if a == nil && b == nil {
 		return true
 	}
@@ -339,30 +258,81 @@ func (e *ArmyEntity) slicesEqualGens(a, b []GeneralState) bool {
 	return true
 }
 
+func (e *ArmyEntity) slicesEqualSoldiers(a, b []int) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *ArmyEntity) slicesEqualConscriptEndTimes(a, b []int64) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *ArmyEntity) slicesEqualConscriptCounts(a, b []int) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func HydrateArmyEntity(s ArmyState) *ArmyEntity {
 	return &ArmyEntity{
-		id:                 s.Id,
-		cityId:             s.CityId,
-		order:              s.Order,
-		generals:           s.Generals,
-		soldiers:           s.Soldiers,
-		conscriptEndTime:   s.ConscriptEndTime,
-		conscriptQuantity:  s.ConscriptQuantity,
-		cmd:                s.Cmd,
-		fromX:              s.FromX,
-		fromY:              s.FromY,
-		toX:                s.ToX,
-		toY:                s.ToY,
-		startTime:          s.StartTime,
-		endTime:            s.EndTime,
-		state:              s.State,
-		generalArray:       append([]int(nil), s.GeneralArray...),
-		soldierArray:       append([]int(nil), s.SoldierArray...),
-		conscriptTimeArray: append([]int64(nil), s.ConscriptTimeArray...),
-		conscriptCntArray:  append([]int(nil), s.ConscriptCntArray...),
-		gens:               emptyArmyEntity.hydrateSliceGens(s.Gens),
-		cellX:              s.CellX,
-		cellY:              s.CellY,
+		id:                s.Id,
+		cityId:            s.CityId,
+		playerId:          s.PlayerId,
+		allianceId:        s.AllianceId,
+		order:             s.Order,
+		generals:          emptyArmyEntity.hydrateSliceGenerals(s.Generals),
+		soldiers:          append([]int(nil), s.Soldiers...),
+		cmd:               s.Cmd,
+		fromX:             s.FromX,
+		fromY:             s.FromY,
+		toX:               s.ToX,
+		toY:               s.ToY,
+		startTime:         s.StartTime,
+		endTime:           s.EndTime,
+		state:             s.State,
+		conscriptEndTimes: append([]int64(nil), s.ConscriptEndTimes...),
+		conscriptCounts:   append([]int(nil), s.ConscriptCounts...),
+		cellX:             s.CellX,
+		cellY:             s.CellY,
 	}
 }
 
@@ -484,11 +454,11 @@ func (e *ArmyEntity) Save() ArmyState {
 	}
 	s.Id = e.id
 	s.CityId = e.cityId
+	s.PlayerId = e.playerId
+	s.AllianceId = e.allianceId
 	s.Order = e.order
-	s.Generals = e.generals
-	s.Soldiers = e.soldiers
-	s.ConscriptEndTime = e.conscriptEndTime
-	s.ConscriptQuantity = e.conscriptQuantity
+	s.Generals = e.snapshotSliceGenerals(e.generals)
+	s.Soldiers = append([]int(nil), e.soldiers...)
 	s.Cmd = e.cmd
 	s.FromX = e.fromX
 	s.FromY = e.fromY
@@ -497,11 +467,8 @@ func (e *ArmyEntity) Save() ArmyState {
 	s.StartTime = e.startTime
 	s.EndTime = e.endTime
 	s.State = e.state
-	s.GeneralArray = append([]int(nil), e.generalArray...)
-	s.SoldierArray = append([]int(nil), e.soldierArray...)
-	s.ConscriptTimeArray = append([]int64(nil), e.conscriptTimeArray...)
-	s.ConscriptCntArray = append([]int(nil), e.conscriptCntArray...)
-	s.Gens = e.snapshotSliceGens(e.gens)
+	s.ConscriptEndTimes = append([]int64(nil), e.conscriptEndTimes...)
+	s.ConscriptCounts = append([]int(nil), e.conscriptCounts...)
 	s.CellX = e.cellX
 	s.CellY = e.cellY
 	return s
@@ -534,11 +501,10 @@ func (s *ArmyEntitySnap) Clone() *ArmyEntitySnap {
 			out.Changes[f] = cloneArmyEntityCollectionChange(ch)
 		}
 	}
-	out.State.GeneralArray = append([]int(nil), s.State.GeneralArray...)
-	out.State.SoldierArray = append([]int(nil), s.State.SoldierArray...)
-	out.State.ConscriptTimeArray = append([]int64(nil), s.State.ConscriptTimeArray...)
-	out.State.ConscriptCntArray = append([]int(nil), s.State.ConscriptCntArray...)
-	out.State.Gens = append([]GeneralState(nil), s.State.Gens...)
+	out.State.Generals = append([]GeneralState(nil), s.State.Generals...)
+	out.State.Soldiers = append([]int(nil), s.State.Soldiers...)
+	out.State.ConscriptEndTimes = append([]int64(nil), s.State.ConscriptEndTimes...)
+	out.State.ConscriptCounts = append([]int(nil), s.State.ConscriptCounts...)
 	return out
 }
 
@@ -582,6 +548,46 @@ func (e *ArmyEntity) SetCityId(v CityID) bool {
 	return true
 }
 
+func (e *ArmyEntity) PlayerId() PlayerID {
+	if e == nil {
+		var z PlayerID
+		return z
+	}
+	return e.playerId
+}
+
+func (e *ArmyEntity) SetPlayerId(v PlayerID) bool {
+	if e == nil {
+		return false
+	}
+	if e.playerId == v {
+		return false
+	}
+	e.playerId = v
+	e._dt.mark(FieldArmy_playerId)
+	return true
+}
+
+func (e *ArmyEntity) AllianceId() AllianceID {
+	if e == nil {
+		var z AllianceID
+		return z
+	}
+	return e.allianceId
+}
+
+func (e *ArmyEntity) SetAllianceId(v AllianceID) bool {
+	if e == nil {
+		return false
+	}
+	if e.allianceId == v {
+		return false
+	}
+	e.allianceId = v
+	e._dt.mark(FieldArmy_allianceId)
+	return true
+}
+
 func (e *ArmyEntity) Order() int8 {
 	if e == nil {
 		var z int8
@@ -602,83 +608,273 @@ func (e *ArmyEntity) SetOrder(v int8) bool {
 	return true
 }
 
-func (e *ArmyEntity) Generals() string {
+func (e *ArmyEntity) LenGenerals() int {
 	if e == nil {
-		var z string
-		return z
+		return 0
 	}
-	return e.generals
+	return len(e.generals)
 }
 
-func (e *ArmyEntity) SetGenerals(v string) bool {
+func (e *ArmyEntity) AtGenerals(index int) (GeneralState, bool) {
+	var z GeneralState
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.generals) {
+		return z, false
+	}
+	v := e.generals[index]
+	if v == nil {
+		return z, true
+	}
+	return v.Save(), true
+}
+
+func (e *ArmyEntity) ForEachGenerals(fn func(index int, value GeneralState)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.generals {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		fn(i, state)
+	}
+}
+
+func (e *ArmyEntity) RangeGenerals(fn func(index int, value GeneralState) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.generals {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		if !fn(i, state) {
+			return
+		}
+	}
+}
+
+func (e *ArmyEntity) ReplaceGenerals(v []GeneralState) bool {
 	if e == nil {
 		return false
 	}
-	if e.generals == v {
+	if e.slicesEqualGenerals(e.snapshotSliceGenerals(e.generals), v) {
 		return false
 	}
-	e.generals = v
-	e._dt.mark(FieldArmy_generals)
+	e.generals = e.hydrateSliceGenerals(v)
+	e._dt.markFullReplace(FieldArmy_generals)
 	return true
 }
 
-func (e *ArmyEntity) Soldiers() string {
-	if e == nil {
-		var z string
-		return z
-	}
-	return e.soldiers
-}
-
-func (e *ArmyEntity) SetSoldiers(v string) bool {
-	if e == nil {
+func (e *ArmyEntity) AppendGenerals(values ...GeneralState) bool {
+	if e == nil || len(values) == 0 {
 		return false
 	}
-	if e.soldiers == v {
-		return false
+	for _, v := range values {
+		rv := HydrateGeneralEntity(v)
+		e.generals = append(e.generals, rv)
+		e._dt.markSliceAppend(FieldArmy_generals, v)
 	}
-	e.soldiers = v
-	e._dt.mark(FieldArmy_soldiers)
 	return true
 }
 
-func (e *ArmyEntity) ConscriptEndTime() string {
-	if e == nil {
-		var z string
-		return z
-	}
-	return e.conscriptEndTime
-}
-
-func (e *ArmyEntity) SetConscriptEndTime(v string) bool {
+func (e *ArmyEntity) SetGeneralsAt(index int, value GeneralState) bool {
 	if e == nil {
 		return false
 	}
-	if e.conscriptEndTime == v {
+	if index < 0 || index >= len(e.generals) {
 		return false
 	}
-	e.conscriptEndTime = v
-	e._dt.mark(FieldArmy_conscriptEndTime)
+	var oldState GeneralState
+	if e.generals[index] != nil {
+		oldState = e.generals[index].Save()
+	}
+	if reflect.DeepEqual(oldState, value) {
+		return false
+	}
+	e.generals[index] = HydrateGeneralEntity(value)
+	e._dt.markSliceSet(FieldArmy_generals, index, value)
 	return true
 }
 
-func (e *ArmyEntity) ConscriptQuantity() string {
-	if e == nil {
-		var z string
-		return z
+func (e *ArmyEntity) UpdateGeneralsAt(index int, fn func(value *GeneralEntity)) bool {
+	if e == nil || fn == nil {
+		return false
 	}
-	return e.conscriptQuantity
+	if index < 0 || index >= len(e.generals) {
+		return false
+	}
+	v := e.generals[index]
+	if v == nil {
+		return false
+	}
+	before := v.Save()
+	fn(v)
+	after := v.Save()
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markSliceSet(FieldArmy_generals, index, after)
+	return true
 }
 
-func (e *ArmyEntity) SetConscriptQuantity(v string) bool {
+func (e *ArmyEntity) RemoveGeneralsAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if e.conscriptQuantity == v {
+	if index < 0 || index >= len(e.generals) {
 		return false
 	}
-	e.conscriptQuantity = v
-	e._dt.mark(FieldArmy_conscriptQuantity)
+	e.generals = append(e.generals[:index], e.generals[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldArmy_generals, index)
+	return true
+}
+
+func (e *ArmyEntity) SwapRemoveGeneralsAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.generals) {
+		return false
+	}
+	last := len(e.generals) - 1
+	if index != last {
+		e.generals[index] = e.generals[last]
+	}
+	e.generals = e.generals[:last]
+	e._dt.markSliceSwapRemoveAt(FieldArmy_generals, index)
+	return true
+}
+
+func (e *ArmyEntity) ClearGenerals() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.generals) == 0 {
+		return false
+	}
+	e.generals = nil
+	e._dt.markFullReplace(FieldArmy_generals)
+	return true
+}
+
+func (e *ArmyEntity) LenSoldiers() int {
+	if e == nil {
+		return 0
+	}
+	return len(e.soldiers)
+}
+
+func (e *ArmyEntity) AtSoldiers(index int) (int, bool) {
+	var z int
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.soldiers) {
+		return z, false
+	}
+	return e.soldiers[index], true
+}
+
+func (e *ArmyEntity) ForEachSoldiers(fn func(index int, value int)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.soldiers {
+		fn(i, v)
+	}
+}
+
+func (e *ArmyEntity) RangeSoldiers(fn func(index int, value int) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.soldiers {
+		if !fn(i, v) {
+			return
+		}
+	}
+}
+
+func (e *ArmyEntity) ReplaceSoldiers(v []int) bool {
+	if e == nil {
+		return false
+	}
+	if e.slicesEqualSoldiers(e.soldiers, v) {
+		return false
+	}
+	e.soldiers = append([]int(nil), v...)
+	e._dt.markFullReplace(FieldArmy_soldiers)
+	return true
+}
+
+func (e *ArmyEntity) AppendSoldiers(values ...int) bool {
+	if e == nil || len(values) == 0 {
+		return false
+	}
+	e.soldiers = append(e.soldiers, values...)
+	for _, v := range values {
+		e._dt.markSliceAppend(FieldArmy_soldiers, v)
+	}
+	return true
+}
+
+func (e *ArmyEntity) SetSoldiersAt(index int, value int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.soldiers) {
+		return false
+	}
+	if e.soldiers[index] == value {
+		return false
+	}
+	e.soldiers[index] = value
+	e._dt.markSliceSet(FieldArmy_soldiers, index, value)
+	return true
+}
+
+func (e *ArmyEntity) RemoveSoldiersAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.soldiers) {
+		return false
+	}
+	e.soldiers = append(e.soldiers[:index], e.soldiers[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldArmy_soldiers, index)
+	return true
+}
+
+func (e *ArmyEntity) SwapRemoveSoldiersAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.soldiers) {
+		return false
+	}
+	last := len(e.soldiers) - 1
+	if index != last {
+		e.soldiers[index] = e.soldiers[last]
+	}
+	e.soldiers = e.soldiers[:last]
+	e._dt.markSliceSwapRemoveAt(FieldArmy_soldiers, index)
+	return true
+}
+
+func (e *ArmyEntity) ClearSoldiers() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.soldiers) == 0 {
+		return false
+	}
+	e.soldiers = nil
+	e._dt.markFullReplace(FieldArmy_soldiers)
 	return true
 }
 
@@ -842,621 +1038,235 @@ func (e *ArmyEntity) SetState(v int8) bool {
 	return true
 }
 
-func (e *ArmyEntity) LenGeneralArray() int {
+func (e *ArmyEntity) LenConscriptEndTimes() int {
 	if e == nil {
 		return 0
 	}
-	return len(e.generalArray)
+	return len(e.conscriptEndTimes)
 }
 
-func (e *ArmyEntity) AtGeneralArray(index int) (int, bool) {
-	var z int
-	if e == nil {
-		return z, false
-	}
-	if index < 0 || index >= len(e.generalArray) {
-		return z, false
-	}
-	return e.generalArray[index], true
-}
-
-func (e *ArmyEntity) ForEachGeneralArray(fn func(index int, value int)) {
-	if e == nil || fn == nil {
-		return
-	}
-	for i, v := range e.generalArray {
-		fn(i, v)
-	}
-}
-
-func (e *ArmyEntity) RangeGeneralArray(fn func(index int, value int) bool) {
-	if e == nil || fn == nil {
-		return
-	}
-	for i, v := range e.generalArray {
-		if !fn(i, v) {
-			return
-		}
-	}
-}
-
-func (e *ArmyEntity) ReplaceGeneralArray(v []int) bool {
-	if e == nil {
-		return false
-	}
-	if e.slicesEqualGeneralArray(e.generalArray, v) {
-		return false
-	}
-	e.generalArray = append([]int(nil), v...)
-	e._dt.markFullReplace(FieldArmy_generalArray)
-	return true
-}
-
-func (e *ArmyEntity) AppendGeneralArray(values ...int) bool {
-	if e == nil || len(values) == 0 {
-		return false
-	}
-	e.generalArray = append(e.generalArray, values...)
-	for _, v := range values {
-		e._dt.markSliceAppend(FieldArmy_generalArray, v)
-	}
-	return true
-}
-
-func (e *ArmyEntity) SetGeneralArrayAt(index int, value int) bool {
-	if e == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.generalArray) {
-		return false
-	}
-	if e.generalArray[index] == value {
-		return false
-	}
-	e.generalArray[index] = value
-	e._dt.markSliceSet(FieldArmy_generalArray, index, value)
-	return true
-}
-
-func (e *ArmyEntity) RemoveGeneralArrayAt(index int) bool {
-	if e == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.generalArray) {
-		return false
-	}
-	e.generalArray = append(e.generalArray[:index], e.generalArray[index+1:]...)
-	e._dt.markSliceRemoveAt(FieldArmy_generalArray, index)
-	return true
-}
-
-func (e *ArmyEntity) SwapRemoveGeneralArrayAt(index int) bool {
-	if e == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.generalArray) {
-		return false
-	}
-	last := len(e.generalArray) - 1
-	if index != last {
-		e.generalArray[index] = e.generalArray[last]
-	}
-	e.generalArray = e.generalArray[:last]
-	e._dt.markSliceSwapRemoveAt(FieldArmy_generalArray, index)
-	return true
-}
-
-func (e *ArmyEntity) ClearGeneralArray() bool {
-	if e == nil {
-		return false
-	}
-	if len(e.generalArray) == 0 {
-		return false
-	}
-	e.generalArray = nil
-	e._dt.markFullReplace(FieldArmy_generalArray)
-	return true
-}
-
-func (e *ArmyEntity) LenSoldierArray() int {
-	if e == nil {
-		return 0
-	}
-	return len(e.soldierArray)
-}
-
-func (e *ArmyEntity) AtSoldierArray(index int) (int, bool) {
-	var z int
-	if e == nil {
-		return z, false
-	}
-	if index < 0 || index >= len(e.soldierArray) {
-		return z, false
-	}
-	return e.soldierArray[index], true
-}
-
-func (e *ArmyEntity) ForEachSoldierArray(fn func(index int, value int)) {
-	if e == nil || fn == nil {
-		return
-	}
-	for i, v := range e.soldierArray {
-		fn(i, v)
-	}
-}
-
-func (e *ArmyEntity) RangeSoldierArray(fn func(index int, value int) bool) {
-	if e == nil || fn == nil {
-		return
-	}
-	for i, v := range e.soldierArray {
-		if !fn(i, v) {
-			return
-		}
-	}
-}
-
-func (e *ArmyEntity) ReplaceSoldierArray(v []int) bool {
-	if e == nil {
-		return false
-	}
-	if e.slicesEqualSoldierArray(e.soldierArray, v) {
-		return false
-	}
-	e.soldierArray = append([]int(nil), v...)
-	e._dt.markFullReplace(FieldArmy_soldierArray)
-	return true
-}
-
-func (e *ArmyEntity) AppendSoldierArray(values ...int) bool {
-	if e == nil || len(values) == 0 {
-		return false
-	}
-	e.soldierArray = append(e.soldierArray, values...)
-	for _, v := range values {
-		e._dt.markSliceAppend(FieldArmy_soldierArray, v)
-	}
-	return true
-}
-
-func (e *ArmyEntity) SetSoldierArrayAt(index int, value int) bool {
-	if e == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.soldierArray) {
-		return false
-	}
-	if e.soldierArray[index] == value {
-		return false
-	}
-	e.soldierArray[index] = value
-	e._dt.markSliceSet(FieldArmy_soldierArray, index, value)
-	return true
-}
-
-func (e *ArmyEntity) RemoveSoldierArrayAt(index int) bool {
-	if e == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.soldierArray) {
-		return false
-	}
-	e.soldierArray = append(e.soldierArray[:index], e.soldierArray[index+1:]...)
-	e._dt.markSliceRemoveAt(FieldArmy_soldierArray, index)
-	return true
-}
-
-func (e *ArmyEntity) SwapRemoveSoldierArrayAt(index int) bool {
-	if e == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.soldierArray) {
-		return false
-	}
-	last := len(e.soldierArray) - 1
-	if index != last {
-		e.soldierArray[index] = e.soldierArray[last]
-	}
-	e.soldierArray = e.soldierArray[:last]
-	e._dt.markSliceSwapRemoveAt(FieldArmy_soldierArray, index)
-	return true
-}
-
-func (e *ArmyEntity) ClearSoldierArray() bool {
-	if e == nil {
-		return false
-	}
-	if len(e.soldierArray) == 0 {
-		return false
-	}
-	e.soldierArray = nil
-	e._dt.markFullReplace(FieldArmy_soldierArray)
-	return true
-}
-
-func (e *ArmyEntity) LenConscriptTimeArray() int {
-	if e == nil {
-		return 0
-	}
-	return len(e.conscriptTimeArray)
-}
-
-func (e *ArmyEntity) AtConscriptTimeArray(index int) (int64, bool) {
+func (e *ArmyEntity) AtConscriptEndTimes(index int) (int64, bool) {
 	var z int64
 	if e == nil {
 		return z, false
 	}
-	if index < 0 || index >= len(e.conscriptTimeArray) {
+	if index < 0 || index >= len(e.conscriptEndTimes) {
 		return z, false
 	}
-	return e.conscriptTimeArray[index], true
+	return e.conscriptEndTimes[index], true
 }
 
-func (e *ArmyEntity) ForEachConscriptTimeArray(fn func(index int, value int64)) {
+func (e *ArmyEntity) ForEachConscriptEndTimes(fn func(index int, value int64)) {
 	if e == nil || fn == nil {
 		return
 	}
-	for i, v := range e.conscriptTimeArray {
+	for i, v := range e.conscriptEndTimes {
 		fn(i, v)
 	}
 }
 
-func (e *ArmyEntity) RangeConscriptTimeArray(fn func(index int, value int64) bool) {
+func (e *ArmyEntity) RangeConscriptEndTimes(fn func(index int, value int64) bool) {
 	if e == nil || fn == nil {
 		return
 	}
-	for i, v := range e.conscriptTimeArray {
+	for i, v := range e.conscriptEndTimes {
 		if !fn(i, v) {
 			return
 		}
 	}
 }
 
-func (e *ArmyEntity) ReplaceConscriptTimeArray(v []int64) bool {
+func (e *ArmyEntity) ReplaceConscriptEndTimes(v []int64) bool {
 	if e == nil {
 		return false
 	}
-	if e.slicesEqualConscriptTimeArray(e.conscriptTimeArray, v) {
+	if e.slicesEqualConscriptEndTimes(e.conscriptEndTimes, v) {
 		return false
 	}
-	e.conscriptTimeArray = append([]int64(nil), v...)
-	e._dt.markFullReplace(FieldArmy_conscriptTimeArray)
+	e.conscriptEndTimes = append([]int64(nil), v...)
+	e._dt.markFullReplace(FieldArmy_conscriptEndTimes)
 	return true
 }
 
-func (e *ArmyEntity) AppendConscriptTimeArray(values ...int64) bool {
+func (e *ArmyEntity) AppendConscriptEndTimes(values ...int64) bool {
 	if e == nil || len(values) == 0 {
 		return false
 	}
-	e.conscriptTimeArray = append(e.conscriptTimeArray, values...)
+	e.conscriptEndTimes = append(e.conscriptEndTimes, values...)
 	for _, v := range values {
-		e._dt.markSliceAppend(FieldArmy_conscriptTimeArray, v)
+		e._dt.markSliceAppend(FieldArmy_conscriptEndTimes, v)
 	}
 	return true
 }
 
-func (e *ArmyEntity) SetConscriptTimeArrayAt(index int, value int64) bool {
+func (e *ArmyEntity) SetConscriptEndTimesAt(index int, value int64) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.conscriptTimeArray) {
+	if index < 0 || index >= len(e.conscriptEndTimes) {
 		return false
 	}
-	if e.conscriptTimeArray[index] == value {
+	if e.conscriptEndTimes[index] == value {
 		return false
 	}
-	e.conscriptTimeArray[index] = value
-	e._dt.markSliceSet(FieldArmy_conscriptTimeArray, index, value)
+	e.conscriptEndTimes[index] = value
+	e._dt.markSliceSet(FieldArmy_conscriptEndTimes, index, value)
 	return true
 }
 
-func (e *ArmyEntity) RemoveConscriptTimeArrayAt(index int) bool {
+func (e *ArmyEntity) RemoveConscriptEndTimesAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.conscriptTimeArray) {
+	if index < 0 || index >= len(e.conscriptEndTimes) {
 		return false
 	}
-	e.conscriptTimeArray = append(e.conscriptTimeArray[:index], e.conscriptTimeArray[index+1:]...)
-	e._dt.markSliceRemoveAt(FieldArmy_conscriptTimeArray, index)
+	e.conscriptEndTimes = append(e.conscriptEndTimes[:index], e.conscriptEndTimes[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldArmy_conscriptEndTimes, index)
 	return true
 }
 
-func (e *ArmyEntity) SwapRemoveConscriptTimeArrayAt(index int) bool {
+func (e *ArmyEntity) SwapRemoveConscriptEndTimesAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.conscriptTimeArray) {
+	if index < 0 || index >= len(e.conscriptEndTimes) {
 		return false
 	}
-	last := len(e.conscriptTimeArray) - 1
+	last := len(e.conscriptEndTimes) - 1
 	if index != last {
-		e.conscriptTimeArray[index] = e.conscriptTimeArray[last]
+		e.conscriptEndTimes[index] = e.conscriptEndTimes[last]
 	}
-	e.conscriptTimeArray = e.conscriptTimeArray[:last]
-	e._dt.markSliceSwapRemoveAt(FieldArmy_conscriptTimeArray, index)
+	e.conscriptEndTimes = e.conscriptEndTimes[:last]
+	e._dt.markSliceSwapRemoveAt(FieldArmy_conscriptEndTimes, index)
 	return true
 }
 
-func (e *ArmyEntity) ClearConscriptTimeArray() bool {
+func (e *ArmyEntity) ClearConscriptEndTimes() bool {
 	if e == nil {
 		return false
 	}
-	if len(e.conscriptTimeArray) == 0 {
+	if len(e.conscriptEndTimes) == 0 {
 		return false
 	}
-	e.conscriptTimeArray = nil
-	e._dt.markFullReplace(FieldArmy_conscriptTimeArray)
+	e.conscriptEndTimes = nil
+	e._dt.markFullReplace(FieldArmy_conscriptEndTimes)
 	return true
 }
 
-func (e *ArmyEntity) LenConscriptCntArray() int {
+func (e *ArmyEntity) LenConscriptCounts() int {
 	if e == nil {
 		return 0
 	}
-	return len(e.conscriptCntArray)
+	return len(e.conscriptCounts)
 }
 
-func (e *ArmyEntity) AtConscriptCntArray(index int) (int, bool) {
+func (e *ArmyEntity) AtConscriptCounts(index int) (int, bool) {
 	var z int
 	if e == nil {
 		return z, false
 	}
-	if index < 0 || index >= len(e.conscriptCntArray) {
+	if index < 0 || index >= len(e.conscriptCounts) {
 		return z, false
 	}
-	return e.conscriptCntArray[index], true
+	return e.conscriptCounts[index], true
 }
 
-func (e *ArmyEntity) ForEachConscriptCntArray(fn func(index int, value int)) {
+func (e *ArmyEntity) ForEachConscriptCounts(fn func(index int, value int)) {
 	if e == nil || fn == nil {
 		return
 	}
-	for i, v := range e.conscriptCntArray {
+	for i, v := range e.conscriptCounts {
 		fn(i, v)
 	}
 }
 
-func (e *ArmyEntity) RangeConscriptCntArray(fn func(index int, value int) bool) {
+func (e *ArmyEntity) RangeConscriptCounts(fn func(index int, value int) bool) {
 	if e == nil || fn == nil {
 		return
 	}
-	for i, v := range e.conscriptCntArray {
+	for i, v := range e.conscriptCounts {
 		if !fn(i, v) {
 			return
 		}
 	}
 }
 
-func (e *ArmyEntity) ReplaceConscriptCntArray(v []int) bool {
+func (e *ArmyEntity) ReplaceConscriptCounts(v []int) bool {
 	if e == nil {
 		return false
 	}
-	if e.slicesEqualConscriptCntArray(e.conscriptCntArray, v) {
+	if e.slicesEqualConscriptCounts(e.conscriptCounts, v) {
 		return false
 	}
-	e.conscriptCntArray = append([]int(nil), v...)
-	e._dt.markFullReplace(FieldArmy_conscriptCntArray)
+	e.conscriptCounts = append([]int(nil), v...)
+	e._dt.markFullReplace(FieldArmy_conscriptCounts)
 	return true
 }
 
-func (e *ArmyEntity) AppendConscriptCntArray(values ...int) bool {
+func (e *ArmyEntity) AppendConscriptCounts(values ...int) bool {
 	if e == nil || len(values) == 0 {
 		return false
 	}
-	e.conscriptCntArray = append(e.conscriptCntArray, values...)
+	e.conscriptCounts = append(e.conscriptCounts, values...)
 	for _, v := range values {
-		e._dt.markSliceAppend(FieldArmy_conscriptCntArray, v)
+		e._dt.markSliceAppend(FieldArmy_conscriptCounts, v)
 	}
 	return true
 }
 
-func (e *ArmyEntity) SetConscriptCntArrayAt(index int, value int) bool {
+func (e *ArmyEntity) SetConscriptCountsAt(index int, value int) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.conscriptCntArray) {
+	if index < 0 || index >= len(e.conscriptCounts) {
 		return false
 	}
-	if e.conscriptCntArray[index] == value {
+	if e.conscriptCounts[index] == value {
 		return false
 	}
-	e.conscriptCntArray[index] = value
-	e._dt.markSliceSet(FieldArmy_conscriptCntArray, index, value)
+	e.conscriptCounts[index] = value
+	e._dt.markSliceSet(FieldArmy_conscriptCounts, index, value)
 	return true
 }
 
-func (e *ArmyEntity) RemoveConscriptCntArrayAt(index int) bool {
+func (e *ArmyEntity) RemoveConscriptCountsAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.conscriptCntArray) {
+	if index < 0 || index >= len(e.conscriptCounts) {
 		return false
 	}
-	e.conscriptCntArray = append(e.conscriptCntArray[:index], e.conscriptCntArray[index+1:]...)
-	e._dt.markSliceRemoveAt(FieldArmy_conscriptCntArray, index)
+	e.conscriptCounts = append(e.conscriptCounts[:index], e.conscriptCounts[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldArmy_conscriptCounts, index)
 	return true
 }
 
-func (e *ArmyEntity) SwapRemoveConscriptCntArrayAt(index int) bool {
+func (e *ArmyEntity) SwapRemoveConscriptCountsAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if index < 0 || index >= len(e.conscriptCntArray) {
+	if index < 0 || index >= len(e.conscriptCounts) {
 		return false
 	}
-	last := len(e.conscriptCntArray) - 1
+	last := len(e.conscriptCounts) - 1
 	if index != last {
-		e.conscriptCntArray[index] = e.conscriptCntArray[last]
+		e.conscriptCounts[index] = e.conscriptCounts[last]
 	}
-	e.conscriptCntArray = e.conscriptCntArray[:last]
-	e._dt.markSliceSwapRemoveAt(FieldArmy_conscriptCntArray, index)
+	e.conscriptCounts = e.conscriptCounts[:last]
+	e._dt.markSliceSwapRemoveAt(FieldArmy_conscriptCounts, index)
 	return true
 }
 
-func (e *ArmyEntity) ClearConscriptCntArray() bool {
+func (e *ArmyEntity) ClearConscriptCounts() bool {
 	if e == nil {
 		return false
 	}
-	if len(e.conscriptCntArray) == 0 {
+	if len(e.conscriptCounts) == 0 {
 		return false
 	}
-	e.conscriptCntArray = nil
-	e._dt.markFullReplace(FieldArmy_conscriptCntArray)
-	return true
-}
-
-func (e *ArmyEntity) LenGens() int {
-	if e == nil {
-		return 0
-	}
-	return len(e.gens)
-}
-
-func (e *ArmyEntity) AtGens(index int) (GeneralState, bool) {
-	var z GeneralState
-	if e == nil {
-		return z, false
-	}
-	if index < 0 || index >= len(e.gens) {
-		return z, false
-	}
-	v := e.gens[index]
-	if v == nil {
-		return z, true
-	}
-	return v.Save(), true
-}
-
-func (e *ArmyEntity) ForEachGens(fn func(index int, value GeneralState)) {
-	if e == nil || fn == nil {
-		return
-	}
-	for i, v := range e.gens {
-		var state GeneralState
-		if v != nil {
-			state = v.Save()
-		}
-		fn(i, state)
-	}
-}
-
-func (e *ArmyEntity) RangeGens(fn func(index int, value GeneralState) bool) {
-	if e == nil || fn == nil {
-		return
-	}
-	for i, v := range e.gens {
-		var state GeneralState
-		if v != nil {
-			state = v.Save()
-		}
-		if !fn(i, state) {
-			return
-		}
-	}
-}
-
-func (e *ArmyEntity) ReplaceGens(v []GeneralState) bool {
-	if e == nil {
-		return false
-	}
-	if e.slicesEqualGens(e.snapshotSliceGens(e.gens), v) {
-		return false
-	}
-	e.gens = e.hydrateSliceGens(v)
-	e._dt.markFullReplace(FieldArmy_gens)
-	return true
-}
-
-func (e *ArmyEntity) AppendGens(values ...GeneralState) bool {
-	if e == nil || len(values) == 0 {
-		return false
-	}
-	for _, v := range values {
-		rv := HydrateGeneralEntity(v)
-		e.gens = append(e.gens, rv)
-		e._dt.markSliceAppend(FieldArmy_gens, v)
-	}
-	return true
-}
-
-func (e *ArmyEntity) SetGensAt(index int, value GeneralState) bool {
-	if e == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.gens) {
-		return false
-	}
-	var oldState GeneralState
-	if e.gens[index] != nil {
-		oldState = e.gens[index].Save()
-	}
-	if reflect.DeepEqual(oldState, value) {
-		return false
-	}
-	e.gens[index] = HydrateGeneralEntity(value)
-	e._dt.markSliceSet(FieldArmy_gens, index, value)
-	return true
-}
-
-func (e *ArmyEntity) UpdateGensAt(index int, fn func(value *GeneralEntity)) bool {
-	if e == nil || fn == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.gens) {
-		return false
-	}
-	v := e.gens[index]
-	if v == nil {
-		return false
-	}
-	before := v.Save()
-	fn(v)
-	after := v.Save()
-	if reflect.DeepEqual(before, after) {
-		return false
-	}
-	e._dt.markSliceSet(FieldArmy_gens, index, after)
-	return true
-}
-
-func (e *ArmyEntity) RemoveGensAt(index int) bool {
-	if e == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.gens) {
-		return false
-	}
-	e.gens = append(e.gens[:index], e.gens[index+1:]...)
-	e._dt.markSliceRemoveAt(FieldArmy_gens, index)
-	return true
-}
-
-func (e *ArmyEntity) SwapRemoveGensAt(index int) bool {
-	if e == nil {
-		return false
-	}
-	if index < 0 || index >= len(e.gens) {
-		return false
-	}
-	last := len(e.gens) - 1
-	if index != last {
-		e.gens[index] = e.gens[last]
-	}
-	e.gens = e.gens[:last]
-	e._dt.markSliceSwapRemoveAt(FieldArmy_gens, index)
-	return true
-}
-
-func (e *ArmyEntity) ClearGens() bool {
-	if e == nil {
-		return false
-	}
-	if len(e.gens) == 0 {
-		return false
-	}
-	e.gens = nil
-	e._dt.markFullReplace(FieldArmy_gens)
+	e.conscriptCounts = nil
+	e._dt.markFullReplace(FieldArmy_conscriptCounts)
 	return true
 }
 

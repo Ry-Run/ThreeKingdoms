@@ -51,6 +51,20 @@ func (h *WorldHandler) HandleHWMyCities(ctx actor.Context, w *WorldActor, reques
 	ctx.Respond(out)
 }
 
-func (h *WorldHandler) HandleHWScanBlock(ctx actor.Context, p *WorldActor, request *messages.HWScanBlock) {
-	ctx.Respond(WS.ScanBlock(p, request))
+func (h *WorldHandler) HandleHWScanBlock(ctx actor.Context, w *WorldActor, request *messages.HWScanBlock) {
+	ctx.Respond(WS.ScanBlock(w, request))
+}
+
+func (h *WorldHandler) HandleHWAttack(ctx actor.Context, w *WorldActor, req *messages.HWAttack) {
+	attack := WS.Attack(ctx, w, req)
+	if attack == nil {
+		attack = &messages.WHAttack{
+			OK: false,
+		}
+	}
+	ctx.Respond(attack)
+}
+
+func (h *WorldHandler) HandleHWSyncCityFacility(ctx actor.Context, w *WorldActor, req *messages.HWSyncCityFacility) {
+	ctx.Respond(WS.SyncCityFacility(w.Entity(), req))
 }

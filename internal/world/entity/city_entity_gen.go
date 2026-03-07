@@ -2,22 +2,24 @@
 package entity
 
 import (
+	"reflect"
 	"sort"
 	"time"
 )
 
 const (
-	FieldCity_cityId     Field = "cityId"
-	FieldCity_name       Field = "name"
-	FieldCity_unionId    Field = "unionId"
-	FieldCity_unionName  Field = "unionName"
-	FieldCity_parentId   Field = "parentId"
-	FieldCity_pos        Field = "pos"
-	FieldCity_isMain     Field = "isMain"
-	FieldCity_level      Field = "level"
-	FieldCity_curDurable Field = "curDurable"
-	FieldCity_maxDurable Field = "maxDurable"
-	FieldCity_occupyTime Field = "occupyTime"
+	FieldCity_cityId       Field = "cityId"
+	FieldCity_name         Field = "name"
+	FieldCity_allianceId   Field = "allianceId"
+	FieldCity_allianceName Field = "allianceName"
+	FieldCity_parentId     Field = "parentId"
+	FieldCity_pos          Field = "pos"
+	FieldCity_isMain       Field = "isMain"
+	FieldCity_level        Field = "level"
+	FieldCity_curDurable   Field = "curDurable"
+	FieldCity_maxDurable   Field = "maxDurable"
+	FieldCity_occupyTime   Field = "occupyTime"
+	FieldCity_facility     Field = "facility"
 )
 
 var emptyCityEntity = &CityEntity{}
@@ -153,17 +155,18 @@ func (t *CityEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 }
 
 type CityState struct {
-	CityId     CityID
-	Name       string
-	UnionId    int
-	UnionName  string
-	ParentId   int
-	Pos        PosState
-	IsMain     bool
-	Level      int8
-	CurDurable int
-	MaxDurable int
-	OccupyTime time.Time
+	CityId       CityID
+	Name         string
+	AllianceId   AllianceID
+	AllianceName string
+	ParentId     int
+	Pos          PosState
+	IsMain       bool
+	Level        int8
+	CurDurable   int
+	MaxDurable   int
+	OccupyTime   time.Time
+	Facility     []FacilityState
 }
 
 type CityEntitySnap struct {
@@ -174,33 +177,80 @@ type CityEntitySnap struct {
 }
 
 type CityEntity struct {
-	cityId     CityID
-	name       string
-	unionId    int
-	unionName  string
-	parentId   int
-	pos        *PosEntity
-	isMain     bool
-	level      int8
-	curDurable int
-	maxDurable int
-	occupyTime time.Time
-	_dt        CityEntityTrace
+	cityId       CityID
+	name         string
+	allianceId   AllianceID
+	allianceName string
+	parentId     int
+	pos          *PosEntity
+	isMain       bool
+	level        int8
+	curDurable   int
+	maxDurable   int
+	occupyTime   time.Time
+	facility     []*FacilityEntity
+	_dt          CityEntityTrace
+}
+
+func (e *CityEntity) hydrateSliceFacility(in []FacilityState) []*FacilityEntity {
+	if in == nil {
+		return nil
+	}
+	out := make([]*FacilityEntity, len(in))
+	for i, v := range in {
+		out[i] = HydrateFacilityEntity(v)
+	}
+	return out
+}
+
+func (e *CityEntity) snapshotSliceFacility(in []*FacilityEntity) []FacilityState {
+	if in == nil {
+		return nil
+	}
+	out := make([]FacilityState, len(in))
+	for i, v := range in {
+		if v == nil {
+			var z FacilityState
+			out[i] = z
+			continue
+		}
+		out[i] = v.Save()
+	}
+	return out
+}
+
+func (e *CityEntity) slicesEqualFacility(a, b []FacilityState) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 func HydrateCityEntity(s CityState) *CityEntity {
 	return &CityEntity{
-		cityId:     s.CityId,
-		name:       s.Name,
-		unionId:    s.UnionId,
-		unionName:  s.UnionName,
-		parentId:   s.ParentId,
-		pos:        HydratePosEntity(s.Pos),
-		isMain:     s.IsMain,
-		level:      s.Level,
-		curDurable: s.CurDurable,
-		maxDurable: s.MaxDurable,
-		occupyTime: s.OccupyTime,
+		cityId:       s.CityId,
+		name:         s.Name,
+		allianceId:   s.AllianceId,
+		allianceName: s.AllianceName,
+		parentId:     s.ParentId,
+		pos:          HydratePosEntity(s.Pos),
+		isMain:       s.IsMain,
+		level:        s.Level,
+		curDurable:   s.CurDurable,
+		maxDurable:   s.MaxDurable,
+		occupyTime:   s.OccupyTime,
+		facility:     emptyCityEntity.hydrateSliceFacility(s.Facility),
 	}
 }
 
@@ -331,8 +381,8 @@ func (e *CityEntity) Save() CityState {
 	}
 	s.CityId = e.cityId
 	s.Name = e.name
-	s.UnionId = e.unionId
-	s.UnionName = e.unionName
+	s.AllianceId = e.allianceId
+	s.AllianceName = e.allianceName
 	s.ParentId = e.parentId
 	if e.pos != nil {
 		s.Pos = e.pos.Save()
@@ -345,6 +395,7 @@ func (e *CityEntity) Save() CityState {
 	s.CurDurable = e.curDurable
 	s.MaxDurable = e.maxDurable
 	s.OccupyTime = e.occupyTime
+	s.Facility = e.snapshotSliceFacility(e.facility)
 	return s
 }
 
@@ -375,6 +426,7 @@ func (s *CityEntitySnap) Clone() *CityEntitySnap {
 			out.Changes[f] = cloneCityEntityCollectionChange(ch)
 		}
 	}
+	out.State.Facility = append([]FacilityState(nil), s.State.Facility...)
 	return out
 }
 
@@ -418,43 +470,43 @@ func (e *CityEntity) SetName(v string) bool {
 	return true
 }
 
-func (e *CityEntity) UnionId() int {
+func (e *CityEntity) AllianceId() AllianceID {
 	if e == nil {
-		var z int
+		var z AllianceID
 		return z
 	}
-	return e.unionId
+	return e.allianceId
 }
 
-func (e *CityEntity) SetUnionId(v int) bool {
+func (e *CityEntity) SetAllianceId(v AllianceID) bool {
 	if e == nil {
 		return false
 	}
-	if e.unionId == v {
+	if e.allianceId == v {
 		return false
 	}
-	e.unionId = v
-	e._dt.mark(FieldCity_unionId)
+	e.allianceId = v
+	e._dt.mark(FieldCity_allianceId)
 	return true
 }
 
-func (e *CityEntity) UnionName() string {
+func (e *CityEntity) AllianceName() string {
 	if e == nil {
 		var z string
 		return z
 	}
-	return e.unionName
+	return e.allianceName
 }
 
-func (e *CityEntity) SetUnionName(v string) bool {
+func (e *CityEntity) SetAllianceName(v string) bool {
 	if e == nil {
 		return false
 	}
-	if e.unionName == v {
+	if e.allianceName == v {
 		return false
 	}
-	e.unionName = v
-	e._dt.mark(FieldCity_unionName)
+	e.allianceName = v
+	e._dt.mark(FieldCity_allianceName)
 	return true
 }
 
@@ -619,5 +671,159 @@ func (e *CityEntity) SetOccupyTime(v time.Time) bool {
 	}
 	e.occupyTime = v
 	e._dt.mark(FieldCity_occupyTime)
+	return true
+}
+
+func (e *CityEntity) LenFacility() int {
+	if e == nil {
+		return 0
+	}
+	return len(e.facility)
+}
+
+func (e *CityEntity) AtFacility(index int) (FacilityState, bool) {
+	var z FacilityState
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return z, false
+	}
+	v := e.facility[index]
+	if v == nil {
+		return z, true
+	}
+	return v.Save(), true
+}
+
+func (e *CityEntity) ForEachFacility(fn func(index int, value FacilityState)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.facility {
+		var state FacilityState
+		if v != nil {
+			state = v.Save()
+		}
+		fn(i, state)
+	}
+}
+
+func (e *CityEntity) RangeFacility(fn func(index int, value FacilityState) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.facility {
+		var state FacilityState
+		if v != nil {
+			state = v.Save()
+		}
+		if !fn(i, state) {
+			return
+		}
+	}
+}
+
+func (e *CityEntity) ReplaceFacility(v []FacilityState) bool {
+	if e == nil {
+		return false
+	}
+	if e.slicesEqualFacility(e.snapshotSliceFacility(e.facility), v) {
+		return false
+	}
+	e.facility = e.hydrateSliceFacility(v)
+	e._dt.markFullReplace(FieldCity_facility)
+	return true
+}
+
+func (e *CityEntity) AppendFacility(values ...FacilityState) bool {
+	if e == nil || len(values) == 0 {
+		return false
+	}
+	for _, v := range values {
+		rv := HydrateFacilityEntity(v)
+		e.facility = append(e.facility, rv)
+		e._dt.markSliceAppend(FieldCity_facility, v)
+	}
+	return true
+}
+
+func (e *CityEntity) SetFacilityAt(index int, value FacilityState) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return false
+	}
+	var oldState FacilityState
+	if e.facility[index] != nil {
+		oldState = e.facility[index].Save()
+	}
+	if reflect.DeepEqual(oldState, value) {
+		return false
+	}
+	e.facility[index] = HydrateFacilityEntity(value)
+	e._dt.markSliceSet(FieldCity_facility, index, value)
+	return true
+}
+
+func (e *CityEntity) UpdateFacilityAt(index int, fn func(value *FacilityEntity)) bool {
+	if e == nil || fn == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return false
+	}
+	v := e.facility[index]
+	if v == nil {
+		return false
+	}
+	before := v.Save()
+	fn(v)
+	after := v.Save()
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markSliceSet(FieldCity_facility, index, after)
+	return true
+}
+
+func (e *CityEntity) RemoveFacilityAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return false
+	}
+	e.facility = append(e.facility[:index], e.facility[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldCity_facility, index)
+	return true
+}
+
+func (e *CityEntity) SwapRemoveFacilityAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.facility) {
+		return false
+	}
+	last := len(e.facility) - 1
+	if index != last {
+		e.facility[index] = e.facility[last]
+	}
+	e.facility = e.facility[:last]
+	e._dt.markSliceSwapRemoveAt(FieldCity_facility, index)
+	return true
+}
+
+func (e *CityEntity) ClearFacility() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.facility) == 0 {
+		return false
+	}
+	e.facility = nil
+	e._dt.markFullReplace(FieldCity_facility)
 	return true
 }

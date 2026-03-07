@@ -3,6 +3,8 @@ package actor
 import (
 	"ThreeKingdoms/internal/player/actors"
 	"ThreeKingdoms/internal/player/service/port"
+	sharedactor "ThreeKingdoms/internal/shared/actor"
+	gatepb "ThreeKingdoms/internal/shared/gen/gate"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/transport"
 	"context"
@@ -47,71 +49,18 @@ type Runtime struct {
 	ownSys  bool
 }
 
-func NewRuntime(logger *zap.Logger, repo port.PlayerRepository, worldAdd string, allianceAdd string, askTimeout time.Duration) *Runtime {
-	if askTimeout <= 0 {
-		askTimeout = defaultAskTimeout
-	}
-
-	/**
-	创建一个新的 ActorSystem，相当于容器/运行时环境：
-	管理 PID、调度、邮箱、系统消息
-	挂载扩展（remote/cluster/metrics 等）
-	提供 root context 等入口
-	*/
-	system := protoactor.NewActorSystem()
-	/**
-	拿到 ActorSystem 的 根上下文。主要用来：
-	Spawn 创建 actor
-	Send/Request/Stop 等操作
-	它代表“系统外部（或顶层）对 actor 的操作入口”。
-	*/
-	root := system.Root
-	/**
-	创建一个远程 WorldActor
-	组装远端 PID：Address=服务器 ip:port，Id=SpawnNamed 的名字
-	*/
-	worldPID := protoactor.NewPID(worldAdd, "world")
-	alliancePID := protoactor.NewPID(allianceAdd, "alliance")
-
-	/**
-	用 root context 创建（spawn） 一个 actor，返回它的 PID。
-	PropsFromProducer(...) 表示：用一个“工厂函数”来生成 actor 实例。
-	这样每次需要创建 actor 时，框架会调用这个 producer 来 new 一个出来。
-	**/
-	managerProps := protoactor.PropsFromProducer(func() protoactor.Actor {
-		// 具体返回的 actor 实例
-		return actors.NewManagerActor(repo, worldPID, alliancePID)
-	})
-	/**
-	配置这个 actor 的 Props（行为+邮箱+中间件等）。
-	manager：作为一个“管理/协调 actor”的 PID，供 Runtime 后续使用。
-	manager 不能干重活，路由、查表、维护元数据可以
-	*/
-	manager := root.Spawn(managerProps)
-
-	return &Runtime{
-		logger:  logger,
-		system:  system,
-		root:    root,
-		manager: manager,
-		timeout: askTimeout,
-		ownSys:  true,
-	}
-}
-
-// NewRuntimeWithWorldPID 使用共享 ActorSystem + 本地 world actor PID 初始化 player runtime，
-// player -> world 将走进程内消息（可直接发送普通 Go 结构体消息）。
-func NewRuntimeWithWorldPID(
+func NewRuntime(
 	logger *zap.Logger,
 	system *protoactor.ActorSystem,
 	repo port.PlayerRepository,
-	worldPID *protoactor.PID,
-	alliancePID *protoactor.PID,
+	resolver sharedactor.ManagerPIDResolver,
+	pusher gatepb.GatePushServiceClient,
 	askTimeout time.Duration,
 ) *Runtime {
 	if askTimeout <= 0 {
 		askTimeout = defaultAskTimeout
 	}
+
 	ownSys := false
 	if system == nil {
 		system = protoactor.NewActorSystem()
@@ -119,7 +68,7 @@ func NewRuntimeWithWorldPID(
 	}
 	root := system.Root
 	managerProps := protoactor.PropsFromProducer(func() protoactor.Actor {
-		return actors.NewManagerActor(repo, worldPID, alliancePID)
+		return actors.NewManagerActor(repo, resolver, pusher)
 	})
 	manager := root.Spawn(managerProps)
 
@@ -143,6 +92,14 @@ func (r *Runtime) Shutdown() {
 	if r.ownSys && r.system != nil {
 		r.system.Shutdown()
 	}
+}
+
+// PlayerMangerPID 返回 player runtime 对外入口 actor 的 PID（当前为 ManagerActor）。
+func (r *Runtime) PlayerMangerPID() *protoactor.PID {
+	if r == nil {
+		return nil
+	}
+	return r.manager
 }
 
 func (r *Runtime) request(pid *protoactor.PID, msg any, timeout time.Duration) (any, error) {

@@ -7,23 +7,26 @@ import (
 )
 
 type ArmyDoc struct {
-	Id                int       `bson:"id"`
-	CityId            CityID    `bson:"city_id"`
-	Order             int8      `bson:"order"`
-	Generals          []int     `bson:"generals"`
-	Soldiers          []int     `bson:"soldiers"`
-	Cmd               int8      `bson:"cmd"`
-	FromX             int       `bson:"from_x"`
-	FromY             int       `bson:"from_y"`
-	ToX               int       `bson:"to_x"`
-	ToY               int       `bson:"to_y"`
-	StartTime         time.Time `bson:"start_time"`
-	EndTime           time.Time `bson:"end_time"`
-	State             int8      `bson:"state"`
-	ConscriptEndTimes []int64   `bson:"conscript_end_times"`
-	ConscriptCounts   []int     `bson:"conscript_counts"`
-	CellX             int       `bson:"cell_x"`
-	CellY             int       `bson:"cell_y"`
+	Id                int        `bson:"id"`
+	CityId            CityID     `bson:"city_id"`
+	PlayerId          PlayerID   `bson:"player_id"`
+	AllianceId        AllianceID `bson:"alliance_id"`
+	Order             int8       `bson:"order"`
+	Generals          []int      `bson:"generals"`
+	Soldiers          []int      `bson:"soldiers"`
+	Cmd               int8       `bson:"cmd"`
+	FromX             int        `bson:"from_x"`
+	FromY             int        `bson:"from_y"`
+	ToX               int        `bson:"to_x"`
+	ToY               int        `bson:"to_y"`
+	StartTime         time.Time  `bson:"start_time"`
+	EndTime           time.Time  `bson:"end_time"`
+	State             int8       `bson:"state"`
+	Frozen            bool       `bson:"frozen"`
+	ConscriptEndTimes []int64    `bson:"conscript_end_times"`
+	ConscriptCounts   []int      `bson:"conscript_counts"`
+	CellX             int        `bson:"cell_x"`
+	CellY             int        `bson:"cell_y"`
 }
 
 func ArmyStateToDoc(s entity.ArmyState) ArmyDoc {
@@ -31,6 +34,8 @@ func ArmyStateToDoc(s entity.ArmyState) ArmyDoc {
 	return ArmyDoc{
 		Id:                state.Id,
 		CityId:            state.CityId,
+		PlayerId:          state.PlayerId,
+		AllianceId:        state.AllianceId,
 		Order:             state.Order,
 		Generals:          state.Generals,
 		Soldiers:          state.Soldiers,
@@ -42,6 +47,7 @@ func ArmyStateToDoc(s entity.ArmyState) ArmyDoc {
 		StartTime:         state.StartTime,
 		EndTime:           state.EndTime,
 		State:             state.State,
+		Frozen:            state.Frozen,
 		ConscriptEndTimes: state.ConscriptEndTimes,
 		ConscriptCounts:   state.ConscriptCounts,
 		CellX:             state.CellX,
@@ -53,6 +59,8 @@ func ArmyDocToState(d ArmyDoc) entity.ArmyState {
 	state := entity.ArmyState{
 		Id:                d.Id,
 		CityId:            d.CityId,
+		PlayerId:          d.PlayerId,
+		AllianceId:        d.AllianceId,
 		Order:             d.Order,
 		Generals:          d.Generals,
 		Soldiers:          d.Soldiers,
@@ -64,6 +72,7 @@ func ArmyDocToState(d ArmyDoc) entity.ArmyState {
 		StartTime:         d.StartTime,
 		EndTime:           d.EndTime,
 		State:             d.State,
+		Frozen:            d.Frozen,
 		ConscriptEndTimes: d.ConscriptEndTimes,
 		ConscriptCounts:   d.ConscriptCounts,
 		CellX:             d.CellX,

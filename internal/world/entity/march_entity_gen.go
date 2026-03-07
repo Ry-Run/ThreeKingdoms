@@ -7,12 +7,13 @@ import (
 )
 
 const (
-	FieldMarch_playerID Field = "playerID"
-	FieldMarch_armyID   Field = "armyID"
-	FieldMarch_from     Field = "from"
-	FieldMarch_to       Field = "to"
-	FieldMarch_startAt  Field = "startAt"
-	FieldMarch_arriveAt Field = "arriveAt"
+	FieldMarch_playerId   Field = "playerId"
+	FieldMarch_allianceId Field = "allianceId"
+	FieldMarch_armyID     Field = "armyID"
+	FieldMarch_from       Field = "from"
+	FieldMarch_to         Field = "to"
+	FieldMarch_startAt    Field = "startAt"
+	FieldMarch_arriveAt   Field = "arriveAt"
 )
 
 var emptyMarchEntity = &MarchEntity{}
@@ -148,12 +149,13 @@ func (t *MarchEntityTrace) markSliceSwapRemoveAt(f Field, index int) {
 }
 
 type MarchState struct {
-	PlayerID PlayerID
-	ArmyID   ArmyID
-	From     PosState
-	To       PosState
-	StartAt  time.Time
-	ArriveAt time.Time
+	PlayerId   PlayerID
+	AllianceId AllianceID
+	ArmyID     ArmyID
+	From       PosState
+	To         PosState
+	StartAt    time.Time
+	ArriveAt   time.Time
 }
 
 type MarchEntitySnap struct {
@@ -164,23 +166,25 @@ type MarchEntitySnap struct {
 }
 
 type MarchEntity struct {
-	playerID PlayerID
-	armyID   ArmyID
-	from     *PosEntity
-	to       *PosEntity
-	startAt  time.Time
-	arriveAt time.Time
-	_dt      MarchEntityTrace
+	playerId   PlayerID
+	allianceId AllianceID
+	armyID     ArmyID
+	from       *PosEntity
+	to         *PosEntity
+	startAt    time.Time
+	arriveAt   time.Time
+	_dt        MarchEntityTrace
 }
 
 func HydrateMarchEntity(s MarchState) *MarchEntity {
 	return &MarchEntity{
-		playerID: s.PlayerID,
-		armyID:   s.ArmyID,
-		from:     HydratePosEntity(s.From),
-		to:       HydratePosEntity(s.To),
-		startAt:  s.StartAt,
-		arriveAt: s.ArriveAt,
+		playerId:   s.PlayerId,
+		allianceId: s.AllianceId,
+		armyID:     s.ArmyID,
+		from:       HydratePosEntity(s.From),
+		to:         HydratePosEntity(s.To),
+		startAt:    s.StartAt,
+		arriveAt:   s.ArriveAt,
 	}
 }
 
@@ -318,7 +322,8 @@ func (e *MarchEntity) Save() MarchState {
 	if e == nil {
 		return s
 	}
-	s.PlayerID = e.playerID
+	s.PlayerId = e.playerId
+	s.AllianceId = e.allianceId
 	s.ArmyID = e.armyID
 	if e.from != nil {
 		s.From = e.from.Save()
@@ -367,23 +372,43 @@ func (s *MarchEntitySnap) Clone() *MarchEntitySnap {
 	return out
 }
 
-func (e *MarchEntity) PlayerID() PlayerID {
+func (e *MarchEntity) PlayerId() PlayerID {
 	if e == nil {
 		var z PlayerID
 		return z
 	}
-	return e.playerID
+	return e.playerId
 }
 
-func (e *MarchEntity) SetPlayerID(v PlayerID) bool {
+func (e *MarchEntity) SetPlayerId(v PlayerID) bool {
 	if e == nil {
 		return false
 	}
-	if e.playerID == v {
+	if e.playerId == v {
 		return false
 	}
-	e.playerID = v
-	e._dt.mark(FieldMarch_playerID)
+	e.playerId = v
+	e._dt.mark(FieldMarch_playerId)
+	return true
+}
+
+func (e *MarchEntity) AllianceId() AllianceID {
+	if e == nil {
+		var z AllianceID
+		return z
+	}
+	return e.allianceId
+}
+
+func (e *MarchEntity) SetAllianceId(v AllianceID) bool {
+	if e == nil {
+		return false
+	}
+	if e.allianceId == v {
+		return false
+	}
+	e.allianceId = v
+	e._dt.mark(FieldMarch_allianceId)
 	return true
 }
 

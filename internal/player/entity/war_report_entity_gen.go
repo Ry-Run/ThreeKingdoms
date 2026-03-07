@@ -2,6 +2,7 @@
 package entity
 
 import (
+	"reflect"
 	"sort"
 )
 
@@ -168,10 +169,10 @@ type WarReportState struct {
 	BegDefenseArmy    ArmyState
 	EndAttackArmy     ArmyState
 	EndDefenseArmy    ArmyState
-	BegAttackGeneral  GeneralState
-	BegDefenseGeneral GeneralState
-	EndAttackGeneral  GeneralState
-	EndDefenseGeneral GeneralState
+	BegAttackGeneral  []GeneralState
+	BegDefenseGeneral []GeneralState
+	EndAttackGeneral  []GeneralState
+	EndDefenseGeneral []GeneralState
 	Result            int
 	Rounds            string
 	AttackIsRead      bool
@@ -198,10 +199,10 @@ type WarReportEntity struct {
 	begDefenseArmy    *ArmyEntity
 	endAttackArmy     *ArmyEntity
 	endDefenseArmy    *ArmyEntity
-	begAttackGeneral  *GeneralEntity
-	begDefenseGeneral *GeneralEntity
-	endAttackGeneral  *GeneralEntity
-	endDefenseGeneral *GeneralEntity
+	begAttackGeneral  []*GeneralEntity
+	begDefenseGeneral []*GeneralEntity
+	endAttackGeneral  []*GeneralEntity
+	endDefenseGeneral []*GeneralEntity
 	result            int
 	rounds            string
 	attackIsRead      bool
@@ -214,6 +215,186 @@ type WarReportEntity struct {
 	_dt               WarReportEntityTrace
 }
 
+func (e *WarReportEntity) hydrateSliceBegAttackGeneral(in []GeneralState) []*GeneralEntity {
+	if in == nil {
+		return nil
+	}
+	out := make([]*GeneralEntity, len(in))
+	for i, v := range in {
+		out[i] = HydrateGeneralEntity(v)
+	}
+	return out
+}
+
+func (e *WarReportEntity) snapshotSliceBegAttackGeneral(in []*GeneralEntity) []GeneralState {
+	if in == nil {
+		return nil
+	}
+	out := make([]GeneralState, len(in))
+	for i, v := range in {
+		if v == nil {
+			var z GeneralState
+			out[i] = z
+			continue
+		}
+		out[i] = v.Save()
+	}
+	return out
+}
+
+func (e *WarReportEntity) slicesEqualBegAttackGeneral(a, b []GeneralState) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *WarReportEntity) hydrateSliceBegDefenseGeneral(in []GeneralState) []*GeneralEntity {
+	if in == nil {
+		return nil
+	}
+	out := make([]*GeneralEntity, len(in))
+	for i, v := range in {
+		out[i] = HydrateGeneralEntity(v)
+	}
+	return out
+}
+
+func (e *WarReportEntity) snapshotSliceBegDefenseGeneral(in []*GeneralEntity) []GeneralState {
+	if in == nil {
+		return nil
+	}
+	out := make([]GeneralState, len(in))
+	for i, v := range in {
+		if v == nil {
+			var z GeneralState
+			out[i] = z
+			continue
+		}
+		out[i] = v.Save()
+	}
+	return out
+}
+
+func (e *WarReportEntity) slicesEqualBegDefenseGeneral(a, b []GeneralState) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *WarReportEntity) hydrateSliceEndAttackGeneral(in []GeneralState) []*GeneralEntity {
+	if in == nil {
+		return nil
+	}
+	out := make([]*GeneralEntity, len(in))
+	for i, v := range in {
+		out[i] = HydrateGeneralEntity(v)
+	}
+	return out
+}
+
+func (e *WarReportEntity) snapshotSliceEndAttackGeneral(in []*GeneralEntity) []GeneralState {
+	if in == nil {
+		return nil
+	}
+	out := make([]GeneralState, len(in))
+	for i, v := range in {
+		if v == nil {
+			var z GeneralState
+			out[i] = z
+			continue
+		}
+		out[i] = v.Save()
+	}
+	return out
+}
+
+func (e *WarReportEntity) slicesEqualEndAttackGeneral(a, b []GeneralState) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *WarReportEntity) hydrateSliceEndDefenseGeneral(in []GeneralState) []*GeneralEntity {
+	if in == nil {
+		return nil
+	}
+	out := make([]*GeneralEntity, len(in))
+	for i, v := range in {
+		out[i] = HydrateGeneralEntity(v)
+	}
+	return out
+}
+
+func (e *WarReportEntity) snapshotSliceEndDefenseGeneral(in []*GeneralEntity) []GeneralState {
+	if in == nil {
+		return nil
+	}
+	out := make([]GeneralState, len(in))
+	for i, v := range in {
+		if v == nil {
+			var z GeneralState
+			out[i] = z
+			continue
+		}
+		out[i] = v.Save()
+	}
+	return out
+}
+
+func (e *WarReportEntity) slicesEqualEndDefenseGeneral(a, b []GeneralState) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 func HydrateWarReportEntity(s WarReportState) *WarReportEntity {
 	return &WarReportEntity{
 		id:                s.Id,
@@ -223,10 +404,10 @@ func HydrateWarReportEntity(s WarReportState) *WarReportEntity {
 		begDefenseArmy:    HydrateArmyEntity(s.BegDefenseArmy),
 		endAttackArmy:     HydrateArmyEntity(s.EndAttackArmy),
 		endDefenseArmy:    HydrateArmyEntity(s.EndDefenseArmy),
-		begAttackGeneral:  HydrateGeneralEntity(s.BegAttackGeneral),
-		begDefenseGeneral: HydrateGeneralEntity(s.BegDefenseGeneral),
-		endAttackGeneral:  HydrateGeneralEntity(s.EndAttackGeneral),
-		endDefenseGeneral: HydrateGeneralEntity(s.EndDefenseGeneral),
+		begAttackGeneral:  emptyWarReportEntity.hydrateSliceBegAttackGeneral(s.BegAttackGeneral),
+		begDefenseGeneral: emptyWarReportEntity.hydrateSliceBegDefenseGeneral(s.BegDefenseGeneral),
+		endAttackGeneral:  emptyWarReportEntity.hydrateSliceEndAttackGeneral(s.EndAttackGeneral),
+		endDefenseGeneral: emptyWarReportEntity.hydrateSliceEndDefenseGeneral(s.EndDefenseGeneral),
 		result:            s.Result,
 		rounds:            s.Rounds,
 		attackIsRead:      s.AttackIsRead,
@@ -258,18 +439,6 @@ func (e *WarReportEntity) Dirty() bool {
 	if e.endDefenseArmy != nil && e.endDefenseArmy.Dirty() {
 		return true
 	}
-	if e.begAttackGeneral != nil && e.begAttackGeneral.Dirty() {
-		return true
-	}
-	if e.begDefenseGeneral != nil && e.begDefenseGeneral.Dirty() {
-		return true
-	}
-	if e.endAttackGeneral != nil && e.endAttackGeneral.Dirty() {
-		return true
-	}
-	if e.endDefenseGeneral != nil && e.endDefenseGeneral.Dirty() {
-		return true
-	}
 	return false
 }
 
@@ -289,18 +458,6 @@ func (e *WarReportEntity) ClearDirty() {
 	}
 	if e.endDefenseArmy != nil {
 		e.endDefenseArmy.ClearDirty()
-	}
-	if e.begAttackGeneral != nil {
-		e.begAttackGeneral.ClearDirty()
-	}
-	if e.begDefenseGeneral != nil {
-		e.begDefenseGeneral.ClearDirty()
-	}
-	if e.endAttackGeneral != nil {
-		e.endAttackGeneral.ClearDirty()
-	}
-	if e.endDefenseGeneral != nil {
-		e.endDefenseGeneral.ClearDirty()
 	}
 }
 
@@ -323,18 +480,6 @@ func (e *WarReportEntity) DirtyFields() []Field {
 	}
 	if e.endDefenseArmy != nil && e.endDefenseArmy.Dirty() {
 		trace[FieldWarReport_endDefenseArmy] = true
-	}
-	if e.begAttackGeneral != nil && e.begAttackGeneral.Dirty() {
-		trace[FieldWarReport_begAttackGeneral] = true
-	}
-	if e.begDefenseGeneral != nil && e.begDefenseGeneral.Dirty() {
-		trace[FieldWarReport_begDefenseGeneral] = true
-	}
-	if e.endAttackGeneral != nil && e.endAttackGeneral.Dirty() {
-		trace[FieldWarReport_endAttackGeneral] = true
-	}
-	if e.endDefenseGeneral != nil && e.endDefenseGeneral.Dirty() {
-		trace[FieldWarReport_endDefenseGeneral] = true
 	}
 	if len(trace) == 0 {
 		return nil
@@ -454,30 +599,10 @@ func (e *WarReportEntity) Save() WarReportState {
 		var z ArmyState
 		s.EndDefenseArmy = z
 	}
-	if e.begAttackGeneral != nil {
-		s.BegAttackGeneral = e.begAttackGeneral.Save()
-	} else {
-		var z GeneralState
-		s.BegAttackGeneral = z
-	}
-	if e.begDefenseGeneral != nil {
-		s.BegDefenseGeneral = e.begDefenseGeneral.Save()
-	} else {
-		var z GeneralState
-		s.BegDefenseGeneral = z
-	}
-	if e.endAttackGeneral != nil {
-		s.EndAttackGeneral = e.endAttackGeneral.Save()
-	} else {
-		var z GeneralState
-		s.EndAttackGeneral = z
-	}
-	if e.endDefenseGeneral != nil {
-		s.EndDefenseGeneral = e.endDefenseGeneral.Save()
-	} else {
-		var z GeneralState
-		s.EndDefenseGeneral = z
-	}
+	s.BegAttackGeneral = e.snapshotSliceBegAttackGeneral(e.begAttackGeneral)
+	s.BegDefenseGeneral = e.snapshotSliceBegDefenseGeneral(e.begDefenseGeneral)
+	s.EndAttackGeneral = e.snapshotSliceEndAttackGeneral(e.endAttackGeneral)
+	s.EndDefenseGeneral = e.snapshotSliceEndDefenseGeneral(e.endDefenseGeneral)
 	s.Result = e.result
 	s.Rounds = e.rounds
 	s.AttackIsRead = e.attackIsRead
@@ -517,6 +642,10 @@ func (s *WarReportEntitySnap) Clone() *WarReportEntitySnap {
 			out.Changes[f] = cloneWarReportEntityCollectionChange(ch)
 		}
 	}
+	out.State.BegAttackGeneral = append([]GeneralState(nil), s.State.BegAttackGeneral...)
+	out.State.BegDefenseGeneral = append([]GeneralState(nil), s.State.BegDefenseGeneral...)
+	out.State.EndAttackGeneral = append([]GeneralState(nil), s.State.EndAttackGeneral...)
+	out.State.EndDefenseGeneral = append([]GeneralState(nil), s.State.EndDefenseGeneral...)
 	return out
 }
 
@@ -756,179 +885,619 @@ func (e *WarReportEntity) UpdateEndDefenseArmy(fn func(value *ArmyEntity)) bool 
 	return true
 }
 
-func (e *WarReportEntity) BegAttackGeneral() *GeneralEntity {
+func (e *WarReportEntity) LenBegAttackGeneral() int {
 	if e == nil {
-		return nil
+		return 0
 	}
-	return e.begAttackGeneral
+	return len(e.begAttackGeneral)
 }
 
-func (e *WarReportEntity) SetBegAttackGeneral(v GeneralState) bool {
+func (e *WarReportEntity) AtBegAttackGeneral(index int) (GeneralState, bool) {
+	var z GeneralState
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.begAttackGeneral) {
+		return z, false
+	}
+	v := e.begAttackGeneral[index]
+	if v == nil {
+		return z, true
+	}
+	return v.Save(), true
+}
+
+func (e *WarReportEntity) ForEachBegAttackGeneral(fn func(index int, value GeneralState)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.begAttackGeneral {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		fn(i, state)
+	}
+}
+
+func (e *WarReportEntity) RangeBegAttackGeneral(fn func(index int, value GeneralState) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.begAttackGeneral {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		if !fn(i, state) {
+			return
+		}
+	}
+}
+
+func (e *WarReportEntity) ReplaceBegAttackGeneral(v []GeneralState) bool {
 	if e == nil {
 		return false
 	}
-	next := HydrateGeneralEntity(v)
-	if e.begAttackGeneral == next {
+	if e.slicesEqualBegAttackGeneral(e.snapshotSliceBegAttackGeneral(e.begAttackGeneral), v) {
 		return false
 	}
-	e.begAttackGeneral = next
-	e._dt.mark(FieldWarReport_begAttackGeneral)
+	e.begAttackGeneral = e.hydrateSliceBegAttackGeneral(v)
+	e._dt.markFullReplace(FieldWarReport_begAttackGeneral)
 	return true
 }
 
-func (e *WarReportEntity) SetBegAttackGeneralEntity(v *GeneralEntity) bool {
-	if e == nil {
+func (e *WarReportEntity) AppendBegAttackGeneral(values ...GeneralState) bool {
+	if e == nil || len(values) == 0 {
 		return false
 	}
-	if e.begAttackGeneral == v {
-		return false
+	for _, v := range values {
+		rv := HydrateGeneralEntity(v)
+		e.begAttackGeneral = append(e.begAttackGeneral, rv)
+		e._dt.markSliceAppend(FieldWarReport_begAttackGeneral, v)
 	}
-	e.begAttackGeneral = v
-	e._dt.mark(FieldWarReport_begAttackGeneral)
 	return true
 }
 
-func (e *WarReportEntity) UpdateBegAttackGeneral(fn func(value *GeneralEntity)) bool {
+func (e *WarReportEntity) SetBegAttackGeneralAt(index int, value GeneralState) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.begAttackGeneral) {
+		return false
+	}
+	var oldState GeneralState
+	if e.begAttackGeneral[index] != nil {
+		oldState = e.begAttackGeneral[index].Save()
+	}
+	if reflect.DeepEqual(oldState, value) {
+		return false
+	}
+	e.begAttackGeneral[index] = HydrateGeneralEntity(value)
+	e._dt.markSliceSet(FieldWarReport_begAttackGeneral, index, value)
+	return true
+}
+
+func (e *WarReportEntity) UpdateBegAttackGeneralAt(index int, fn func(value *GeneralEntity)) bool {
 	if e == nil || fn == nil {
 		return false
 	}
-	if e.begAttackGeneral == nil {
-		e.begAttackGeneral = &GeneralEntity{}
+	if index < 0 || index >= len(e.begAttackGeneral) {
+		return false
 	}
-	fn(e.begAttackGeneral)
-	e._dt.mark(FieldWarReport_begAttackGeneral)
+	v := e.begAttackGeneral[index]
+	if v == nil {
+		return false
+	}
+	before := v.Save()
+	fn(v)
+	after := v.Save()
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markSliceSet(FieldWarReport_begAttackGeneral, index, after)
 	return true
 }
 
-func (e *WarReportEntity) BegDefenseGeneral() *GeneralEntity {
-	if e == nil {
-		return nil
-	}
-	return e.begDefenseGeneral
-}
-
-func (e *WarReportEntity) SetBegDefenseGeneral(v GeneralState) bool {
+func (e *WarReportEntity) RemoveBegAttackGeneralAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	next := HydrateGeneralEntity(v)
-	if e.begDefenseGeneral == next {
+	if index < 0 || index >= len(e.begAttackGeneral) {
 		return false
 	}
-	e.begDefenseGeneral = next
-	e._dt.mark(FieldWarReport_begDefenseGeneral)
+	e.begAttackGeneral = append(e.begAttackGeneral[:index], e.begAttackGeneral[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldWarReport_begAttackGeneral, index)
 	return true
 }
 
-func (e *WarReportEntity) SetBegDefenseGeneralEntity(v *GeneralEntity) bool {
+func (e *WarReportEntity) SwapRemoveBegAttackGeneralAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if e.begDefenseGeneral == v {
+	if index < 0 || index >= len(e.begAttackGeneral) {
 		return false
 	}
-	e.begDefenseGeneral = v
-	e._dt.mark(FieldWarReport_begDefenseGeneral)
+	last := len(e.begAttackGeneral) - 1
+	if index != last {
+		e.begAttackGeneral[index] = e.begAttackGeneral[last]
+	}
+	e.begAttackGeneral = e.begAttackGeneral[:last]
+	e._dt.markSliceSwapRemoveAt(FieldWarReport_begAttackGeneral, index)
 	return true
 }
 
-func (e *WarReportEntity) UpdateBegDefenseGeneral(fn func(value *GeneralEntity)) bool {
+func (e *WarReportEntity) ClearBegAttackGeneral() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.begAttackGeneral) == 0 {
+		return false
+	}
+	e.begAttackGeneral = nil
+	e._dt.markFullReplace(FieldWarReport_begAttackGeneral)
+	return true
+}
+
+func (e *WarReportEntity) LenBegDefenseGeneral() int {
+	if e == nil {
+		return 0
+	}
+	return len(e.begDefenseGeneral)
+}
+
+func (e *WarReportEntity) AtBegDefenseGeneral(index int) (GeneralState, bool) {
+	var z GeneralState
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.begDefenseGeneral) {
+		return z, false
+	}
+	v := e.begDefenseGeneral[index]
+	if v == nil {
+		return z, true
+	}
+	return v.Save(), true
+}
+
+func (e *WarReportEntity) ForEachBegDefenseGeneral(fn func(index int, value GeneralState)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.begDefenseGeneral {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		fn(i, state)
+	}
+}
+
+func (e *WarReportEntity) RangeBegDefenseGeneral(fn func(index int, value GeneralState) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.begDefenseGeneral {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		if !fn(i, state) {
+			return
+		}
+	}
+}
+
+func (e *WarReportEntity) ReplaceBegDefenseGeneral(v []GeneralState) bool {
+	if e == nil {
+		return false
+	}
+	if e.slicesEqualBegDefenseGeneral(e.snapshotSliceBegDefenseGeneral(e.begDefenseGeneral), v) {
+		return false
+	}
+	e.begDefenseGeneral = e.hydrateSliceBegDefenseGeneral(v)
+	e._dt.markFullReplace(FieldWarReport_begDefenseGeneral)
+	return true
+}
+
+func (e *WarReportEntity) AppendBegDefenseGeneral(values ...GeneralState) bool {
+	if e == nil || len(values) == 0 {
+		return false
+	}
+	for _, v := range values {
+		rv := HydrateGeneralEntity(v)
+		e.begDefenseGeneral = append(e.begDefenseGeneral, rv)
+		e._dt.markSliceAppend(FieldWarReport_begDefenseGeneral, v)
+	}
+	return true
+}
+
+func (e *WarReportEntity) SetBegDefenseGeneralAt(index int, value GeneralState) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.begDefenseGeneral) {
+		return false
+	}
+	var oldState GeneralState
+	if e.begDefenseGeneral[index] != nil {
+		oldState = e.begDefenseGeneral[index].Save()
+	}
+	if reflect.DeepEqual(oldState, value) {
+		return false
+	}
+	e.begDefenseGeneral[index] = HydrateGeneralEntity(value)
+	e._dt.markSliceSet(FieldWarReport_begDefenseGeneral, index, value)
+	return true
+}
+
+func (e *WarReportEntity) UpdateBegDefenseGeneralAt(index int, fn func(value *GeneralEntity)) bool {
 	if e == nil || fn == nil {
 		return false
 	}
-	if e.begDefenseGeneral == nil {
-		e.begDefenseGeneral = &GeneralEntity{}
+	if index < 0 || index >= len(e.begDefenseGeneral) {
+		return false
 	}
-	fn(e.begDefenseGeneral)
-	e._dt.mark(FieldWarReport_begDefenseGeneral)
+	v := e.begDefenseGeneral[index]
+	if v == nil {
+		return false
+	}
+	before := v.Save()
+	fn(v)
+	after := v.Save()
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markSliceSet(FieldWarReport_begDefenseGeneral, index, after)
 	return true
 }
 
-func (e *WarReportEntity) EndAttackGeneral() *GeneralEntity {
-	if e == nil {
-		return nil
-	}
-	return e.endAttackGeneral
-}
-
-func (e *WarReportEntity) SetEndAttackGeneral(v GeneralState) bool {
+func (e *WarReportEntity) RemoveBegDefenseGeneralAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	next := HydrateGeneralEntity(v)
-	if e.endAttackGeneral == next {
+	if index < 0 || index >= len(e.begDefenseGeneral) {
 		return false
 	}
-	e.endAttackGeneral = next
-	e._dt.mark(FieldWarReport_endAttackGeneral)
+	e.begDefenseGeneral = append(e.begDefenseGeneral[:index], e.begDefenseGeneral[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldWarReport_begDefenseGeneral, index)
 	return true
 }
 
-func (e *WarReportEntity) SetEndAttackGeneralEntity(v *GeneralEntity) bool {
+func (e *WarReportEntity) SwapRemoveBegDefenseGeneralAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if e.endAttackGeneral == v {
+	if index < 0 || index >= len(e.begDefenseGeneral) {
 		return false
 	}
-	e.endAttackGeneral = v
-	e._dt.mark(FieldWarReport_endAttackGeneral)
+	last := len(e.begDefenseGeneral) - 1
+	if index != last {
+		e.begDefenseGeneral[index] = e.begDefenseGeneral[last]
+	}
+	e.begDefenseGeneral = e.begDefenseGeneral[:last]
+	e._dt.markSliceSwapRemoveAt(FieldWarReport_begDefenseGeneral, index)
 	return true
 }
 
-func (e *WarReportEntity) UpdateEndAttackGeneral(fn func(value *GeneralEntity)) bool {
+func (e *WarReportEntity) ClearBegDefenseGeneral() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.begDefenseGeneral) == 0 {
+		return false
+	}
+	e.begDefenseGeneral = nil
+	e._dt.markFullReplace(FieldWarReport_begDefenseGeneral)
+	return true
+}
+
+func (e *WarReportEntity) LenEndAttackGeneral() int {
+	if e == nil {
+		return 0
+	}
+	return len(e.endAttackGeneral)
+}
+
+func (e *WarReportEntity) AtEndAttackGeneral(index int) (GeneralState, bool) {
+	var z GeneralState
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.endAttackGeneral) {
+		return z, false
+	}
+	v := e.endAttackGeneral[index]
+	if v == nil {
+		return z, true
+	}
+	return v.Save(), true
+}
+
+func (e *WarReportEntity) ForEachEndAttackGeneral(fn func(index int, value GeneralState)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.endAttackGeneral {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		fn(i, state)
+	}
+}
+
+func (e *WarReportEntity) RangeEndAttackGeneral(fn func(index int, value GeneralState) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.endAttackGeneral {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		if !fn(i, state) {
+			return
+		}
+	}
+}
+
+func (e *WarReportEntity) ReplaceEndAttackGeneral(v []GeneralState) bool {
+	if e == nil {
+		return false
+	}
+	if e.slicesEqualEndAttackGeneral(e.snapshotSliceEndAttackGeneral(e.endAttackGeneral), v) {
+		return false
+	}
+	e.endAttackGeneral = e.hydrateSliceEndAttackGeneral(v)
+	e._dt.markFullReplace(FieldWarReport_endAttackGeneral)
+	return true
+}
+
+func (e *WarReportEntity) AppendEndAttackGeneral(values ...GeneralState) bool {
+	if e == nil || len(values) == 0 {
+		return false
+	}
+	for _, v := range values {
+		rv := HydrateGeneralEntity(v)
+		e.endAttackGeneral = append(e.endAttackGeneral, rv)
+		e._dt.markSliceAppend(FieldWarReport_endAttackGeneral, v)
+	}
+	return true
+}
+
+func (e *WarReportEntity) SetEndAttackGeneralAt(index int, value GeneralState) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.endAttackGeneral) {
+		return false
+	}
+	var oldState GeneralState
+	if e.endAttackGeneral[index] != nil {
+		oldState = e.endAttackGeneral[index].Save()
+	}
+	if reflect.DeepEqual(oldState, value) {
+		return false
+	}
+	e.endAttackGeneral[index] = HydrateGeneralEntity(value)
+	e._dt.markSliceSet(FieldWarReport_endAttackGeneral, index, value)
+	return true
+}
+
+func (e *WarReportEntity) UpdateEndAttackGeneralAt(index int, fn func(value *GeneralEntity)) bool {
 	if e == nil || fn == nil {
 		return false
 	}
-	if e.endAttackGeneral == nil {
-		e.endAttackGeneral = &GeneralEntity{}
+	if index < 0 || index >= len(e.endAttackGeneral) {
+		return false
 	}
-	fn(e.endAttackGeneral)
-	e._dt.mark(FieldWarReport_endAttackGeneral)
+	v := e.endAttackGeneral[index]
+	if v == nil {
+		return false
+	}
+	before := v.Save()
+	fn(v)
+	after := v.Save()
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markSliceSet(FieldWarReport_endAttackGeneral, index, after)
 	return true
 }
 
-func (e *WarReportEntity) EndDefenseGeneral() *GeneralEntity {
-	if e == nil {
-		return nil
-	}
-	return e.endDefenseGeneral
-}
-
-func (e *WarReportEntity) SetEndDefenseGeneral(v GeneralState) bool {
+func (e *WarReportEntity) RemoveEndAttackGeneralAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	next := HydrateGeneralEntity(v)
-	if e.endDefenseGeneral == next {
+	if index < 0 || index >= len(e.endAttackGeneral) {
 		return false
 	}
-	e.endDefenseGeneral = next
-	e._dt.mark(FieldWarReport_endDefenseGeneral)
+	e.endAttackGeneral = append(e.endAttackGeneral[:index], e.endAttackGeneral[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldWarReport_endAttackGeneral, index)
 	return true
 }
 
-func (e *WarReportEntity) SetEndDefenseGeneralEntity(v *GeneralEntity) bool {
+func (e *WarReportEntity) SwapRemoveEndAttackGeneralAt(index int) bool {
 	if e == nil {
 		return false
 	}
-	if e.endDefenseGeneral == v {
+	if index < 0 || index >= len(e.endAttackGeneral) {
 		return false
 	}
-	e.endDefenseGeneral = v
-	e._dt.mark(FieldWarReport_endDefenseGeneral)
+	last := len(e.endAttackGeneral) - 1
+	if index != last {
+		e.endAttackGeneral[index] = e.endAttackGeneral[last]
+	}
+	e.endAttackGeneral = e.endAttackGeneral[:last]
+	e._dt.markSliceSwapRemoveAt(FieldWarReport_endAttackGeneral, index)
 	return true
 }
 
-func (e *WarReportEntity) UpdateEndDefenseGeneral(fn func(value *GeneralEntity)) bool {
+func (e *WarReportEntity) ClearEndAttackGeneral() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.endAttackGeneral) == 0 {
+		return false
+	}
+	e.endAttackGeneral = nil
+	e._dt.markFullReplace(FieldWarReport_endAttackGeneral)
+	return true
+}
+
+func (e *WarReportEntity) LenEndDefenseGeneral() int {
+	if e == nil {
+		return 0
+	}
+	return len(e.endDefenseGeneral)
+}
+
+func (e *WarReportEntity) AtEndDefenseGeneral(index int) (GeneralState, bool) {
+	var z GeneralState
+	if e == nil {
+		return z, false
+	}
+	if index < 0 || index >= len(e.endDefenseGeneral) {
+		return z, false
+	}
+	v := e.endDefenseGeneral[index]
+	if v == nil {
+		return z, true
+	}
+	return v.Save(), true
+}
+
+func (e *WarReportEntity) ForEachEndDefenseGeneral(fn func(index int, value GeneralState)) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.endDefenseGeneral {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		fn(i, state)
+	}
+}
+
+func (e *WarReportEntity) RangeEndDefenseGeneral(fn func(index int, value GeneralState) bool) {
+	if e == nil || fn == nil {
+		return
+	}
+	for i, v := range e.endDefenseGeneral {
+		var state GeneralState
+		if v != nil {
+			state = v.Save()
+		}
+		if !fn(i, state) {
+			return
+		}
+	}
+}
+
+func (e *WarReportEntity) ReplaceEndDefenseGeneral(v []GeneralState) bool {
+	if e == nil {
+		return false
+	}
+	if e.slicesEqualEndDefenseGeneral(e.snapshotSliceEndDefenseGeneral(e.endDefenseGeneral), v) {
+		return false
+	}
+	e.endDefenseGeneral = e.hydrateSliceEndDefenseGeneral(v)
+	e._dt.markFullReplace(FieldWarReport_endDefenseGeneral)
+	return true
+}
+
+func (e *WarReportEntity) AppendEndDefenseGeneral(values ...GeneralState) bool {
+	if e == nil || len(values) == 0 {
+		return false
+	}
+	for _, v := range values {
+		rv := HydrateGeneralEntity(v)
+		e.endDefenseGeneral = append(e.endDefenseGeneral, rv)
+		e._dt.markSliceAppend(FieldWarReport_endDefenseGeneral, v)
+	}
+	return true
+}
+
+func (e *WarReportEntity) SetEndDefenseGeneralAt(index int, value GeneralState) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.endDefenseGeneral) {
+		return false
+	}
+	var oldState GeneralState
+	if e.endDefenseGeneral[index] != nil {
+		oldState = e.endDefenseGeneral[index].Save()
+	}
+	if reflect.DeepEqual(oldState, value) {
+		return false
+	}
+	e.endDefenseGeneral[index] = HydrateGeneralEntity(value)
+	e._dt.markSliceSet(FieldWarReport_endDefenseGeneral, index, value)
+	return true
+}
+
+func (e *WarReportEntity) UpdateEndDefenseGeneralAt(index int, fn func(value *GeneralEntity)) bool {
 	if e == nil || fn == nil {
 		return false
 	}
-	if e.endDefenseGeneral == nil {
-		e.endDefenseGeneral = &GeneralEntity{}
+	if index < 0 || index >= len(e.endDefenseGeneral) {
+		return false
 	}
-	fn(e.endDefenseGeneral)
-	e._dt.mark(FieldWarReport_endDefenseGeneral)
+	v := e.endDefenseGeneral[index]
+	if v == nil {
+		return false
+	}
+	before := v.Save()
+	fn(v)
+	after := v.Save()
+	if reflect.DeepEqual(before, after) {
+		return false
+	}
+	e._dt.markSliceSet(FieldWarReport_endDefenseGeneral, index, after)
+	return true
+}
+
+func (e *WarReportEntity) RemoveEndDefenseGeneralAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.endDefenseGeneral) {
+		return false
+	}
+	e.endDefenseGeneral = append(e.endDefenseGeneral[:index], e.endDefenseGeneral[index+1:]...)
+	e._dt.markSliceRemoveAt(FieldWarReport_endDefenseGeneral, index)
+	return true
+}
+
+func (e *WarReportEntity) SwapRemoveEndDefenseGeneralAt(index int) bool {
+	if e == nil {
+		return false
+	}
+	if index < 0 || index >= len(e.endDefenseGeneral) {
+		return false
+	}
+	last := len(e.endDefenseGeneral) - 1
+	if index != last {
+		e.endDefenseGeneral[index] = e.endDefenseGeneral[last]
+	}
+	e.endDefenseGeneral = e.endDefenseGeneral[:last]
+	e._dt.markSliceSwapRemoveAt(FieldWarReport_endDefenseGeneral, index)
+	return true
+}
+
+func (e *WarReportEntity) ClearEndDefenseGeneral() bool {
+	if e == nil {
+		return false
+	}
+	if len(e.endDefenseGeneral) == 0 {
+		return false
+	}
+	e.endDefenseGeneral = nil
+	e._dt.markFullReplace(FieldWarReport_endDefenseGeneral)
 	return true
 }
 

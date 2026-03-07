@@ -101,7 +101,7 @@ type City struct {
 
 type Army struct {
 	Id       int32   `json:"id"`
-	CityId   int32   `json:"city_id"`
+	CityId   int32   `json:"cityId"`
 	UnionId  int32   `json:"union_id"`
 	Order    int32   `json:"order"`
 	Generals []int32 `json:"generals"`
@@ -116,6 +116,44 @@ type Army struct {
 	ToY      int32   `json:"to_y"`
 	Start    int64   `json:"start"`
 	End      int64   `json:"end"`
+}
+
+func legacyArmyTime(v int64) int64 {
+	if v <= 0 {
+		return 0
+	}
+	if v >= 1_000_000_000_000 {
+		return v / 1000
+	}
+	return v
+}
+
+func NewArmy(resp *playerpb.Army) Army {
+	if resp == nil {
+		return Army{}
+	}
+	conTimes := append([]int64(nil), resp.GetConTimes()...)
+	for i, v := range conTimes {
+		conTimes[i] = legacyArmyTime(v)
+	}
+	return Army{
+		Id:       resp.GetId(),
+		CityId:   resp.GetCityId(),
+		UnionId:  resp.GetUnionId(),
+		Order:    resp.GetOrder(),
+		Generals: append([]int32(nil), resp.GetGenerals()...),
+		Soldiers: append([]int32(nil), resp.GetSoldiers()...),
+		ConTimes: conTimes,
+		ConCnts:  append([]int32(nil), resp.GetConCnts()...),
+		Cmd:      resp.GetCmd(),
+		State:    resp.GetState(),
+		FromX:    resp.GetFromX(),
+		FromY:    resp.GetFromY(),
+		ToX:      resp.GetToX(),
+		ToY:      resp.GetToY(),
+		Start:    legacyArmyTime(resp.GetStart()),
+		End:      legacyArmyTime(resp.GetEnd()),
+	}
 }
 
 func NewCreateRoleResp(resp *playerpb.CreateRoleResponse) CreateRoleResp {
@@ -263,24 +301,7 @@ func NewMyPropertyResp(resp *playerpb.MyPropertyResponse) MyPropertyResp {
 			if a == nil {
 				continue
 			}
-			out.Armies = append(out.Armies, Army{
-				Id:       a.GetId(),
-				CityId:   a.GetCityId(),
-				UnionId:  a.GetUnionId(),
-				Order:    a.GetOrder(),
-				Generals: append([]int32(nil), a.GetGenerals()...),
-				Soldiers: append([]int32(nil), a.GetSoldiers()...),
-				ConTimes: append([]int64(nil), a.GetConTimes()...),
-				ConCnts:  append([]int32(nil), a.GetConCnts()...),
-				Cmd:      a.GetCmd(),
-				State:    a.GetState(),
-				FromX:    a.GetFromX(),
-				FromY:    a.GetFromY(),
-				ToX:      a.GetToX(),
-				ToY:      a.GetToY(),
-				Start:    a.GetStart(),
-				End:      a.GetEnd(),
-			})
+			out.Armies = append(out.Armies, NewArmy(a))
 		}
 	}
 

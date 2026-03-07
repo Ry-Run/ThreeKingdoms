@@ -6,8 +6,8 @@ import (
 )
 
 type GarrisonDoc struct {
-	Owner  int `bson:"owner"`
-	ArmyId int `bson:"army_id"`
+	Owner  int    `bson:"owner"`
+	ArmyId ArmyID `bson:"army_id"`
 }
 
 func GarrisonStateToDoc(s entity.GarrisonState) GarrisonDoc {

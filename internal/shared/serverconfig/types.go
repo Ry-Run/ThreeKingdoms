@@ -41,6 +41,7 @@ type HTTPServerConfig struct {
 type GateServerConfig struct {
 	Host       string `yaml:"host" mapstructure:"host"`
 	Port       int    `yaml:"port" mapstructure:"port"`
+	GRPCPort   int    `yaml:"grpc_port" mapstructure:"grpc_port"`
 	NeedSecret bool   `yaml:"need_secret" mapstructure:"need_secret"`
 	SLGProxy   string `yaml:"slg_proxy" mapstructure:"slg_proxy"`
 	ChatProxy  string `yaml:"chat_proxy" mapstructure:"chat_proxy"`

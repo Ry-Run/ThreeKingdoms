@@ -85,3 +85,12 @@ func (m *MapCell) IsSysFortress() bool {
 func (m *MapCell) IsRoleFortress() bool {
 	return m.Type == MapBuildFortress
 }
+
+func (m *mapConf) GetCell(x, y int) (MapCell, bool) {
+	pos := ToPosition(x, y)
+	cell, ok := m.Confs[pos]
+	if !ok {
+		return cell, false
+	}
+	return cell, true
+}
