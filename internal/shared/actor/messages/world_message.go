@@ -72,6 +72,16 @@ type WHAttack struct {
 	EndTime   time.Time
 }
 
+type HWBack struct {
+	WorldBaseMessage
+	ArmyId int
+}
+
+type WHBack struct {
+	OK   bool
+	Army Army
+}
+
 type HWSyncCityFacility struct {
 	WorldBaseMessage
 	CityId     int

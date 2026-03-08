@@ -8,6 +8,7 @@ import (
 	"ThreeKingdoms/internal/shared/gameconfig/facility"
 	"ThreeKingdoms/internal/shared/gameconfig/general"
 	_map "ThreeKingdoms/internal/shared/gameconfig/map"
+	gatepb "ThreeKingdoms/internal/shared/gen/gate"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"ThreeKingdoms/internal/shared/utils"
 	"context"
@@ -244,7 +245,26 @@ func (h *PlayerHandler) HandleWHBattleResult(ctx actor.Context, p *PlayerActor, 
 	if p == nil || p.Entity() == nil || message == nil {
 		return
 	}
-	applyBattleResult(p.Entity(), message.Army)
+	state, ok := applyBattleResult(p.Entity(), message.Army)
+	if !ok {
+		return
+	}
+	if err := pushArmyUpdate(context.Background(), p.pusher, p.Entity(), state); err != nil {
+		ctx.Logger().Error("push battle result army failed", "player_id", p.PlayerId, "army_id", state.Id, "err", err)
+	}
+}
+
+func (h *PlayerHandler) HandleWHArmySync(ctx actor.Context, p *PlayerActor, message *messages.WHArmySync) {
+	if p == nil || p.Entity() == nil || message == nil {
+		return
+	}
+	state, ok := syncArmyState(p.Entity(), message.Army)
+	if !ok {
+		return
+	}
+	if err := pushArmyUpdate(context.Background(), p.pusher, p.Entity(), state); err != nil {
+		ctx.Logger().Error("push synced army failed", "player_id", p.PlayerId, "army_id", state.Id, "err", err)
+	}
 }
 
 func (h *PlayerHandler) HandleSkillListRequest(ctx actor.Context, p *PlayerActor, request *playerpb.SkillListRequest) {
@@ -1200,6 +1220,10 @@ func (h *PlayerHandler) HandleAssignArmyRequest(ctx actor.Context, p *PlayerActo
 		ctx.Respond(fail("Army Not Found"))
 		return
 	}
+	if cmd == entity.ArmyCmdBack {
+		PS.Back(ctx, p, army)
+		return
+	}
 	if army.Frozen {
 		ctx.Respond(fail("army frozen"))
 		return
@@ -1211,8 +1235,6 @@ func (h *PlayerHandler) HandleAssignArmyRequest(ctx actor.Context, p *PlayerActo
 	}
 
 	switch cmd {
-	case entity.ArmyCmdBack:
-		PS.Back(p, army)
 	case entity.ArmyCmdAttack:
 		PS.Attack(ctx, p, army, x, y)
 	case entity.ArmyCmdDefend:
@@ -1263,22 +1285,49 @@ func PositionCanModify(a entity.ArmyState, pos int) bool {
 	return false
 }
 
-func applyBattleResult(player *entity.PlayerEntity, army *messages.Army) bool {
+func syncArmyState(player *entity.PlayerEntity, army *messages.Army) (entity.ArmyState, bool) {
 	if player == nil || army == nil {
-		return false
+		return entity.ArmyState{}, false
 	}
 
 	state := msgArmyToArmy(army)
 	state.Frozen = false
 	player.PutArmies(state.Id, state)
+	return state, true
+}
 
-	for _, general := range army.Generals {
-		if general == nil || general.Id <= 0 {
+func applyBattleResult(player *entity.PlayerEntity, army *messages.Army) (entity.ArmyState, bool) {
+	state, ok := syncArmyState(player, army)
+	if !ok {
+		return entity.ArmyState{}, false
+	}
+	for _, g := range army.Generals {
+		if g == nil || g.Id <= 0 {
 			continue
 		}
-		player.PutGenerals(general.Id, msgToEntityGeneral(general))
+		player.PutGenerals(g.Id, msgToEntityGeneral(g))
 	}
-	return true
+	return state, true
+}
+
+func pushArmyUpdate(ctx context.Context, pusher gatepb.GatePushServiceClient, player *entity.PlayerEntity, army entity.ArmyState) error {
+	if pusher == nil || player == nil || army.Id <= 0 || player.PlayerID() <= 0 {
+		return nil
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	_, err := pusher.PushWorldBatch(ctx, &gatepb.PushWorldBatchRequest{
+		WorldId: int32(player.WorldID()),
+		MsgType: messages.ArmyPush,
+		Items: []*gatepb.WorldPushItem{
+			{
+				PlayerId: int64(player.PlayerID()),
+				Army:     ToPBArmy(player.CityID(), army),
+			},
+		},
+	})
+	return err
 }
 
 func GeneralIsRepeat(p *entity.PlayerEntity, a entity.ArmyState, cfgId int) bool {

@@ -28,3 +28,8 @@ type WHBattleResult struct {
 	PlayerBaseMessage
 	Army *Army
 }
+
+type WHArmySync struct {
+	PlayerBaseMessage
+	Army *Army
+}

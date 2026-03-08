@@ -253,8 +253,54 @@ func (s *PlayerService) GetGenerals(player *entity.PlayerEntity) (*playerpb.Play
 	}, nil
 }
 
-func (s *PlayerService) Back(p *PlayerActor, army entity.ArmyState) {
+func (s *PlayerService) Back(ctx actor.Context, p *PlayerActor, army entity.ArmyState) {
+	player := p.Entity()
+	worldPID := p.WorldPID()
+	if worldPID == nil || p.WorldId == nil {
+		ctx.Respond(fail("world actor unavailable"))
+		return
+	}
 
+	f := ctx.RequestFuture(worldPID,
+		&messages.HWBack{
+			WorldBaseMessage: messages.WorldBaseMessage{WorldId: int(*p.WorldId), PlayerId: int(*p.PlayerId)},
+			ArmyId:           army.Id,
+		},
+		500*time.Millisecond,
+	)
+	ctx.ReenterAfter(f, func(res interface{}, err error) {
+		if err != nil {
+			ctx.Respond(fail(err.Error()))
+			return
+		}
+
+		if backRes, ok := res.(*messages.WHBack); ok && backRes.OK {
+			updated := player.UpdateArmies(army.Id, func(v *entity.ArmyEntity) {
+				if v == nil {
+					return
+				}
+				a := backRes.Army
+				v.SetCmd(a.Cmd)
+				v.SetState(a.State)
+				v.SetFromX(a.FromPos.X)
+				v.SetFromY(a.FromPos.Y)
+				v.SetToX(a.ToPos.X)
+				v.SetToY(a.ToPos.Y)
+				v.SetStartTime(time.UnixMilli(a.Start))
+				v.SetEndTime(time.UnixMilli(a.End))
+				v.SetFrozen(true)
+			})
+			if !updated {
+				ctx.Respond(fail("army not found"))
+				return
+			}
+			a, _ := player.GetArmies(army.Id)
+			AssignArmyResponse(ctx, player, a)
+		} else {
+			ctx.Logger().Info("position", "err", entity.ErrCreateCity)
+			ctx.Respond(fail("can't back the aim"))
+		}
+	})
 }
 
 func (s *PlayerService) Attack(ctx actor.Context, p *PlayerActor, army entity.ArmyState, x, y int) {
@@ -279,14 +325,9 @@ func (s *PlayerService) Attack(ctx actor.Context, p *PlayerActor, army entity.Ar
 			return
 		}
 
-		if attackRes, ok := res.(*messages.WHAttack); ok {
+		if attackRes, ok := res.(*messages.WHAttack); ok && attackRes.OK {
 			updated := player.UpdateArmies(army.Id, func(v *entity.ArmyEntity) {
 				if v == nil {
-					return
-				}
-
-				if !attackRes.OK {
-					ctx.Respond(fail("can't attack the aim"))
 					return
 				}
 
@@ -304,10 +345,11 @@ func (s *PlayerService) Attack(ctx actor.Context, p *PlayerActor, army entity.Ar
 				ctx.Respond(fail("army not found"))
 				return
 			}
-			AssignArmyResponse(ctx, player, army.Id)
+			a, _ := player.GetArmies(army.Id)
+			AssignArmyResponse(ctx, player, a)
 		} else {
 			ctx.Logger().Info("position", "err", entity.ErrCreateCity)
-			ctx.Respond(fail(""))
+			ctx.Respond(fail("can't attack the aim"))
 		}
 	})
 }
@@ -419,8 +461,7 @@ func (s *PlayerService) Transfer(ctx actor.Context, p *PlayerActor, army entity.
 
 }
 
-func AssignArmyResponse(ctx actor.Context, player *entity.PlayerEntity, armyId int) {
-	army, _ := player.GetArmies(armyId)
+func AssignArmyResponse(ctx actor.Context, player *entity.PlayerEntity, army entity.ArmyState) {
 	response := ok()
 	response.Body = &playerpb.PlayerResponse_ArmyInfoResponse{
 		ArmyInfoResponse: &playerpb.ArmyInfoResponse{

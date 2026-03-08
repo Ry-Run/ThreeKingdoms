@@ -27,6 +27,9 @@ type CityID = entity.CityID
 type ArmyID = entity.ArmyID
 type AllianceID = entity.AllianceID
 type CityState = entity.CityState
+type messageSender interface {
+	Send(pid *actor.PID, message interface{})
+}
 
 func (s *WorldService) CreateCity(e *entity.WorldEntity, request *messages.HWCreateCity) *messages.WHCreateCity {
 	if request == nil {
@@ -268,6 +271,76 @@ func (s *WorldService) Attack(ctx actor.Context, w *WorldActor, req *messages.HW
 	}
 }
 
+// 返回
+func (s *WorldService) Back(ctx actor.Context, w *WorldActor, req *messages.HWBack) *messages.WHBack {
+	now := time.Now()
+	if req == nil || w == nil || w.Entity() == nil || req.PlayerId <= 0 || req.ArmyId <= 0 {
+		if ctx != nil {
+			ctx.Logger().Error("back request invalid")
+		}
+		return nil
+	}
+
+	world := w.Entity()
+	playerID := PlayerID(req.PlayerId)
+	armyID := ArmyID(req.ArmyId)
+
+	army, ok := GetArmy(world, playerID, armyID)
+	if !ok {
+		if ctx != nil {
+			ctx.Logger().Error("army not found")
+		}
+		return nil
+	}
+	if army.State != entity.ArmyRunning {
+		if ctx != nil {
+			ctx.Logger().Error("army is not marching")
+		}
+		return nil
+	}
+
+	marches, ok := world.GetMarches(playerID)
+	if !ok {
+		if ctx != nil {
+			ctx.Logger().Error("player marches not found")
+		}
+		return nil
+	}
+	currentMarch, ok := marches[armyID]
+	if !ok {
+		if ctx != nil {
+			ctx.Logger().Error("army march not found")
+		}
+		return nil
+	}
+
+	// 返程以前，先把旧的行军索引移除，再以当前位置重新派发行军。
+	s.removeMarchFromIndex(world, currentMarch)
+	homeX, homeY := army.FromX, army.FromY
+	currentX, currentY := marchArmyPos(army)
+	army.FromX = currentX
+	army.FromY = currentY
+	army.ToX = homeX
+	army.ToY = homeY
+	army.Cmd = entity.ArmyCmdBack
+	army.State = entity.ArmyRunning
+	army.StartTime = now
+	army.EndTime = now.Add(time.Second * 10)
+
+	if !s.replaceArmyState(world, army) {
+		if ctx != nil {
+			ctx.Logger().Error("replace army state failed")
+		}
+		return nil
+	}
+	s.dispatchArmyMarch(world, army)
+
+	return &messages.WHBack{
+		OK:   true,
+		Army: ToMessagesArmy(army),
+	}
+}
+
 // 检查行军
 func (s *WorldService) march(ctx actor.Context, w *WorldActor) {
 	now := time.Now()
@@ -319,14 +392,14 @@ func (s *WorldService) march(ctx actor.Context, w *WorldActor) {
 }
 
 func (s *WorldService) handleArrive(ctx actor.Context, w *WorldActor, world *entity.WorldEntity, army entity.ArmyState, now time.Time) {
-	defenderPos := _map.ToPosition(army.ToX, army.ToY)
-	defenderCell, b := world.GetWorldMap(defenderPos)
-	if !b || defenderCell.Occupancy.Owner == 0 {
-		logs.Warn("not found the defender, can not attack")
-		return
-	}
 	switch army.Cmd {
 	case entity.ArmyCmdAttack:
+		defenderPos := _map.ToPosition(army.ToX, army.ToY)
+		defenderCell, b := world.GetWorldMap(defenderPos)
+		if !b || defenderCell.Occupancy.Owner == 0 {
+			logs.Warn("not found the defender, can not attack")
+			return
+		}
 		// 自己的城池 和联盟的城池 都不能攻击
 		if !s.CanAttack(army.PlayerId, PlayerID(defenderCell.Occupancy.Owner), army.AllianceId, AllianceID(defenderCell.Occupancy.AllianceId)) {
 			logs.Warn("can not attack")
@@ -339,6 +412,19 @@ func (s *WorldService) handleArrive(ctx actor.Context, w *WorldActor, world *ent
 			return
 		}
 		s.startBattle(ctx, w, world, army, defenderCell)
+	case entity.ArmyCmdBack:
+		world.UpdateArmies(army.PlayerId, func(v map[entity.ArmyID]*entity.ArmyEntity) {
+			armyEntity, ok := v[ArmyID(army.Id)]
+			if ok {
+				armyEntity.SetCmd(entity.ArmyCmdIdle)
+				armyEntity.SetState(entity.ArmyStop)
+				armyEntity.SetToX(armyEntity.FromX())
+				armyEntity.SetToY(armyEntity.FromY())
+			}
+		})
+		if updated, ok := GetArmy(world, army.PlayerId, ArmyID(army.Id)); ok {
+			s.pushArmySync(ctx, w, updated)
+		}
 	}
 }
 
@@ -1172,6 +1258,29 @@ func (s *WorldService) pushBattleResult(ctx actor.Context, w *WorldActor, army e
 	}
 	resultArmy := ToMessagesArmy(army)
 	ctx.Send(playerManagerPID, &messages.WHBattleResult{
+		PlayerBaseMessage: messages.PlayerBaseMessage{
+			WorldId:  worldID,
+			PlayerId: int(army.PlayerId),
+		},
+		Army: &resultArmy,
+	})
+}
+
+func (s *WorldService) pushArmySync(sender messageSender, w *WorldActor, army entity.ArmyState) {
+	if sender == nil || w == nil || !hasArmyState(army) || army.PlayerId <= 0 {
+		return
+	}
+	playerManagerPID, ok := w.ResolveManagerPID(sharedactor.ManagerPIDPlayer)
+	if !ok || playerManagerPID == nil {
+		logs.Warn("player manager actor pid is nil, skip army sync push")
+		return
+	}
+	worldID := 0
+	if wid := w.WorldID(); wid != nil {
+		worldID = int(*wid)
+	}
+	resultArmy := ToMessagesArmy(army)
+	sender.Send(playerManagerPID, &messages.WHArmySync{
 		PlayerBaseMessage: messages.PlayerBaseMessage{
 			WorldId:  worldID,
 			PlayerId: int(army.PlayerId),

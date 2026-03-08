@@ -29,6 +29,7 @@ func (d *Dispatcher) registerAll() {
 	register(d, WH.HandleHWMyCities)
 	register(d, WH.HandleHWScanBlock)
 	register(d, WH.HandleHWAttack)
+	register(d, WH.HandleHWBack)
 	register(d, WH.HandleHWSyncCityFacility)
 }
 

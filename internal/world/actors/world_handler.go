@@ -65,6 +65,16 @@ func (h *WorldHandler) HandleHWAttack(ctx actor.Context, w *WorldActor, req *mes
 	ctx.Respond(attack)
 }
 
+func (h *WorldHandler) HandleHWBack(ctx actor.Context, w *WorldActor, req *messages.HWBack) {
+	back := WS.Back(ctx, w, req)
+	if back == nil {
+		back = &messages.WHBack{
+			OK: false,
+		}
+	}
+	ctx.Respond(back)
+}
+
 func (h *WorldHandler) HandleHWSyncCityFacility(ctx actor.Context, w *WorldActor, req *messages.HWSyncCityFacility) {
 	ctx.Respond(WS.SyncCityFacility(w.Entity(), req))
 }

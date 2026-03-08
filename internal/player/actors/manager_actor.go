@@ -73,7 +73,7 @@ func (m *ManagerActor) getOrSpawn(ctx actor.Context, playerId PlayerID, worldId 
 	}
 
 	props := actor.PropsFromProducer(func() actor.Actor {
-		return NewPlayerActor(playerId, worldId, m.repo, m.resolver)
+		return NewPlayerActor(playerId, worldId, m.repo, m.resolver, m.pusher)
 	})
 	// ManagerActor 创建 子 actor
 	pid := ctx.Spawn(props)

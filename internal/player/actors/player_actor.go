@@ -6,6 +6,7 @@ import (
 	"ThreeKingdoms/internal/player/service/port"
 	sharedactor "ThreeKingdoms/internal/shared/actor"
 	"ThreeKingdoms/internal/shared/actor/messages"
+	gatepb "ThreeKingdoms/internal/shared/gen/gate"
 	playerpb "ThreeKingdoms/internal/shared/gen/player"
 	"context"
 	"errors"
@@ -37,6 +38,7 @@ type PlayerActor struct {
 	WorldId    *WorldID
 	AllianceID *AllianceID
 	dc         *dc.PlayerDC
+	pusher     gatepb.GatePushServiceClient
 
 	resolver   sharedactor.ManagerPIDResolver
 	dispatcher *Dispatcher
@@ -50,7 +52,7 @@ type flushTick struct{}
 
 func (flushTick) NotInfluenceReceiveTimeout() {}
 
-func NewPlayerActor(playerID PlayerID, worldID WorldID, repo port.PlayerRepository, resolver sharedactor.ManagerPIDResolver) *PlayerActor {
+func NewPlayerActor(playerID PlayerID, worldID WorldID, repo port.PlayerRepository, resolver sharedactor.ManagerPIDResolver, pusher gatepb.GatePushServiceClient) *PlayerActor {
 	return &PlayerActor{
 		state:      None,
 		PlayerId:   &playerID,
@@ -59,6 +61,7 @@ func NewPlayerActor(playerID PlayerID, worldID WorldID, repo port.PlayerReposito
 		dispatcher: NewDispatcher(),
 		seenSeq:    make(map[int64]struct{}, seqWindowSize),
 		resolver:   resolver,
+		pusher:     pusher,
 	}
 }
 
@@ -148,6 +151,8 @@ func (p *PlayerActor) handlePlayerMessage(ctx actor.Context, msg messages.Player
 		PH.HandleWHWarReport(ctx, p, typed)
 	case *messages.WHBattleResult:
 		PH.HandleWHBattleResult(ctx, p, typed)
+	case *messages.WHArmySync:
+		PH.HandleWHArmySync(ctx, p, typed)
 	default:
 		return
 	}
